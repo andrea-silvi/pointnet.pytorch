@@ -14,7 +14,7 @@ class ShapeNetDataset(data.Dataset):
                  npoints=2500,
                  class_choice=None,
                  split='train',
-                 data_augmentation=True):
+                 data_augmentation=False):
         self.npoints = npoints
         self.root = root
         # download Shapenet dataset command here and save in colab in /Shapenet
@@ -56,7 +56,7 @@ class ShapeNetDataset(data.Dataset):
         fn = self.datapath[index]
         cls = self.classes[self.datapath[index][0]]
         point_set = np.loadtxt(fn[1]).astype(np.float32)
-        # print(point_set.shape)
+        print(point_set.shape)
         choice = np.random.choice(len(point_set), self.npoints, replace=True)
         # resample
         point_set = point_set[choice, :]
@@ -71,7 +71,8 @@ class ShapeNetDataset(data.Dataset):
             point_set += np.random.normal(0, 0.02, size=point_set.shape)  # random jitter
 
         point_set = torch.from_numpy(point_set)
-        cls = torch.from_numpy(np.array([cls]).astype(np.int64))
+        # Uncomment if label is needed
+        # cls = torch.from_numpy(np.array([cls]).astype(np.int64))
 
         return point_set
 
