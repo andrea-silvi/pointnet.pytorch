@@ -4,10 +4,8 @@ import os
 import os.path
 import torch
 import numpy as np
-import sys
-from tqdm import tqdm
 import json
-from plyfile import PlyData, PlyElement
+
 
 
 class ShapeNetDataset(data.Dataset):
