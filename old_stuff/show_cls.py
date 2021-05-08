@@ -1,11 +1,9 @@
 from __future__ import print_function
 import argparse
-import torch
-import torch.nn.parallel
 import torch.utils.data
 from torch.autograd import Variable
-from pointnet.dataset import ShapeNetDataset
-from pointnet.model import PointNetCls
+from utils.dataset import ShapeNetDataset
+from pointnet.pointnet_model import PointNetCls
 import torch.nn.functional as F
 
 

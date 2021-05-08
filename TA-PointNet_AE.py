@@ -1,33 +1,10 @@
-# %%
-"""
-<a href="https://colab.research.google.com/github/vittoriop17/point_cloud/blob/dev/PointNet_AE.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-"""
-
-# %%
-"""
-# 3D-DL Project - PointNet AE
-### Teaching Assistant: Antonio Alliegro, antonio.alliegro at polito dot it
-"""
-
-# %%
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-# %%
-"""
-## PointNet - Network
-"""
 
-# %%
-"""
-### Feature Extractor
-"""
-
-
-# %%
 class STN3d(nn.Module):
     def __init__(self):
         super(STN3d, self).__init__()
@@ -157,19 +134,19 @@ model = PointNetCls(num_classes=num_classes, feature_transform=False)
 print("PointNet light - Cla. Model - num_classes: %d" % num_classes)
 print(str(model) + '\n')
 
-# %%
+
 """
 #### PointNet AutoEncoder
 """
 
-# %%
+
 import torch
 import torch.nn as nn
 
 
 class Decoder(nn.Module):
     ''' Just a lightweight Fully Connected decoder:
-  '''
+    '''
 
     def __init__(self, num_points=2048):
         super(Decoder, self).__init__()
