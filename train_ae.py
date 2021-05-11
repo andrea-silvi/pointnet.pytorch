@@ -100,7 +100,7 @@ def train_example(opt):
         scheduler.step()
         for i, points in enumerate(dataloader, 0):
             print(f"Points size: {points.size()}")
-            points = points.transpose(2, 1)
+            # points = points.transpose(2, 1)
             points = points.cuda()
             optimizer.zero_grad()
             autoencoder = autoencoder.train()
