@@ -3,7 +3,7 @@ import argparse
 import torch.utils.data
 from torch.autograd import Variable
 from utils.dataset import ShapeNetDataset
-from pointnet.pointnet_model import PointNetCls
+from utils.pointnet_model import PointNetCls
 import torch.nn.functional as F
 
 

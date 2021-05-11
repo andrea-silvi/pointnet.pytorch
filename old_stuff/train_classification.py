@@ -5,7 +5,7 @@ import random
 import torch.optim as optim
 import torch.utils.data
 from utils.dataset import ShapeNetDataset
-from pointnet.pointnet_model import PointNetCls, feature_transform_regularizer
+from utils.pointnet_model import PointNetCls, feature_transform_regularizer
 import torch.nn.functional as F
 from tqdm import tqdm
 

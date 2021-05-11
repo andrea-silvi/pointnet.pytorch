@@ -1,15 +1,12 @@
 from __future__ import print_function
 import torch
-from pointnet.pointnet_model import PointNet_AutoEncoder
+from utils.pointnet_model import PointNet_AutoEncoder
 from loss import PointLoss
 import argparse
 import os
-import random
 import torch.optim as optim
 import torch.utils.data
-from utils.dataset import ShapeNetDataset
-import torch.nn.functional as F
-
+from dataset import ShapeNetDataset
 
 
 # the following function doesn't make the training of the network!!
@@ -54,6 +51,7 @@ def example_AE_and_chamfer_loss():
     loss = chamfer_loss(decoded, points)
     print(loss)
 
+
 def train_example(opt):
     dataset = ShapeNetDataset(
         root=opt.dataset,
@@ -73,11 +71,11 @@ def train_example(opt):
         shuffle=True,
         num_workers=int(opt.workers))
 
-    testdataloader = torch.utils.data.DataLoader(
-        test_dataset,
-        batch_size=opt.batchSize,
-        shuffle=True,
-        num_workers=int(opt.workers))
+    # testdataloader = torch.utils.data.DataLoader(
+    #     test_dataset,
+    #     batch_size=opt.batchSize,
+    #     shuffle=True,
+    #     num_workers=int(opt.workers))
 
     print(len(dataset), len(test_dataset))
 
