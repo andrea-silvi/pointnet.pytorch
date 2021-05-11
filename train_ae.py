@@ -55,13 +55,13 @@ def example_AE_and_chamfer_loss():
 def train_example(opt):
     dataset = ShapeNetDataset(
         root=opt.dataset,
-        class_choice="Knife",
+        class_choice=opt.train_class_choice,
         npoints=opt.num_points)
 
     test_dataset = ShapeNetDataset(
         root=opt.dataset,
         split='test',
-        class_choice="Knife",
+        class_choice=opt.train_class_choice,
         npoints=opt.num_points,
         data_augmentation=False)
 
@@ -162,6 +162,8 @@ if __name__=='__main__':
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
     parser.add_argument('--model', type=str, default='', help='model path')
     parser.add_argument('--dataset', type=str, required=True, help="dataset path")
+    parser.add_argument('--train_class_choice', type=str, default=None, help="Training class")
+    parser.add_argument('--test_class_choice', type=str, default=None, help="Test class")
     # parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
     opt = parser.parse_args()
