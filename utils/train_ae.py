@@ -9,7 +9,7 @@ import torch.optim as optim
 import torch.utils.data
 from utils.dataset import ShapeNetDataset
 import torch.nn.functional as F
-from tqdm import tqdm
+
 
 
 # the following function doesn't make the training of the network!!
