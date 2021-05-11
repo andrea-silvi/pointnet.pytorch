@@ -1,6 +1,6 @@
 from __future__ import print_function
 import torch
-from utils.pointnet_model import PointNet_AutoEncoder
+from pointnet_model import PointNet_AutoEncoder
 from loss import PointLoss
 import argparse
 import os
