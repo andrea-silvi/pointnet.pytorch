@@ -56,7 +56,6 @@ class ShapeNetDataset(data.Dataset):
         fn = self.datapath[index]
         cls = self.classes[self.datapath[index][0]]
         point_set = np.loadtxt(fn[1]).astype(np.float32)
-        print(point_set.shape)
         choice = np.random.choice(len(point_set), self.npoints, replace=True)
         # resample
         point_set = point_set[choice, :]
