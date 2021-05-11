@@ -1,12 +1,12 @@
 from __future__ import print_function
 import torch
-from pointnet_model import PointNet_AutoEncoder
-from loss import PointLoss
+from pointnet.pointnet_model import PointNet_AutoEncoder
+from utils.loss import PointLoss
 import argparse
 import os
 import torch.optim as optim
 import torch.utils.data
-from dataset import ShapeNetDataset
+from utils.dataset import ShapeNetDataset
 
 
 # the following function doesn't make the training of the network!!
