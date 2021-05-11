@@ -12,24 +12,6 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 
-# TODO - create a json file for setting all the arguments. Actually:
-# TODO - create a json for the FINAL arguments (after the cross-validation, e.g.: {'batchSize': 32})
-# TODO - and a json for the GRID SEARCH phase (e.g.: {'batchSize': [16, 32, 64], ...}
-parser = argparse.ArgumentParser()
-parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
-parser.add_argument('--num_points', type=int, default=2500, help='input batch size')
-parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
-parser.add_argument('--nepoch', type=int, default=250, help='number of epochs to train for')
-parser.add_argument('--outf', type=str, default='cls', help='output folder')
-parser.add_argument('--model', type=str, default='', help='model path')
-parser.add_argument('--dataset', type=str, required=True, help="dataset path")
-parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
-parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
-
-opt = parser.parse_args()
-print(opt)
-
-
 # the following function doesn't make the training of the network!!
 # It shows the interfaces with the classes necessary for the point cloud completion task
 # N.B.: only with PointNetAE and PointLoss (the one used for evaluating the Chamfer distance)
@@ -169,6 +151,24 @@ def train_example(opt):
     #
     # print("final accuracy {}".format(total_correct / float(total_testset)))
 
+
+if __name__=='__main__':
+    # TODO - create a json file for setting all the arguments. Actually:
+    # TODO - create a json for the FINAL arguments (after the cross-validation, e.g.: {'batchSize': 32})
+    # TODO - and a json for the GRID SEARCH phase (e.g.: {'batchSize': [16, 32, 64], ...}
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
+    parser.add_argument('--num_points', type=int, default=2500, help='input batch size')
+    parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
+    parser.add_argument('--nepoch', type=int, default=250, help='number of epochs to train for')
+    parser.add_argument('--outf', type=str, default='cls', help='output folder')
+    parser.add_argument('--model', type=str, default='', help='model path')
+    parser.add_argument('--dataset', type=str, required=True, help="dataset path")
+    # parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
+    parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
+    opt = parser.parse_args()
+    print(opt)
+    train_example(opt)
 
 # TODO - Implement training phase (you should also implement cross-validation for tuning the hyperparameters)
 # TODO - You should also implement the visualization tools (visualization_tools package)
