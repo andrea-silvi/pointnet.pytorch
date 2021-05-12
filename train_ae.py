@@ -58,6 +58,15 @@ def example_AE_and_chamfer_loss():
     print(loss)
 
 
+def print_loss_graph(training_losses, val_losses):
+    plt.plot(training_losses, '-bx')
+    plt.plot(val_losses, '-rx')
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.legend(['Training', 'Validation'])
+    plt.title('Loss vs. No. of epochs')
+    plt.show()
+
 def train_example(opt):
     random_seed = 43
     torch.manual_seed(random_seed)
@@ -183,13 +192,9 @@ def train_example(opt):
 
 
     # TODO PLOT LOSSES
-    plt.plot(training_losses, '-bx')
-    plt.plot(val_losses, '-rx')
-    plt.xlabel('epoch')
-    plt.ylabel('loss')
-    plt.legend(['Training', 'Validation'])
-    plt.title('Loss vs. No. of epochs')
-    plt.show()
+
+    print_loss_graph(training_losses, val_losses)
+
     # total_correct = 0
     # total_testset = 0
     # for i, data in tqdm(enumerate(testdataloader, 0)):
