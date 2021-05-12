@@ -49,20 +49,21 @@ def array2samples_distance(array1, array2):
     return distances
 
 
-def chamfer_distance_numpy(array1, array2):
+def chamfer_distance_numpy(array1, array2, cd_weight):
     batch_size, num_point, num_features = array1.shape
     dist = 0
     for i in range(batch_size):
         av_dist1 = array2samples_distance(array1[i], array2[i])
         av_dist2 = array2samples_distance(array2[i], array1[i])
         dist = dist + (0.5 * av_dist1 + 0.5 * av_dist2) / batch_size
-    return dist
+    return cd_weight * dist
 
 
 class PointLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, cd_weight=100):
         super(PointLoss, self).__init__()
+        self.cd_weight = cd_weight
 
     def forward(self, array1, array2):
-        return chamfer_distance_numpy(array1, array2)
+        return chamfer_distance_numpy(array1, array2, self.cd_weight)
 

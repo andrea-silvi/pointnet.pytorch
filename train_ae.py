@@ -1,4 +1,6 @@
 from __future__ import print_function
+
+import numpy as np
 import torch
 from pointnet.pointnet_model import PointNet_AutoEncoder
 from utils.loss import PointLoss
@@ -7,7 +9,8 @@ import os
 import torch.optim as optim
 import torch.utils.data
 from utils.dataset import ShapeNetDataset
-
+from torch.utils.data import random_split
+import matplotlib.pyplot as plt
 
 # the following function doesn't make the training of the network!!
 # It shows the interfaces with the classes necessary for the point cloud completion task
@@ -53,31 +56,45 @@ def example_AE_and_chamfer_loss():
 
 
 def train_example(opt):
+    random_seed = 43
+    torch.manual_seed(random_seed)
+
     dataset = ShapeNetDataset(
         root=opt.dataset,
         class_choice=opt.train_class_choice,
         npoints=opt.num_points)
 
+    val_size = int(0.2 * len(dataset))
+    train_size = len(dataset) - val_size
+
+    training_dataset, validation_dataset = random_split(dataset, [train_size, val_size])
+
     test_dataset = ShapeNetDataset(
         root=opt.dataset,
         split='test',
-        class_choice=opt.train_class_choice,
+        class_choice=opt.test_class_choice,
         npoints=opt.num_points,
         data_augmentation=False)
 
-    dataloader = torch.utils.data.DataLoader(
-        dataset,
+    train_dataloader = torch.utils.data.DataLoader(
+        training_dataset,
         batch_size=opt.batchSize,
         shuffle=True,
         num_workers=int(opt.workers))
 
-    # testdataloader = torch.utils.data.DataLoader(
-    #     test_dataset,
-    #     batch_size=opt.batchSize,
-    #     shuffle=True,
-    #     num_workers=int(opt.workers))
+    val_dataloader = torch.utils.data.DataLoader(
+        validation_dataset,
+        batch_size=opt.batchSize,
+        shuffle=True,
+        num_workers=int(opt.workers))
 
-    print(len(dataset), len(test_dataset))
+    testdataloader = torch.utils.data.DataLoader(
+         test_dataset,
+         batch_size=opt.batchSize,
+         shuffle=True,
+         num_workers=int(opt.workers))
+
+    print(len(training_dataset), len(val_dataloader), len(test_dataset))
 
     try:
         os.makedirs(opt.outf)
@@ -96,26 +113,48 @@ def train_example(opt):
 
     num_batch = len(dataset) / opt.batchSize
     # TODO - modify number of epochs (from 5 to opt.nepoch)
-    for epoch in range(5):
+
+    training_history = []
+    val_history = []
+
+    for epoch in range(10):
         scheduler.step()
-        for i, points in enumerate(dataloader, 0):
-            print(f"Points size: {points.size()}")
+        training_losses = []
+        for i, points in enumerate(train_dataloader, 0):
+            # print(f"Points size: {points.size()}")
             # points = points.transpose(2, 1)
             points = points.cuda()
             optimizer.zero_grad()
-            autoencoder = autoencoder.train()
+            autoencoder.train()
             decoded_points = autoencoder(points)
-            print(f"Decoded points size: {decoded_points.size()}")
+            #print(f"Decoded points size: {decoded_points.size()}")
             decoded_points = decoded_points.cuda()
             chamfer_loss = PointLoss()  #  instantiate the loss
             # let's compute the chamfer distance between the two sets: 'points' and 'decoded'
             loss = chamfer_loss(decoded_points, points)
             # if opt.feature_transform:
             #     loss += feature_transform_regularizer(trans_feat) * 0.001
+            training_losses.append(loss)
             loss.backward()
             optimizer.step()
-            print('[%d: %d/%d] train loss: %f' % (
-            epoch, i, num_batch, loss.item()))
+            #print('[%d: %d/%d] train loss: %f' % (
+            #epoch, i, num_batch, loss.item()))
+
+        # TODO - VALIDATION PHASE
+        val_losses = []
+        for j, val_points in enumerate(val_dataloader, 0):
+            autoencoder.eval()
+            val_points = val_points.cuda()
+            decoded_val_points = autoencoder(val_points)
+            decoded_val_points = decoded_val_points.cuda()
+            chamfer_loss = PointLoss()  #  instantiate the loss
+            val_loss = chamfer_loss(decoded_val_points, val_points)
+            val_losses.append(val_loss)
+        training_losses = np.array(training_losses)
+        val_losses = np.array(val_losses)
+
+        training_history.append(np.average(training_losses))
+        val_history.append(np.average(val_losses))
 
             # if i % 10 == 0:
             #     j, data = next(enumerate(testdataloader, 0))
@@ -132,6 +171,15 @@ def train_example(opt):
             #     epoch, i, num_batch, blue('test'), loss.item(), correct.item() / float(opt.batchSize)))
 
         torch.save(autoencoder.state_dict(), '%s/cls_model_%d.pth' % (opt.outf, epoch))
+
+
+    # TODO PLOT LOSSES
+    plt.plot(training_losses, '-bx')
+    plt.plot(val_losses, '-rx')
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.legend(['Training', 'Validation'])
+    plt.title('Loss vs. No. of epochs')
 
     # total_correct = 0
     # total_testset = 0
