@@ -11,6 +11,7 @@ import torch.utils.data
 from utils.dataset import ShapeNetDataset
 from torch.utils.data import random_split
 import matplotlib.pyplot as plt
+import gc
 
 # the following function doesn't make the training of the network!!
 # It shows the interfaces with the classes necessary for the point cloud completion task
@@ -116,6 +117,8 @@ def train_example(opt):
 
     training_history = []
     val_history = []
+    gc.collect()
+    torch.cuda.empty_cache()
 
     for epoch in range(10):
         scheduler.step()
@@ -138,25 +141,27 @@ def train_example(opt):
             loss.backward()
             optimizer.step()
 
-
+        gc.collect()
+        torch.cuda.empty_cache()
 
         # TODO - VALIDATION PHASE
-        val_losses = []
-        for j, val_points in enumerate(val_dataloader, 0):
-            autoencoder.eval()
-            val_points = val_points.cuda()
-            decoded_val_points = autoencoder(val_points)
-            decoded_val_points = decoded_val_points.cuda()
-            chamfer_loss = PointLoss()  #  instantiate the loss
-            val_loss = chamfer_loss(decoded_val_points, val_points)
-            val_losses.append(val_loss)
-        training_losses = np.array(training_losses)
-        val_losses = np.array(val_losses)
+        with torch.no_grad():
+            val_losses = []
+            for j, val_points in enumerate(val_dataloader, 0):
+                autoencoder.eval()
+                val_points = val_points.cuda()
+                decoded_val_points = autoencoder(val_points)
+                decoded_val_points = decoded_val_points.cuda()
+                chamfer_loss = PointLoss()  #  instantiate the loss
+                val_loss = chamfer_loss(decoded_val_points, val_points)
+                val_losses.append(val_loss)
+            training_losses = np.array(training_losses)
+            val_losses = np.array(val_losses)
 
-        print('[%d:] train loss: %f' % (epoch,  np.average(training_losses)))
-        print('[%d:] val loss: %f' % (epoch,  np.average(val_losses)))
-        training_history.append(np.average(training_losses))
-        val_history.append(np.average(val_losses))
+            print('[%d:] train loss: %f' % (epoch,  np.average(training_losses)))
+            print('[%d:] val loss: %f' % (epoch,  np.average(val_losses)))
+            training_history.append(np.average(training_losses))
+            val_history.append(np.average(val_losses))
 
             # if i % 10 == 0:
             #     j, data = next(enumerate(testdataloader, 0))
