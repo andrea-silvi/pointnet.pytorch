@@ -153,8 +153,8 @@ def train_example(opt):
         training_losses = np.array(training_losses)
         val_losses = np.array(val_losses)
 
-        print(f' train loss:epoch {epoch} ,  {np.average(training_losses)}')
-        print(f' train loss:epoch {epoch} ,  {np.average(val_losses)}')
+        print(f' train loss:epoch {epoch} ,  {np.array(training_losses).mean()}')
+        print(f' train loss:epoch {epoch} ,  {np.array(val_losses).mean()}')
         training_history.append(np.average(training_losses))
         val_history.append(np.average(val_losses))
 
