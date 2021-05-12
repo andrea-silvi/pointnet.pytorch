@@ -10,7 +10,9 @@ import torch.optim as optim
 import torch.utils.data
 from utils.dataset import ShapeNetDataset
 from torch.utils.data import random_split
+import matplotlib
 import matplotlib.pyplot as plt
+
 import gc
 
 # the following function doesn't make the training of the network!!
