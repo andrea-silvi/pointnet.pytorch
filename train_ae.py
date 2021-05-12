@@ -183,6 +183,7 @@ def train_example(opt):
     plt.ylabel('loss')
     plt.legend(['Training', 'Validation'])
     plt.title('Loss vs. No. of epochs')
+    plt.show()
 
     # total_correct = 0
     # total_testset = 0
