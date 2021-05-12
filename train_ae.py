@@ -137,8 +137,8 @@ def train_example(opt):
             training_losses.append(loss)
             loss.backward()
             optimizer.step()
-            #print('[%d: %d/%d] train loss: %f' % (
-            #epoch, i, num_batch, loss.item()))
+
+
 
         # TODO - VALIDATION PHASE
         val_losses = []
@@ -153,6 +153,8 @@ def train_example(opt):
         training_losses = np.array(training_losses)
         val_losses = np.array(val_losses)
 
+        print('[%d:] train loss: %f' % (epoch,  np.average(training_losses)))
+        print('[%d:] val loss: %f' % (epoch,  np.average(val_losses)))
         training_history.append(np.average(training_losses))
         val_history.append(np.average(val_losses))
 

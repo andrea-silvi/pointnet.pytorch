@@ -147,7 +147,7 @@ class PointNet_AutoEncoder(nn.Module):
 
     def forward(self, x):
         BS, N, dim = x.size()
-        print(x.size())
+        #print(x.size())
         assert dim == 3, f"Fail: expecting 3 (x-y-z) as last tensor dimension! Found {dim}"
 
         #  Refactoring batch for 'PointNetfeat' processing

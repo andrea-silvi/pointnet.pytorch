@@ -1,0 +1,9 @@
+-Gridsearch su batchSize, learningRate, parametri scheduler
+-Plottare grafico: loss vs. n° epoch
+-Chiedere alliegro il 0.5 a riga 58
+-CD_Loss = cd_weight * ( 0.5 * AVG_Y2X + 0.5 * AVG_X2Y )
+
+    Where 'cd_weight' is a loss weight term that you should cross-validate. Hint: try with cd_weight=100!
+
+-Per i momenti di noia cambiare le grandezze all'interno della classe decoder
+-Questione data training e data test e validation
