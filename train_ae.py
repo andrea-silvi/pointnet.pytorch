@@ -155,7 +155,7 @@ def train_example(opt):
         train_mean = torch.stack(training_losses).mean().item()
         val_mean = torch.stack(val_losses).mean().item()
         print(f' train loss:epoch {epoch} ,  {train_mean}')
-        print(f' train loss:epoch {epoch} ,  {val_mean}')
+        print(f' validation loss:epoch {epoch} ,  {val_mean}')
         training_history.append(train_mean)
         val_history.append(val_mean)
 
@@ -184,7 +184,7 @@ def train_example(opt):
     plt.legend(['Training', 'Validation'])
     plt.title('Loss vs. No. of epochs')
     plt.show();
-
+    plt.savefig('Loss vs. No. of epochs.png')
     # total_correct = 0
     # total_testset = 0
     # for i, data in tqdm(enumerate(testdataloader, 0)):
