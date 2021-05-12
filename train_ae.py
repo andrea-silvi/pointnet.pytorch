@@ -156,7 +156,7 @@ def train_example(opt):
         torch.cuda.empty_cache()
 
         # TODO - VALIDATION PHASE
-        with torch.no_grad:
+        with torch.no_grad():
             val_losses = []
             for j, val_points in enumerate(val_dataloader, 0):
                 autoencoder.eval()
@@ -166,8 +166,7 @@ def train_example(opt):
                 chamfer_loss = PointLoss()  #  instantiate the loss
                 val_loss = chamfer_loss(decoded_val_points, val_points)
                 val_losses.append(val_loss)
-            #training_losses = np.array(training_losses)
-            #val_losses = np.array(val_losses)
+
             train_mean = torch.stack(training_losses).mean().item()
             val_mean = torch.stack(val_losses).mean().item()
             print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
