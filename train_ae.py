@@ -145,23 +145,23 @@ def train_example(opt):
         torch.cuda.empty_cache()
 
         # TODO - VALIDATION PHASE
-        with torch.no_grad():
-            val_losses = []
-            for j, val_points in enumerate(val_dataloader, 0):
-                autoencoder.eval()
-                val_points = val_points.cuda()
-                decoded_val_points = autoencoder(val_points)
-                decoded_val_points = decoded_val_points.cuda()
-                chamfer_loss = PointLoss()  #  instantiate the loss
-                val_loss = chamfer_loss(decoded_val_points, val_points)
-                val_losses.append(val_loss)
-            training_losses = np.array(training_losses)
-            val_losses = np.array(val_losses)
+        val_losses = []
+        for j, val_points in enumerate(val_dataloader, 0):
+            autoencoder.eval()
+            val_points = val_points.cuda()
+            decoded_val_points = autoencoder(val_points)
+            decoded_val_points = decoded_val_points.cuda()
+            chamfer_loss = PointLoss()  #  instantiate the loss
+            val_loss = chamfer_loss(decoded_val_points, val_points)
+            val_losses.append(val_loss)
+        #training_losses = np.array(training_losses)
+        #val_losses = np.array(val_losses)
+        train_mean = torch.stack(training_losses).mean().item()
+        val_mean = torch.stack(val_losses).mean().item()
+        print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
 
-            print('[%d:] train loss: %f' % (epoch,  np.average(training_losses)))
-            print('[%d:] val loss: %f' % (epoch,  np.average(val_losses)))
-            training_history.append(np.average(training_losses))
-            val_history.append(np.average(val_losses))
+        training_history.append(train_mean)
+        val_history.append(val_mean)
 
             # if i % 10 == 0:
             #     j, data = next(enumerate(testdataloader, 0))
@@ -217,8 +217,8 @@ if __name__=='__main__':
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
     parser.add_argument('--model', type=str, default='', help='model path')
     parser.add_argument('--dataset', type=str, required=True, help="dataset path")
-    parser.add_argument('--train_class_choice', type=str, default=None, help="Training class")
-    parser.add_argument('--test_class_choice', type=str, default=None, help="Test class")
+    parser.add_argument('--train_class_choice', type=str, default="Knife", help="Training class")
+    parser.add_argument('--test_class_choice', type=str, default="Knife", help="Test class")
     # parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
     opt = parser.parse_args()
