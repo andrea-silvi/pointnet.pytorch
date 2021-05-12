@@ -65,7 +65,8 @@ def print_loss_graph(training_history, val_history):
     plt.ylabel('loss')
     plt.legend(['Training', 'Validation'])
     plt.title('Loss vs. No. of epochs')
-    plt.show()
+    plt.savefig('loss.png')
+
 
 def train_example(opt):
     random_seed = 43
@@ -192,7 +193,8 @@ def train_example(opt):
 
 
     # TODO PLOT LOSSES
-
+    print(training_history)
+    print(val_history)
     print_loss_graph(training_history, val_history)
 
     # total_correct = 0
