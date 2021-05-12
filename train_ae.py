@@ -65,7 +65,7 @@ def print_loss_graph(training_history, val_history):
     plt.ylabel('loss')
     plt.legend(['Training', 'Validation'])
     plt.title('Loss vs. No. of epochs')
-    plt.savefig('loss.png')
+    plt.savefig('loss.png', bbox_inches='tight')
 
 
 def train_example(opt):
