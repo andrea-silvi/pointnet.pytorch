@@ -152,11 +152,12 @@ def train_example(opt):
             val_losses.append(val_loss)
         training_losses = np.array(training_losses)
         val_losses = np.array(val_losses)
-
-        print(f' train loss:epoch {epoch} ,  {np.array(training_losses).mean()}')
-        print(f' train loss:epoch {epoch} ,  {np.array(val_losses).mean()}')
-        training_history.append(np.average(training_losses))
-        val_history.append(np.average(val_losses))
+        train_mean = torch.stack(training_losses).mean().item()
+        val_mean = torch.stack(val_losses).mean().item()
+        print(f' train loss:epoch {epoch} ,  {train_mean}')
+        print(f' train loss:epoch {epoch} ,  {val_mean}')
+        training_history.append(train_mean)
+        val_history.append(val_mean)
 
             # if i % 10 == 0:
             #     j, data = next(enumerate(testdataloader, 0))
