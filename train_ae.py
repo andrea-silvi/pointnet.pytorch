@@ -117,7 +117,7 @@ def train_example(opt):
     training_history = []
     val_history = []
 
-    for epoch in range(10):
+    for epoch in range(8):
         scheduler.step()
         training_losses = []
         for i, points in enumerate(train_dataloader, 0):
@@ -212,8 +212,8 @@ if __name__=='__main__':
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
     parser.add_argument('--model', type=str, default='', help='model path')
     parser.add_argument('--dataset', type=str, required=True, help="dataset path")
-    parser.add_argument('--train_class_choice', type=str, default=None, help="Training class")
-    parser.add_argument('--test_class_choice', type=str, default=None, help="Test class")
+    parser.add_argument('--train_class_choice', type=str, default="Knife", help="Training class")
+    parser.add_argument('--test_class_choice', type=str, default="Knife", help="Test class")
     # parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
     opt = parser.parse_args()
