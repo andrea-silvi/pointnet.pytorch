@@ -58,9 +58,9 @@ def example_AE_and_chamfer_loss():
     print(loss)
 
 
-def print_loss_graph(training_losses, val_losses):
-    plt.plot(training_losses, '-bx')
-    plt.plot(val_losses, '-rx')
+def print_loss_graph(training_history, val_history):
+    plt.plot(training_history, '-bx')
+    plt.plot(val_history, '-rx')
     plt.xlabel('epoch')
     plt.ylabel('loss')
     plt.legend(['Training', 'Validation'])
@@ -106,7 +106,7 @@ def train_example(opt):
          shuffle=True,
          num_workers=int(opt.workers))
 
-    print(len(training_dataset), len(val_dataloader), len(test_dataset))
+    print(len(training_dataset), len(validation_dataset), len(test_dataset))
 
     try:
         os.makedirs(opt.outf)
@@ -123,7 +123,7 @@ def train_example(opt):
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
     autoencoder.cuda()
 
-    num_batch = len(dataset) / opt.batchSize
+    #num_batch = len(dataset) / opt.batchSize
     # TODO - modify number of epochs (from 5 to opt.nepoch)
 
     training_history = []
@@ -156,23 +156,24 @@ def train_example(opt):
         torch.cuda.empty_cache()
 
         # TODO - VALIDATION PHASE
-        val_losses = []
-        for j, val_points in enumerate(val_dataloader, 0):
-            autoencoder.eval()
-            val_points = val_points.cuda()
-            decoded_val_points = autoencoder(val_points)
-            decoded_val_points = decoded_val_points.cuda()
-            chamfer_loss = PointLoss()  #  instantiate the loss
-            val_loss = chamfer_loss(decoded_val_points, val_points)
-            val_losses.append(val_loss)
-        #training_losses = np.array(training_losses)
-        #val_losses = np.array(val_losses)
-        train_mean = torch.stack(training_losses).mean().item()
-        val_mean = torch.stack(val_losses).mean().item()
-        print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+        with torch.no_grad:
+            val_losses = []
+            for j, val_points in enumerate(val_dataloader, 0):
+                autoencoder.eval()
+                val_points = val_points.cuda()
+                decoded_val_points = autoencoder(val_points)
+                decoded_val_points = decoded_val_points.cuda()
+                chamfer_loss = PointLoss()  #  instantiate the loss
+                val_loss = chamfer_loss(decoded_val_points, val_points)
+                val_losses.append(val_loss)
+            #training_losses = np.array(training_losses)
+            #val_losses = np.array(val_losses)
+            train_mean = torch.stack(training_losses).mean().item()
+            val_mean = torch.stack(val_losses).mean().item()
+            print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
 
-        training_history.append(train_mean)
-        val_history.append(val_mean)
+            training_history.append(train_mean)
+            val_history.append(val_mean)
 
             # if i % 10 == 0:
             #     j, data = next(enumerate(testdataloader, 0))
@@ -193,7 +194,7 @@ def train_example(opt):
 
     # TODO PLOT LOSSES
 
-    print_loss_graph(training_losses, val_losses)
+    print_loss_graph(training_history, val_history)
 
     # total_correct = 0
     # total_testset = 0
