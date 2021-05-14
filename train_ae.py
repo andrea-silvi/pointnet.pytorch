@@ -71,7 +71,7 @@ def print_loss_graph(training_history, val_history):
 def train_example(opt):
     random_seed = 43
     torch.manual_seed(random_seed)
-    writer = SummaryWriter('runs/train_ae_experiment_1')
+    writer = SummaryWriter()
 
     dataset = ShapeNetDataset(
         root=opt.dataset,
