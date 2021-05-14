@@ -65,13 +65,13 @@ def print_loss_graph(training_history, val_history):
     plt.ylabel('loss')
     plt.legend(['Training', 'Validation'])
     plt.title('Loss vs. No. of epochs')
-    plt.savefig('loss.png', bbox_inches='tight')
+    plt.savefig('loss.png', bbox_inches='tight',)
 
 
 def train_example(opt):
     random_seed = 43
     torch.manual_seed(random_seed)
-    writer = SummaryWriter()
+    #writer = SummaryWriter('runs/train_ae_experiment_1')
 
     dataset = ShapeNetDataset(
         root=opt.dataset,
@@ -124,7 +124,7 @@ def train_example(opt):
     optimizer = optim.Adam(autoencoder.parameters(), lr=0.001, betas=(0.9, 0.999))
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
     autoencoder.cuda()
-    #writer.add_graph(autoencoder, iter(train_dataloader).next())
+    writer.add_graph(autoencoder)
 
     #num_batch = len(dataset) / opt.batchSize
     # TODO - modify number of epochs (from 5 to opt.nepoch)
@@ -136,7 +136,8 @@ def train_example(opt):
 
     for epoch in range(10):
         scheduler.step()
-        running_loss = 0.0
+        training_losses = []
+        #running_loss = 0.0
         for i, points in enumerate(train_dataloader, 0):
             # print(f"Points size: {points.size()}")
             # points = points.transpose(2, 1)
@@ -149,22 +150,21 @@ def train_example(opt):
             chamfer_loss = PointLoss()  #  instantiate the loss
             # let's compute the chamfer distance between the two sets: 'points' and 'decoded'
             loss = chamfer_loss(decoded_points, points)
+            training_losses.append(loss)
             # if opt.feature_transform:
             #     loss += feature_transform_regularizer(trans_feat) * 0.001
             loss.backward()
-            running_loss += loss.item()
+            #running_loss += loss.item()
             optimizer.step()
-            if i % 1000 == 999: #every 1000 mini batches
-                writer.add_scalar('training loss', running_loss/1000, epoch * len(train_dataloader) + i)
-                running_loss = 0.0
+            #if i % 1000 == 999: #every 1000 mini batches
+                #writer.add_scalar('training loss', running_loss/1000, epoch * len(train_dataloader))
 
         gc.collect()
         torch.cuda.empty_cache()
 
         # TODO - VALIDATION PHASE
         with torch.no_grad():
-            #val_losses = []
-            running_val_loss = 0.0
+            val_losses = []
             for j, val_points in enumerate(val_dataloader, 0):
                 autoencoder.eval()
                 val_points = val_points.cuda()
@@ -172,18 +172,14 @@ def train_example(opt):
                 decoded_val_points = decoded_val_points.cuda()
                 chamfer_loss = PointLoss()  #  instantiate the loss
                 val_loss = chamfer_loss(decoded_val_points, val_points)
-                running_val_loss += val_loss
-                #if j % 1000 == 999:
-                    #writer.add_scalar('validation loss', running_val_loss/1000, epoch * len(val_dataloader) + j)
-                    #running_val_loss = 0.0
-                #val_losses.append(val_loss)
+                val_losses.append(val_loss)
 
-            #train_mean = torch.stack(training_losses).mean().item()
-            #val_mean = torch.stack(val_losses).mean().item()
-            #print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+            train_mean = torch.stack(training_losses).mean().item()
+            val_mean = torch.stack(val_losses).mean().item()
+            print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
 
-            #training_history.append(train_mean)
-            #val_history.append(val_mean)
+            training_history.append(train_mean)
+            val_history.append(val_mean)
 
             # if i % 10 == 0:
             #     j, data = next(enumerate(testdataloader, 0))
@@ -203,9 +199,9 @@ def train_example(opt):
 
 
     # TODO PLOT LOSSES
-    #print(training_history)
-    #print(val_history)
-    #print_loss_graph(training_history, val_history)
+    print(training_history)
+    print(val_history)
+    print_loss_graph(training_history, val_history)
 
     # total_correct = 0
     # total_testset = 0
