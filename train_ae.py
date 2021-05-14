@@ -124,7 +124,7 @@ def train_example(opt):
     optimizer = optim.Adam(autoencoder.parameters(), lr=0.001, betas=(0.9, 0.999))
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
     autoencoder.cuda()
-    writer.add_graph(autoencoder)
+
 
     #num_batch = len(dataset) / opt.batchSize
     # TODO - modify number of epochs (from 5 to opt.nepoch)
