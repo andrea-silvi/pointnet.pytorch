@@ -173,9 +173,9 @@ def train_example(opt):
                 chamfer_loss = PointLoss()  #  instantiate the loss
                 val_loss = chamfer_loss(decoded_val_points, val_points)
                 running_val_loss += val_loss
-                if j % 1000 == 999:
-                    writer.add_scalar('validation loss', running_val_loss/1000, epoch * len(val_dataloader) + j)
-                    running_val_loss = 0.0
+                #if j % 1000 == 999:
+                    #writer.add_scalar('validation loss', running_val_loss/1000, epoch * len(val_dataloader) + j)
+                    #running_val_loss = 0.0
                 #val_losses.append(val_loss)
 
             #train_mean = torch.stack(training_losses).mean().item()
