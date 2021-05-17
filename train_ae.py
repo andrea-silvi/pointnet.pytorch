@@ -80,7 +80,7 @@ def train_example(opt):
 
     validation_dataset = ShapeNetDataset(
         root=opt.dataset,
-        split='validation',
+        split='val',
         class_choice=opt.train_class_choice,
         npoints=opt.num_points)
 
