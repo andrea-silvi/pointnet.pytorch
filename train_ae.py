@@ -73,15 +73,16 @@ def train_example(opt):
     torch.manual_seed(random_seed)
     #writer = SummaryWriter('runs/train_ae_experiment_1')
 
-    dataset = ShapeNetDataset(
+    training_dataset = ShapeNetDataset(
         root=opt.dataset,
         class_choice=opt.train_class_choice,
         npoints=opt.num_points)
 
-    val_size = int(0.2 * len(dataset))
-    train_size = len(dataset) - val_size
-
-    training_dataset, validation_dataset = random_split(dataset, [train_size, val_size])
+    validation_dataset = ShapeNetDataset(
+        root=opt.dataset,
+        split='validation',
+        class_choice=opt.train_class_choice,
+        npoints=opt.num_points)
 
     test_dataset = ShapeNetDataset(
         root=opt.dataset,
@@ -102,7 +103,7 @@ def train_example(opt):
         shuffle=True,
         num_workers=int(opt.workers))
 
-    testdataloader = torch.utils.data.DataLoader(
+    test_dataloader = torch.utils.data.DataLoader(
          test_dataset,
          batch_size=opt.batchSize,
          shuffle=True,
