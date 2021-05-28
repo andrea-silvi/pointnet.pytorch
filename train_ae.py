@@ -120,7 +120,7 @@ def train_example(opt):
     except OSError:
         pass
 
-    autoencoder = PointNet_AutoEncoder(opt.num_points, opt.feature_transform)
+    autoencoder = PointNet_AutoEncoder(opt.num_points, opt.size_encoder, opt.feature_transform)
 
     # TODO - import pointnet parameters (encoder network)
     if opt.model != '':
@@ -230,10 +230,9 @@ if __name__=='__main__':
     # TODO - create a json for the FINAL arguments (after the cross-validation, e.g.: {'batchSize': 32})
     # TODO - and a json for the GRID SEARCH phase (e.g.: {'batchSize': [16, 32, 64], ...}
     parser = argparse.ArgumentParser()
-
-
+    parser.add_argument("--size_encoder", type=int, default=1024, help="Size latent code")
     parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
-    parser.add_argument('--num_points', type=int, default=1024, help='number points point cloud')
+    parser.add_argument('--num_points', type=int, default=1024, help='Number points from point cloud')
     parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
     parser.add_argument('--nepoch', type=int, default=250, help='number of epochs to train for')
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
@@ -243,8 +242,8 @@ if __name__=='__main__':
     parser.add_argument('--test_class_choice', type=str, default="Knife", help="Test class")
     # parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
-    parser.add_argument('--scheduler-gamma', type=int, default=0.5, help="reduction factor of the learning rate")
-    parser.add_argument("--scheduler-stepSize", type= int, default=20)
+    parser.add_argument('--scheduler_gamma', type=int, default=0.5, help="reduction factor of the learning rate")
+    parser.add_argument("--scheduler_stepSize", type= int, default=20)
     parser.add_argument("--dropout", type=int, default=1, help="dropout percentage")
     opt = parser.parse_args()
     print(opt)

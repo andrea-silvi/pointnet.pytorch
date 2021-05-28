@@ -97,13 +97,13 @@ class Decoder(nn.Module):
     ''' Just a lightweight Fully Connected decoder:
     '''
 
-    def __init__(self, num_points=2048):
+    def __init__(self, num_points=1024, size_encoder=1024):
         super(Decoder, self).__init__()
         self.num_points = num_points
-        self.fc1 = nn.Linear(100, 128)
-        self.fc2 = nn.Linear(128, 256)
-        self.fc3 = nn.Linear(256, 512)
-        self.fc4 = nn.Linear(512, 1024)
+        self.fc1 = nn.Linear(size_encoder, 512)
+        self.fc2 = nn.Linear(512, 512)
+        self.fc3 = nn.Linear(512, 1024)
+        self.fc4 = nn.Linear(1024, 1024)
         self.fc5 = nn.Linear(1024, self.num_points * 3)
         self.th = nn.Tanh()
 
@@ -131,19 +131,19 @@ class PointNet_AutoEncoder(nn.Module):
   2. 'num_points' is the parameter controlling the number of points to be generated. In general we want to generate a number of points equal to the number of input points.
   '''
 
-    def __init__(self, num_points=1024, feature_transform=False):
+    def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False):
         super(PointNet_AutoEncoder, self).__init__()
         print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
         #  Encoder Definition
         self.encoder = torch.nn.Sequential(
             PointNetfeat(global_feat=True, feature_transform=feature_transform),
-            nn.Linear(1024, 256),
+            nn.Linear(1024, 512),
             nn.ReLU(),
-            nn.Linear(256, 100))
+            nn.Linear(512, size_encoder))
 
         # Decoder Definition
-        self.decoder = Decoder(num_points=num_points)
+        self.decoder = Decoder(num_points=num_points, size_encoder=size_encoder)
 
     def forward(self, x):
         BS, N, dim = x.size()
@@ -350,31 +350,31 @@ class PointNet_AutoEncoder(nn.Module):
 #     loss = torch.mean(torch.norm(torch.bmm(trans, trans.transpose(2,1)) - I, dim=(1,2)))
 #     return loss
 #
-if __name__ == '__main__':
-    sim_data = Variable(torch.rand(32,3,2500))
-    trans = STN3d()
-    out = trans(sim_data)
-    print('stn', out.size())
-    print('loss', feature_transform_regularizer(out))
-
-    sim_data_64d = Variable(torch.rand(32, 64, 2500))
-    trans = STNkd(k=64)
-    out = trans(sim_data_64d)
-    print('stn64d', out.size())
-    print('loss', feature_transform_regularizer(out))
-
-    pointfeat = PointNetfeat(global_feat=True)
-    out, _, _ = pointfeat(sim_data)
-    print('global feat', out.size())
-
-    pointfeat = PointNetfeat(global_feat=False)
-    out, _, _ = pointfeat(sim_data)
-    print('point feat', out.size())
-
-    cls = PointNetCls(k = 5)
-    out, _, _ = cls(sim_data)
-    print('class', out.size())
-
-    seg = PointNetDenseCls(k = 3)
-    out, _, _ = seg(sim_data)
-    print('seg', out.size())
+# if __name__ == '__main__':
+    # sim_data = Variable(torch.rand(32,3,2500))
+    # trans = STN3d()
+    # out = trans(sim_data)
+    # print('stn', out.size())
+    # print('loss', feature_transform_regularizer(out))
+    #
+    # sim_data_64d = Variable(torch.rand(32, 64, 2500))
+    # trans = STNkd(k=64)
+    # out = trans(sim_data_64d)
+    # print('stn64d', out.size())
+    # print('loss', feature_transform_regularizer(out))
+    #
+    # pointfeat = PointNetfeat(global_feat=True)
+    # out, _, _ = pointfeat(sim_data)
+    # print('global feat', out.size())
+    #
+    # pointfeat = PointNetfeat(global_feat=False)
+    # out, _, _ = pointfeat(sim_data)
+    # print('point feat', out.size())
+    #
+    # cls = PointNetCls(k = 5)
+    # out, _, _ = cls(sim_data)
+    # print('class', out.size())
+    #
+    # seg = PointNetDenseCls(k = 3)
+    # out, _, _ = seg(sim_data)
+    # print('seg', out.size())
