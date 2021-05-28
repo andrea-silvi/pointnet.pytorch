@@ -12,7 +12,6 @@ from utils.dataset import ShapeNetDataset
 from torch.utils.data import random_split
 import matplotlib
 import matplotlib.pyplot as plt
-from torch.utils.tensorboard import SummaryWriter
 import gc
 import csv
 
@@ -59,8 +58,13 @@ def example_AE_and_chamfer_loss():
     print(loss)
 
 
-def print_loss_graph(training_history, val_history):
-    with open('losses.csv', 'w') as f:
+def print_loss_graph(training_history, val_history, opt):
+    folder = "grid_search_results"
+    try:
+        os.makedirs(folder)
+    except OSError:
+        pass
+    with open(os.path.join(folder, f'losses_{hash(str(opt))}.csv'), 'w') as f:
         writer = csv.writer(f)
         writer.writerows([training_history, val_history])
     # plt.plot(training_history, '-bx')
@@ -126,7 +130,7 @@ def train_example(opt):
     if opt.model != '':
         autoencoder.load_state_dict(torch.load(opt.model))
 
-    optimizer = optim.Adam(autoencoder.parameters(), lr=0.001, betas=(0.9, 0.999))
+    optimizer = optim.Adam(autoencoder.parameters(), lr=0.0001, betas=(0.9, 0.999))
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
     autoencoder.cuda()
 
@@ -163,7 +167,6 @@ def train_example(opt):
             optimizer.step()
             #if i % 1000 == 999: #every 1000 mini batches
                 #writer.add_scalar('training loss', running_loss/1000, epoch * len(train_dataloader))
-
         gc.collect()
         torch.cuda.empty_cache()
 
@@ -206,7 +209,7 @@ def train_example(opt):
     # TODO PLOT LOSSES
     print(training_history)
     print(val_history)
-    print_loss_graph(training_history, val_history)
+    print_loss_graph(training_history, val_history, opt)
 
     # total_correct = 0
     # total_testset = 0
