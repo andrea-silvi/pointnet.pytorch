@@ -14,6 +14,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 import gc
+import csv
 
 # the following function doesn't make the training of the network!!
 # It shows the interfaces with the classes necessary for the point cloud completion task
@@ -59,13 +60,16 @@ def example_AE_and_chamfer_loss():
 
 
 def print_loss_graph(training_history, val_history):
-    plt.plot(training_history, '-bx')
-    plt.plot(val_history, '-rx')
-    plt.xlabel('epoch')
-    plt.ylabel('loss')
-    plt.legend(['Training', 'Validation'])
-    plt.title('Loss vs. No. of epochs')
-    plt.savefig('loss.png', bbox_inches='tight',)
+    with open('losses.csv', 'w') as f:
+        writer = csv.writer(f)
+        writer.writerows([training_history, val_history])
+    # plt.plot(training_history, '-bx')
+    # plt.plot(val_history, '-rx')
+    # plt.xlabel('epoch')
+    # plt.ylabel('loss')
+    # plt.legend(['Training', 'Validation'])
+    # plt.title('Loss vs. No. of epochs')
+    # plt.savefig('loss.png', bbox_inches='tight',)
 
 
 def train_example(opt):
