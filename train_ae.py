@@ -163,7 +163,6 @@ def train_example(opt):
             optimizer.step()
             #if i % 1000 == 999: #every 1000 mini batches
                 #writer.add_scalar('training loss', running_loss/1000, epoch * len(train_dataloader))
-
         gc.collect()
         torch.cuda.empty_cache()
 
