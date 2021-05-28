@@ -12,7 +12,6 @@ from utils.dataset import ShapeNetDataset
 from torch.utils.data import random_split
 import matplotlib
 import matplotlib.pyplot as plt
-from torch.utils.tensorboard import SummaryWriter
 import gc
 import csv
 
@@ -60,7 +59,12 @@ def example_AE_and_chamfer_loss():
 
 
 def print_loss_graph(training_history, val_history, opt):
-    with open(f'losses_{hash(opt)}.csv', 'w') as f:
+    folder = "grid_search_results"
+    try:
+        os.makedirs(folder)
+    except OSError:
+        pass
+    with open(os.path.join(folder, f'losses_{hash(str(opt))}.csv'), 'w') as f:
         writer = csv.writer(f)
         writer.writerows([training_history, val_history])
     # plt.plot(training_history, '-bx')
