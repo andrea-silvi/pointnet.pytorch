@@ -59,8 +59,8 @@ def example_AE_and_chamfer_loss():
     print(loss)
 
 
-def print_loss_graph(training_history, val_history):
-    with open('losses.csv', 'w') as f:
+def print_loss_graph(training_history, val_history, opt):
+    with open(f'losses_{hash(opt)}.csv', 'w') as f:
         writer = csv.writer(f)
         writer.writerows([training_history, val_history])
     # plt.plot(training_history, '-bx')
@@ -126,7 +126,7 @@ def train_example(opt):
     if opt.model != '':
         autoencoder.load_state_dict(torch.load(opt.model))
 
-    optimizer = optim.Adam(autoencoder.parameters(), lr=0.001, betas=(0.9, 0.999))
+    optimizer = optim.Adam(autoencoder.parameters(), lr=0.0001, betas=(0.9, 0.999))
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
     autoencoder.cuda()
 
@@ -205,7 +205,7 @@ def train_example(opt):
     # TODO PLOT LOSSES
     print(training_history)
     print(val_history)
-    print_loss_graph(training_history, val_history)
+    print_loss_graph(training_history, val_history, opt)
 
     # total_correct = 0
     # total_testset = 0
