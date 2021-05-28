@@ -184,7 +184,7 @@ def train_example(opt):
     plt.legend(['Training', 'Validation'])
     plt.title('Loss vs. No. of epochs')
     plt.show();
-    plt.savefig('loss.png', bbox_inches ="tight")
+    plt.savefig('Loss vs. No. of epochs.png')
     # total_correct = 0
     # total_testset = 0
     # for i, data in tqdm(enumerate(testdataloader, 0)):
