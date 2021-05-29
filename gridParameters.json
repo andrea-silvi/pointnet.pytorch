@@ -1,0 +1,8 @@
+{
+  "batchSize":[32, 64],
+  "size_encoder":[1024, 2048],
+  "nepoch": [10],
+  "dataset": ["/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0"],
+  "train_class_choice": ["Airplane"],
+  "test_class_choice": ["Airplane"]
+}

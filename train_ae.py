@@ -12,7 +12,6 @@ from utils.dataset import ShapeNetDataset
 from torch.utils.data import random_split
 import matplotlib
 import matplotlib.pyplot as plt
-from torch.utils.tensorboard import SummaryWriter
 import gc
 import csv
 
@@ -59,8 +58,13 @@ def example_AE_and_chamfer_loss():
     print(loss)
 
 
-def print_loss_graph(training_history, val_history):
-    with open('losses.csv', 'w') as f:
+def print_loss_graph(training_history, val_history, opt):
+    folder = "grid_search_results"
+    try:
+        os.makedirs(folder)
+    except OSError:
+        pass
+    with open(os.path.join(folder, f'losses_{hash(str(opt))}.csv'), 'w') as f:
         writer = csv.writer(f)
         writer.writerows([training_history, val_history])
     # plt.plot(training_history, '-bx')
@@ -120,13 +124,13 @@ def train_example(opt):
     except OSError:
         pass
 
-    autoencoder = PointNet_AutoEncoder(opt.num_points, opt.feature_transform)
+    autoencoder = PointNet_AutoEncoder(opt.num_points, opt.size_encoder, opt.feature_transform)
 
     # TODO - import pointnet parameters (encoder network)
     if opt.model != '':
         autoencoder.load_state_dict(torch.load(opt.model))
 
-    optimizer = optim.Adam(autoencoder.parameters(), lr=0.001, betas=(0.9, 0.999))
+    optimizer = optim.Adam(autoencoder.parameters(), lr=0.0001, betas=(0.9, 0.999))
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
     autoencoder.cuda()
 
@@ -155,6 +159,8 @@ def train_example(opt):
             chamfer_loss = PointLoss()  #  instantiate the loss
             # let's compute the chamfer distance between the two sets: 'points' and 'decoded'
             loss = chamfer_loss(decoded_points, points)
+            if epoch==0 and i==0:
+                print(f"LOSS: first epoch, first batch: \t {loss}")
             training_losses.append(loss)
             # if opt.feature_transform:
             #     loss += feature_transform_regularizer(trans_feat) * 0.001
@@ -163,7 +169,6 @@ def train_example(opt):
             optimizer.step()
             #if i % 1000 == 999: #every 1000 mini batches
                 #writer.add_scalar('training loss', running_loss/1000, epoch * len(train_dataloader))
-
         gc.collect()
         torch.cuda.empty_cache()
 
@@ -177,6 +182,8 @@ def train_example(opt):
                 decoded_val_points = decoded_val_points.cuda()
                 chamfer_loss = PointLoss()  #  instantiate the loss
                 val_loss = chamfer_loss(decoded_val_points, val_points)
+                if j==0:
+                    print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
                 val_losses.append(val_loss)
 
             train_mean = torch.stack(training_losses).mean().item()
@@ -206,7 +213,7 @@ def train_example(opt):
     # TODO PLOT LOSSES
     print(training_history)
     print(val_history)
-    print_loss_graph(training_history, val_history)
+    print_loss_graph(training_history, val_history, opt)
 
     # total_correct = 0
     # total_testset = 0
@@ -230,8 +237,9 @@ if __name__=='__main__':
     # TODO - create a json for the FINAL arguments (after the cross-validation, e.g.: {'batchSize': 32})
     # TODO - and a json for the GRID SEARCH phase (e.g.: {'batchSize': [16, 32, 64], ...}
     parser = argparse.ArgumentParser()
+    parser.add_argument("--size_encoder", type=int, default=1024, help="Size latent code")
     parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
-    parser.add_argument('--num_points', type=int, default=2500, help='input batch size')
+    parser.add_argument('--num_points', type=int, default=1024, help='Number points from point cloud')
     parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
     parser.add_argument('--nepoch', type=int, default=250, help='number of epochs to train for')
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
@@ -241,6 +249,9 @@ if __name__=='__main__':
     parser.add_argument('--test_class_choice', type=str, default="Knife", help="Test class")
     # parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
+    parser.add_argument('--scheduler_gamma', type=int, default=0.5, help="reduction factor of the learning rate")
+    parser.add_argument("--scheduler_stepSize", type= int, default=20)
+    parser.add_argument("--dropout", type=int, default=1, help="dropout percentage")
     opt = parser.parse_args()
     print(opt)
     train_example(opt)
