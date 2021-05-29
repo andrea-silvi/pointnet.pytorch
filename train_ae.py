@@ -117,7 +117,8 @@ def train_example(opt):
          shuffle=True,
          num_workers=int(opt.workers))
 
-    print(len(training_dataset), len(validation_dataset), len(test_dataset))
+    print(f"Length training/validation/test datasets: {len(training_dataset)}, {len(validation_dataset)}, "
+          f"{len(test_dataset)}")
 
     try:
         os.makedirs(opt.outf)
@@ -130,8 +131,9 @@ def train_example(opt):
     if opt.model != '':
         autoencoder.load_state_dict(torch.load(opt.model))
 
-    optimizer = optim.Adam(autoencoder.parameters(), lr=0.0001, betas=(0.9, 0.999))
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
+    optimizer = optim.Adam(autoencoder.parameters(), lr=opt.lr, betas=(opt.beta_1, opt.beta_2),
+                           weight_decay=opt.weight_decay)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=opt.scheduler_stepSize, gamma=opt.scheduler_gamma)
     autoencoder.cuda()
 
 
@@ -249,9 +251,14 @@ if __name__=='__main__':
     parser.add_argument('--test_class_choice', type=str, default="Knife", help="Test class")
     # parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
-    parser.add_argument('--scheduler_gamma', type=int, default=0.5, help="reduction factor of the learning rate")
-    parser.add_argument("--scheduler_stepSize", type= int, default=20)
+    parser.add_argument('--scheduler_gamma', type=float, default=0.5, help="reduction factor of the learning rate")
+    parser.add_argument("--scheduler_stepSize", type=int, default=20)
     parser.add_argument("--dropout", type=int, default=1, help="dropout percentage")
+    parser.add_argument("--lr", type=float, default=1e-6, help="learning rate")
+    parser.add_argument("--weight_decay", type=float, default=1e-3, help="weight decay")
+    parser.add_argument("--beta_1", type=float, default=0.9, help="decay rate for first moment")
+    parser.add_argument("--beta_2", type=float, default=0.999, help="decay rate for second moment")
+
     opt = parser.parse_args()
     print(opt)
     train_example(opt)

@@ -1,8 +1,14 @@
 {
-  "batchSize":[32, 64],
-  "size_encoder":[1024, 2048],
-  "nepoch": [10],
-  "dataset": ["/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0"],
-  "train_class_choice": ["Airplane"],
-  "test_class_choice": ["Airplane"]
+  "fixed_params":{
+    "dataset": ["/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0"],
+    "train_class_choice": ["Airplane"],
+    "test_class_choice": ["Airplane"]
+  },
+  "random_params": {
+    "lr": [-2, -6],
+    "size_encoder":[1024, 2048],
+    "weight_decay": [-5, 2],
+    "scheduler_gamma": [0.25, 0.75],
+    "nepoch": [10]
+  }
 }
