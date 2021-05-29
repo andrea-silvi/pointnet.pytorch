@@ -39,15 +39,16 @@ class ShapeNetDataset(data.Dataset):
         # from IPython import embed; embed()
         filelist = json.load(open(splitfile, 'r'))
         for item in self.cat:
-            # randomly select (set_size*100)% point clouds from the original ones
-            val = np.random.uniform()
-            if val <= set_size:  # e.g.: if set_size=1, then val<=1 will be always true (then take 100% point clouds)
-                self.meta[item] = []
+            self.meta[item] = []
 
         for file in filelist:
             _, category, uuid = file.split('/')
             if category in self.cat.values():
-                self.meta[self.id2cat[category]].append((os.path.join(self.root, category, 'points', uuid + '.pts')))
+                # randomly select (set_size*100)% point clouds from the original ones
+                val = np.random.uniform()
+                if val <= set_size:  # e.g.: if set_size=1, then val<=1 will be always true
+                                     # (then take 100% point clouds)
+                    self.meta[self.id2cat[category]].append((os.path.join(self.root, category, 'points', uuid + '.pts')))
 
         self.datapath = []
         for item in self.cat:
