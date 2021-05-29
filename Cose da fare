@@ -27,3 +27,14 @@ IMPLEMENTARE RANDOM BASELINE: misurare distanza tra
 2 - NUVOLA DI PUNTI dopo sampling e dopo aggiunta NOISE
 3 - MISURARE DISTANZA Chamfer loss e mostrarla come baseline nei grafici.
 MODIFICA ARCHITETTURE
+
+-----------------------------PROSSIMA SETTIMANA
+GRID SEARCH: (N.B.: va usata l'intera classe di training!!!)
+1 - learning rate 10^-6 a 10^-2, per 10 epochs, 10 learning rate nel range (TUTTI GLI ALTRI PARAMETRI FISSI)
+2 - grid and random search sui restanti parametri con lr fisso (ottimo del punto precedente) per 10 epoch
+3 - grid and random search su learning rate (intorno del valore ottimo ottenuto al punto 1)
+    utilizzando i parametri ottimi ottenuti al punto precedente.
+    training per 500 epochs con early stopping
+N.B.: PER TESTARE NUOVE ARCHITETTURE (e.g.: con dropout, batch normalization,  skip connection, etc...)
+      utilizzare subset del training set (per il training). Effettuare il training per un numero ridotto di epoch
+      e vedere se l'ARCHITETTURA converge

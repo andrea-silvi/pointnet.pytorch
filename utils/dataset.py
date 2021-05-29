@@ -58,7 +58,7 @@ class ShapeNetDataset(data.Dataset):
         self.classes = dict(zip(sorted(self.cat), range(len(self.cat))))
         if split == 'train':
             print(self.classes)
-            print(f"Total point clouds selected: {len(self.meta.keys())}/{len(filelist)}")
+            print(f"Total point clouds selected: {sum([len(array) for _, array in self.meta.items()])}/{len(filelist)}")
 
     def __getitem__(self, index):
         fn = self.datapath[index]
