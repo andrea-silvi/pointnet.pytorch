@@ -79,12 +79,12 @@ def print_loss_graph(training_history, val_history, opt):
 def train_example(opt):
     random_seed = 43
     torch.manual_seed(random_seed)
-    #writer = SummaryWriter('runs/train_ae_experiment_1')
-
+    # writer = SummaryWriter('runs/train_ae_experiment_1')
     training_dataset = ShapeNetDataset(
         root=opt.dataset,
         class_choice=opt.train_class_choice,
-        npoints=opt.num_points)
+        npoints=opt.num_points,
+        set_size=opt.set_size)
 
     validation_dataset = ShapeNetDataset(
         root=opt.dataset,
@@ -237,6 +237,8 @@ if __name__=='__main__':
     # TODO - create a json for the FINAL arguments (after the cross-validation, e.g.: {'batchSize': 32})
     # TODO - and a json for the GRID SEARCH phase (e.g.: {'batchSize': [16, 32, 64], ...}
     parser = argparse.ArgumentParser()
+    parser.add_argument("--set_size", type=int, default=1, help="Subset size (between 0 and 1) of the training set. "
+                                                                "Use it for fake test")
     parser.add_argument("--size_encoder", type=int, default=1024, help="Size latent code")
     parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
     parser.add_argument('--num_points', type=int, default=1024, help='Number points from point cloud')

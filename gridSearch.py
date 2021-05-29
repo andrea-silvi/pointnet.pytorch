@@ -11,3 +11,25 @@ for setup in ParameterGrid(json_params):
         param_sets.append(command)
         param_sets.append(value)
     subprocess.run(["python", "train_ae.py" ]+param_sets)
+
+
+
+
+
+
+def fake_test(set_size=0.2):
+    json_params = json.loads(open("gridParameters.json").read())
+    for setup in ParameterGrid(json_params):
+        param_sets = []
+        for i in setup:
+            if i in ['nepoch', 'train_class_choice', 'test_class_choice']:
+                continue
+            command = "--" + i
+            value = str(setup[f"{i}"])
+            param_sets.append(command)
+            param_sets.append(value)
+        param_sets.append("--set_size")
+        param_sets.append(set_size)
+        param_sets.append("--nepoch")
+        param_sets.append(10)
+        subprocess.run(["python", "train_ae.py"] + param_sets)
