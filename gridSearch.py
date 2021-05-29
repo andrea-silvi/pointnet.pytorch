@@ -17,7 +17,7 @@ def fake_test(set_size=0.2):
         param_sets.append("--set_size")
         param_sets.append(set_size)
         param_sets.append("--nepoch")
-        param_sets.append(10)
+        param_sets.append(str(10))
         subprocess.run(["python", "train_ae.py"] + param_sets)
 
 fake_test()
