@@ -38,9 +38,9 @@ class ShapeNetDataset(data.Dataset):
         splitfile = os.path.join(self.root, 'train_test_split', 'shuffled_{}_file_list.json'.format(split))
         # from IPython import embed; embed()
         filelist = json.load(open(splitfile, 'r'))
-        # randomly select (set_size*100)% point clouds from the original ones
-        val = np.random.uniform()
         for item in self.cat:
+            # randomly select (set_size*100)% point clouds from the original ones
+            val = np.random.uniform()
             if val <= set_size:  # e.g.: if set_size=1, then val<=1 will be always true (then take 100% point clouds)
                 self.meta[item] = []
 
@@ -55,7 +55,7 @@ class ShapeNetDataset(data.Dataset):
                 self.datapath.append((item, fn))
 
         self.classes = dict(zip(sorted(self.cat), range(len(self.cat))))
-        if split=='train':
+        if split == 'train':
             print(self.classes)
             print(f"Total point clouds selected: {len(self.meta.keys())}/{len(filelist)}")
 

@@ -90,14 +90,15 @@ def train_example(opt):
         root=opt.dataset,
         split='val',
         class_choice=opt.train_class_choice,
-        npoints=opt.num_points)
+        npoints=opt.num_points,
+        set_size=opt.set_size)
 
     test_dataset = ShapeNetDataset(
         root=opt.dataset,
         split='test',
         class_choice=opt.test_class_choice,
         npoints=opt.num_points,
-        data_augmentation=False)
+        set_size=opt.set_size)
 
     train_dataloader = torch.utils.data.DataLoader(
         training_dataset,
@@ -247,8 +248,8 @@ if __name__=='__main__':
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
     parser.add_argument('--model', type=str, default='', help='model path')
     parser.add_argument('--dataset', type=str, required=True, help="dataset path")
-    parser.add_argument('--train_class_choice', type=str, default="Knife", help="Training class")
-    parser.add_argument('--test_class_choice', type=str, default="Knife", help="Test class")
+    parser.add_argument('--train_class_choice', type=str, default=None, help="Training class")
+    parser.add_argument('--test_class_choice', type=str, default=None, help="Test class")
     # parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
     parser.add_argument('--scheduler_gamma', type=int, default=0.5, help="reduction factor of the learning rate")
