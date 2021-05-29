@@ -238,7 +238,7 @@ if __name__=='__main__':
     # TODO - create a json for the FINAL arguments (after the cross-validation, e.g.: {'batchSize': 32})
     # TODO - and a json for the GRID SEARCH phase (e.g.: {'batchSize': [16, 32, 64], ...}
     parser = argparse.ArgumentParser()
-    parser.add_argument("--set_size", type=int, default=1, help="Subset size (between 0 and 1) of the training set. "
+    parser.add_argument("--set_size", type=float, default=1, help="Subset size (between 0 and 1) of the training set. "
                                                                 "Use it for fake test")
     parser.add_argument("--size_encoder", type=int, default=1024, help="Size latent code")
     parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
