@@ -183,9 +183,11 @@ def train_example(opt):
 
 
                 decoded_val_points = autoencoder(val_points)
-                if (flag_stampa is False) and (epoch == n_epoch-1):
+                if (flag_stampa is False) and (epoch == n_epoch):
                     val_stamp = val_points.to("cpu")
                     print(val_stamp.data[0])
+                    flag_stampa=True
+                    torch.save(val_stamp.data[0], "tensor.pts")
 
                 decoded_val_points = decoded_val_points.cuda()
                 chamfer_loss = PointLoss()  #  instantiate the loss
