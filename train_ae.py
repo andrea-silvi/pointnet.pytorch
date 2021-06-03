@@ -185,7 +185,7 @@ def train_example(opt):
                 decoded_val_points = autoencoder(val_points)
                 if (flag_stampa is False) and (epoch == n_epoch-1):
                     val_stamp = val_points.to("cpu")
-                    print(val_stamp)
+                    val_stamp.data[0]
                 decoded_val_points = decoded_val_points.cuda()
                 chamfer_loss = PointLoss()  #  instantiate the loss
                 val_loss = chamfer_loss(decoded_val_points, val_points)
