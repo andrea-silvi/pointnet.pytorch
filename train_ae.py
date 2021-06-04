@@ -148,7 +148,8 @@ def train_example(opt):
     torch.cuda.empty_cache()
     early_stopping = EarlyStopping(patience=opt.patience, verbose=True)
     flag_stampa = False
-    for epoch in range(10):
+    n_epoch = 10
+    for epoch in range(n_epoch):
         scheduler.step()
         training_losses = []
         #running_loss = 0.0
