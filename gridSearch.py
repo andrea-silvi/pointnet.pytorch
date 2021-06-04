@@ -53,17 +53,19 @@ def optimize_lr():
 
     for option, option_value in json_params.items():
         setattr(args, option, option_value)
+    validation_dataset = ShapeNetDataset(
+        root=args.dataset,
+        split='val',
+        class_choice="Airplane",
+        npoints=1024)
+    n_point_clouds = validation_dataset.__len__()
+    image_index = uniform(0, n_point_clouds-1)
+    point_cloud = validation_dataset.__getitem__(image_index)
     # try 20 different learning rate
     for count in range(15):
         setattr(args, "lr", 10**uniform(lower_lr, upper_lr))
         model = train_example(args)
-        validation_dataset = ShapeNetDataset(
-            root=args.dataset,
-            split='val',
-            class_choice="Airplane",
-            npoints=1024)
-        n_point_clouds = validation_dataset.__len__()
-        point_cloud = validation_dataset.__getitem__(uniform(0, n_point_clouds-1))
+
         model.eval()
         point_cloud = point_cloud.cuda()
         decoded_point_cloud = model(point_cloud)
