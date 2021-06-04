@@ -18,6 +18,7 @@ if __name__=='__main__':
         param_sets.append(value)
     subprocess.run(["python", "train_ae.py"]+param_sets)
 
+
 def fake_test(set_size=0.2):
     json_params = json.loads(open("gridParameters.json").read())
     for setup in ParameterGrid(json_params):

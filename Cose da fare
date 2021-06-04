@@ -38,3 +38,6 @@ GRID SEARCH: (N.B.: va usata l'intera classe di training!!!)
 N.B.: PER TESTARE NUOVE ARCHITETTURE (e.g.: con dropout, batch normalization,  skip connection, etc...)
       utilizzare subset del training set (per il training). Effettuare il training per un numero ridotto di epoch
       e vedere se l'ARCHITETTURA converge
+
+PLOTTING risultati e nuvole di punti
+Nuove architetture
