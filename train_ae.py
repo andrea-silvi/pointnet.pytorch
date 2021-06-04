@@ -138,13 +138,13 @@ def train_example(opt):
 
     #num_batch = len(dataset) / opt.batchSize
     # TODO - modify number of epochs (from 5 to opt.nepoch)
-
+    checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
     training_history = []
     val_history = []
     gc.collect()
     torch.cuda.empty_cache()
-    early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt"))
-    flag_stampa = False
+    early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=checkpoint_path)
+    # flag_stampa = False
     n_epoch = opt.nepoch
     for epoch in range(n_epoch):
         scheduler.step()
@@ -230,8 +230,7 @@ def train_example(opt):
 
         #Commented: early_stopping already saves the best model
         #torch.save(autoencoder.state_dict(), '%s/cls_model_%d.pth' % (opt.outf, epoch))
-
-    autoencoder.load_state_dict(torch.load('checkpoint.pt'))
+    autoencoder.load_state_dict(torch.load(checkpoint_path))
 
     # TODO PLOT LOSSES
     print(training_history)
