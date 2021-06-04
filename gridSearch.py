@@ -7,6 +7,7 @@ import argparse
 from train_ae import train_example
 from utils.dataset import ShapeNetDataset
 from visualization_tools import printPointCloud as ptPC
+import torch
 
 
 def fake_test(set_size=0.2):
@@ -34,7 +35,7 @@ def optimize_lr():
     lower_lr = lr_boundaries[0]
     parser = argparse.ArgumentParser(description='Preliminary grid search (for learning rate)')
     args = parser.parse_args()
-
+    dict_params = {}
     for option, option_value in json_params.items():
         if option_value == 'None':
             option_value = None
@@ -55,13 +56,21 @@ def optimize_lr():
 
         model.eval()
         point_cloud = point_cloud.cuda()
+        point_cloud = torch.unsqueeze(point_cloud, 0)
         decoded_point_cloud = model(point_cloud)
 
         point_cloud = point_cloud.cpu().numpy()
-        dec_val_stamp = decoded_point_cloud.cpu().numpy()
-        ptPC.printCloud(point_cloud, "original_validation_points")
-        ptPC.printCloud(dec_val_stamp, "decoded_validation_points")
-
+        dec_val_stamp = decoded_point_cloud.cpu().data.numpy()
+        ptPC.printCloud(point_cloud, f"{hash(str(args))}_original_validation_points")
+        ptPC.printCloud(dec_val_stamp, f"{hash(str(args))}_decoded_validation_points")
+        dict_params[hash(str(args))] = str(args)
+    folder = "grid_search_results"
+    try:
+        os.makedirs(folder)
+    except OSError:
+        pass
+    with open(os.path.join(folder, f'hash_params.json'), 'w') as f:
+        json.dump(dict_params, f)
 
 if __name__ == '__main__':
     optimize_lr()

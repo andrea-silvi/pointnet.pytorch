@@ -145,7 +145,7 @@ def train_example(opt):
     torch.cuda.empty_cache()
     early_stopping = EarlyStopping(patience=opt.patience, verbose=True)
     flag_stampa = False
-    n_epoch = 10
+    n_epoch = opt.nepoch
     for epoch in range(n_epoch):
         scheduler.step()
         training_losses = []
@@ -182,15 +182,15 @@ def train_example(opt):
                 autoencoder.eval()
                 val_points = val_points.cuda()
                 decoded_val_points = autoencoder(val_points)
-                if (flag_stampa is False) and (epoch == n_epoch-1):
-                    val_stamp = val_points[0,:,:].cpu().numpy()
-                    dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
-                    #np.savetxt("validation_point", val_stamp, delimiter=" ")
-                    #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
-                    flag_stampa=True
-                    #print("sono qui")
-                    ptPC.printCloud(val_stamp, "original_validation_points")
-                    ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
+                # if (flag_stampa is False) and (epoch == n_epoch-1):
+                #     val_stamp = val_points[0,:,:].cpu().numpy()
+                #     dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
+                #     #np.savetxt("validation_point", val_stamp, delimiter=" ")
+                #     #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
+                #     flag_stampa=True
+                #     #print("sono qui")
+                #     ptPC.printCloud(val_stamp, "original_validation_points")
+                #     ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
 
 
 
