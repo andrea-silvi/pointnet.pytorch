@@ -57,12 +57,12 @@ def example_AE_and_chamfer_loss():
 
 
 def print_loss_graph(training_history, val_history, opt):
-    folder = "grid_search_results"
+    folder = os.path.join(opt.outf, "grid_search_results")
     try:
         os.makedirs(folder)
     except OSError:
         pass
-    with open(os.path.join(folder, f'losses_{hash(str(opt))}.csv'), 'w') as f:
+    with open(os.path.join(folder, f'{hash(str(opt))}_losses.csv'), 'w') as f:
         writer = csv.writer(f)
         writer.writerows([training_history, val_history])
     # plt.plot(training_history, '-bx')
@@ -143,7 +143,7 @@ def train_example(opt):
     val_history = []
     gc.collect()
     torch.cuda.empty_cache()
-    early_stopping = EarlyStopping(patience=opt.patience, verbose=True)
+    early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt"))
     flag_stampa = False
     n_epoch = opt.nepoch
     for epoch in range(n_epoch):

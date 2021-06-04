@@ -49,22 +49,22 @@ def optimize_lr():
     image_index = int(uniform(0, n_point_clouds - 1))
     point_cloud = val_dataset.__getitem__(image_index)
     # try 20 different learning rate
-    for count in range(10):
+    for count in range(1):
         setattr(args, "lr", 10 ** uniform(lower_lr, upper_lr))
         print(args)
         model = train_example(args)
 
         model.eval()
-        point_cloud = point_cloud.cuda()
-        point_cloud = torch.unsqueeze(point_cloud, 0)
-        decoded_point_cloud = model(point_cloud)
+        point_cloud_np = point_cloud.cuda()
+        point_cloud_np = torch.unsqueeze(point_cloud_np, 0)
+        decoded_point_cloud = model(point_cloud_np)
 
-        point_cloud = point_cloud.cpu().numpy()
+        point_cloud_np = point_cloud_np.cpu().numpy()
         dec_val_stamp = decoded_point_cloud.cpu().data.numpy()
-        ptPC.printCloud(point_cloud, f"{hash(str(args))}_original_validation_points")
+        ptPC.printCloud(point_cloud_np, f"{hash(str(args))}_original_validation_points")
         ptPC.printCloud(dec_val_stamp, f"{hash(str(args))}_decoded_validation_points")
         dict_params[hash(str(args))] = str(args)
-    folder = "grid_search_results"
+    folder = args.outf
     try:
         os.makedirs(folder)
     except OSError:
