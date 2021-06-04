@@ -9,7 +9,7 @@ def printCloudFile(cloud, name):
         fig = plt.figure(figsize=(15, 15))
         ax = fig.add_subplot(111, projection='3d')
         ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], 'o', alpha=alpha)
-        plt.savefig(f"{name}.png")
+        plt.savefig(f"/content/pointnet.pytorch/{name}.png")
 def printCloud(cloud, name):
         alpha = 0.5
         xyz = cloud
@@ -17,4 +17,4 @@ def printCloud(cloud, name):
         fig = plt.figure(figsize=(15, 15))
         ax = fig.add_subplot(111, projection='3d')
         ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], 'o', alpha=alpha)
-        plt.savefig(f"{name}.png")
+        plt.savefig(f"/content/pointnet.pytorch/{name}.png")
