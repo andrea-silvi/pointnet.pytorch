@@ -44,7 +44,7 @@ class ShapeNetDataset(data.Dataset):
             _, category, uuid = file.split('/')
             if category in self.cat.values():
                 # randomly select (set_size*100)% point clouds from the original ones
-                val = np.random.uniform()
+                val = np.random.uniform(0, 1)
                 if val <= set_size:  # e.g.: if set_size=1, then val<=1 will be always true
                                      # (then take 100% point clouds)
                     self.meta[self.id2cat[category]].append((os.path.join(self.root, category, 'points', uuid + '.pts')))

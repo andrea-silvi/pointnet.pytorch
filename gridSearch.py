@@ -39,14 +39,14 @@ def optimize_lr():
         if option_value == 'None':
             option_value = None
         setattr(args, option, option_value)
-    validation_dataset = ShapeNetDataset(
+    val_dataset = ShapeNetDataset(
         root=args.dataset,
         split='val',
         class_choice="Airplane",
         npoints=1024)
-    n_point_clouds = validation_dataset.__len__()
+    n_point_clouds = val_dataset.__len__()
     image_index = int(uniform(0, n_point_clouds - 1))
-    point_cloud = validation_dataset.__getitem__(image_index)
+    point_cloud = val_dataset.__getitem__(image_index)
     # try 20 different learning rate
     for count in range(10):
         setattr(args, "lr", 10 ** uniform(lower_lr, upper_lr))
@@ -57,8 +57,8 @@ def optimize_lr():
         point_cloud = point_cloud.cuda()
         decoded_point_cloud = model(point_cloud)
 
-        point_cloud = point_cloud[0, :, :].cpu().numpy()
-        dec_val_stamp = decoded_point_cloud[0, :, :].cpu().numpy()
+        point_cloud = point_cloud.cpu().numpy()
+        dec_val_stamp = decoded_point_cloud.cpu().numpy()
         ptPC.printCloud(point_cloud, "original_validation_points")
         ptPC.printCloud(dec_val_stamp, "decoded_validation_points")
 
