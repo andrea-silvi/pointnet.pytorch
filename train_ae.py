@@ -187,12 +187,12 @@ def train_example(opt):
                 if (flag_stampa is False) and (epoch == n_epoch-1):
                     val_stamp = val_points[0,:,:].cpu().numpy()
                     dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
-                    np.savetxt("validation_point", val_stamp, delimiter=" ")
-                    np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
+                    #np.savetxt("validation_point", val_stamp, delimiter=" ")
+                    #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
                     flag_stampa=True
                     print("sono qui")
                     ptPC.printCloud(val_stamp, "original_validation_points")
-                    ptPC.printCloud(decoded_val_points,"decoded_validation_points")
+                    ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
 
 
 
