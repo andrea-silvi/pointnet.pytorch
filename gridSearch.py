@@ -36,6 +36,8 @@ def optimize_lr():
     args = parser.parse_args()
 
     for option, option_value in json_params.items():
+        if option_value == 'None':
+            option_value = None
         setattr(args, option, option_value)
     validation_dataset = ShapeNetDataset(
         root=args.dataset,
@@ -43,11 +45,11 @@ def optimize_lr():
         class_choice="Airplane",
         npoints=1024)
     n_point_clouds = validation_dataset.__len__()
-    image_index = int(uniform(0, n_point_clouds-1))
+    image_index = int(uniform(0, n_point_clouds - 1))
     point_cloud = validation_dataset.__getitem__(image_index)
     # try 20 different learning rate
     for count in range(15):
-        setattr(args, "lr", 10**uniform(lower_lr, upper_lr))
+        setattr(args, "lr", 10 ** uniform(lower_lr, upper_lr))
         model = train_example(args)
 
         model.eval()
@@ -60,7 +62,7 @@ def optimize_lr():
         ptPC.printCloud(dec_val_stamp, "decoded_validation_points")
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     optimize_lr()
     # json_params = json.loads(open("gridParameters.json").read())
     # setup = json_params['fixed_params']
