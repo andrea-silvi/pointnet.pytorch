@@ -9,22 +9,6 @@ from utils.dataset import ShapeNetDataset
 from visualization_tools import printPointCloud as ptPC
 
 
-if __name__=='__main__':
-    json_params = json.loads(open("gridParameters.json").read())
-    setup = json_params['fixed_params']
-    param_sets = []
-    for r_param in json_params['random_params']:
-        (low, high) = json_params['random_params'][r_param]
-        setup[r_param] = int(uniform(low, high)) if r_param == 'size_encoder' else \
-            (uniform(low, high) if r_param == 'scheduler_gamma' else 10 ** uniform(low, high))
-    for opt in setup:
-        command = "--"+ opt
-        value = str(setup[f"{opt}"])
-        param_sets.append(command)
-        param_sets.append(value)
-    subprocess.run(["python", "train_ae.py"]+param_sets)
-
-
 def fake_test(set_size=0.2):
     json_params = json.loads(open("gridParameters.json").read())
     for setup in ParameterGrid(json_params):
@@ -74,3 +58,20 @@ def optimize_lr():
         dec_val_stamp = decoded_point_cloud[0, :, :].cpu().numpy()
         ptPC.printCloud(point_cloud, "original_validation_points")
         ptPC.printCloud(dec_val_stamp, "decoded_validation_points")
+
+
+if __name__=='__main__':
+    optimize_lr()
+    # json_params = json.loads(open("gridParameters.json").read())
+    # setup = json_params['fixed_params']
+    # param_sets = []
+    # for r_param in json_params['random_params']:
+    #     (low, high) = json_params['random_params'][r_param]
+    #     setup[r_param] = int(uniform(low, high)) if r_param == 'size_encoder' else \
+    #         (uniform(low, high) if r_param == 'scheduler_gamma' else 10 ** uniform(low, high))
+    # for opt in setup:
+    #     command = "--"+ opt
+    #     value = str(setup[f"{opt}"])
+    #     param_sets.append(command)
+    #     param_sets.append(value)
+    # subprocess.run(["python", "train_ae.py"]+param_sets)
