@@ -180,13 +180,14 @@ def train_example(opt):
             for j, val_points in enumerate(val_dataloader, 0):
                 autoencoder.eval()
                 val_points = val_points.cuda()
-
+                print(val_points.shape)
 
                 decoded_val_points = autoencoder(val_points)
                 if (flag_stampa is False) and (epoch == n_epoch):
                     val_stamp = val_points.to("cpu")
                     print(val_stamp.data[0])
                     flag_stampa=True
+
                     torch.save(val_stamp.data[0], "tensor.pts")
 
                 decoded_val_points = decoded_val_points.cuda()
