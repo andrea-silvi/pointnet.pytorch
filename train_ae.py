@@ -12,7 +12,7 @@ from utils.dataset import ShapeNetDataset
 from torch.utils.data import random_split
 import matplotlib
 import matplotlib.pyplot as plt
-import printPointCloud as pt
+import printPointCloud as ptPC
 import gc
 import csv
 
@@ -180,16 +180,19 @@ def train_example(opt):
             for j, val_points in enumerate(val_dataloader, 0):
                 autoencoder.eval()
                 val_points = val_points.cuda()
-                print(val_points.shape)
-                print(val_points[0,:,:].cpu().numpy().shape)
+
 
                 decoded_val_points = autoencoder(val_points)
                 if (flag_stampa is False) and (epoch == n_epoch):
-                    val_stamp = val_points.to("cpu")
-                    print(val_stamp.data[0,:,:])
+                    val_stamp = val_points[0,:,:].cpu().numpy()
+                    dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
+                    np.savetxt("validation_point", val_stamp, delimiter=" ")
+                    np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
                     flag_stampa=True
+                    ptPC.printCloud(val_stamp)
 
-                    torch.save(val_stamp.data[0], "tensor.pts")
+
+
 
                 decoded_val_points = decoded_val_points.cuda()
                 chamfer_loss = PointLoss()  #  instantiate the loss
