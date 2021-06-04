@@ -43,7 +43,7 @@ def optimize_lr():
         class_choice="Airplane",
         npoints=1024)
     n_point_clouds = validation_dataset.__len__()
-    image_index = uniform(0, n_point_clouds-1)
+    image_index = int(uniform(0, n_point_clouds-1))
     point_cloud = validation_dataset.__getitem__(image_index)
     # try 20 different learning rate
     for count in range(15):
