@@ -14,7 +14,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import gc
 import csv
-
+from utils.early_stopping import EarlyStopping
 # the following function doesn't make the training of the network!!
 # It shows the interfaces with the classes necessary for the point cloud completion task
 # N.B.: only with PointNetAE and PointLoss (the one used for evaluating the Chamfer distance)
@@ -145,6 +145,7 @@ def train_example(opt):
     val_history = []
     gc.collect()
     torch.cuda.empty_cache()
+    early_stopping = EarlyStopping(patience=opt.patience, verbose=True)
 
     for epoch in range(10):
         scheduler.step()
@@ -164,7 +165,7 @@ def train_example(opt):
             loss = chamfer_loss(decoded_points, points)
             if epoch==0 and i==0:
                 print(f"LOSS: first epoch, first batch: \t {loss}")
-            training_losses.append(loss)
+            training_losses.append(loss.item())
             # if opt.feature_transform:
             #     loss += feature_transform_regularizer(trans_feat) * 0.001
             loss.backward()
@@ -187,12 +188,17 @@ def train_example(opt):
                 val_loss = chamfer_loss(decoded_val_points, val_points)
                 if j==0:
                     print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
-                val_losses.append(val_loss)
+                val_losses.append(val_loss.item())
 
-            train_mean = torch.stack(training_losses).mean().item()
-            val_mean = torch.stack(val_losses).mean().item()
+            train_mean = np.average(training_losses)
+            val_mean = np.average(val_losses)
             print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
 
+        early_stopping(val_mean, autoencoder)
+        if early_stopping.early_stop:
+            print("Early stopping")
+            break
+        else:
             training_history.append(train_mean)
             val_history.append(val_mean)
 
@@ -210,8 +216,10 @@ def train_example(opt):
             #     print('[%d: %d/%d] %s loss: %f accuracy: %f' % (
             #     epoch, i, num_batch, blue('test'), loss.item(), correct.item() / float(opt.batchSize)))
 
-        torch.save(autoencoder.state_dict(), '%s/cls_model_%d.pth' % (opt.outf, epoch))
+        #Commented: early_stopping already saves the best model
+        #torch.save(autoencoder.state_dict(), '%s/cls_model_%d.pth' % (opt.outf, epoch))
 
+    autoencoder.load_state_dict(torch.load('checkpoint.pt'))
 
     # TODO PLOT LOSSES
     print(training_history)
@@ -261,6 +269,7 @@ if __name__=='__main__':
     parser.add_argument("--weight_decay", type=float, default=1e-3, help="weight decay")
     parser.add_argument("--beta_1", type=float, default=0.9, help="decay rate for first moment")
     parser.add_argument("--beta_2", type=float, default=0.999, help="decay rate for second moment")
+    parser.add_argument("--patience", type=int, default=7, help="How long to wait after last time val loss improved.")
 
     opt = parser.parse_args()
     print(opt)
