@@ -61,8 +61,8 @@ def optimize_lr():
 
         point_cloud_np = point_cloud_np.cpu().numpy()
         dec_val_stamp = decoded_point_cloud.cpu().data.numpy()
-        ptPC.printCloud(point_cloud_np, f"{hash(str(args))}_original_validation_points")
-        ptPC.printCloud(dec_val_stamp, f"{hash(str(args))}_decoded_validation_points")
+        ptPC.printCloud(point_cloud_np, f"{hash(str(args))}_original_validation_points", args)
+        ptPC.printCloud(dec_val_stamp, f"{hash(str(args))}_decoded_validation_points", args)
         dict_params[hash(str(args))] = str(args)
     folder = args.outf
     try:
