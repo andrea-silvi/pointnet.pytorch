@@ -190,7 +190,7 @@ def train_example(opt):
                     #np.savetxt("validation_point", val_stamp, delimiter=" ")
                     #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
                     flag_stampa=True
-                    print("sono qui")
+                    #print("sono qui")
                     ptPC.printCloud(val_stamp, "original_validation_points")
                     ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
 
