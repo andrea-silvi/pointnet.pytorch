@@ -49,7 +49,7 @@ def optimize_lr():
     image_index = int(uniform(0, n_point_clouds - 1))
     point_cloud = val_dataset.__getitem__(image_index)
     # try 20 different learning rate
-    for count in range(1):
+    for count in range(10):
         setattr(args, "lr", 10 ** uniform(lower_lr, upper_lr))
         print(args)
         model = train_example(args)
