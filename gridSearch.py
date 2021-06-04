@@ -50,6 +50,7 @@ def optimize_lr():
     # try 20 different learning rate
     for count in range(15):
         setattr(args, "lr", 10 ** uniform(lower_lr, upper_lr))
+        print(args)
         model = train_example(args)
 
         model.eval()
