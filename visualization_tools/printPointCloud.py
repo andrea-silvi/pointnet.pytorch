@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 #Insert the cloud path in order to print it
 def printCloudFile(cloud, name):
@@ -17,4 +18,9 @@ def printCloud(cloud, name):
         fig = plt.figure(figsize=(15, 15))
         ax = fig.add_subplot(111, projection='3d')
         ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], 'o', alpha=alpha)
-        plt.savefig(f"/content/pointnet.pytorch/images/{name}.png")
+        folder = "/content/pointnet.pytorch/images/"
+        try:
+                os.makedirs("images")
+        except OSError:
+                pass
+        plt.savefig(f"{folder}_{name}.png")
