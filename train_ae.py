@@ -265,7 +265,7 @@ if __name__=='__main__':
     parser.add_argument("--size_encoder", type=int, default=1024, help="Size latent code")
     parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
     parser.add_argument('--num_points', type=int, default=1024, help='Number points from point cloud')
-    parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
+    parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
     parser.add_argument('--nepoch', type=int, default=250, help='number of epochs to train for')
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
     parser.add_argument('--model', type=str, default='', help='model path')
