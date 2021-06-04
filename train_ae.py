@@ -181,7 +181,7 @@ def train_example(opt):
                 autoencoder.eval()
                 val_points = val_points.cuda()
                 print(val_points.shape)
-                print(val_points[0,:,:].cpu().numpy())
+                print(val_points[0,:,:].cpu().numpy().shape)
 
                 decoded_val_points = autoencoder(val_points)
                 if (flag_stampa is False) and (epoch == n_epoch):
