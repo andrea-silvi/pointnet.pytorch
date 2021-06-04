@@ -7,6 +7,7 @@
 
 -Per i momenti di noia cambiare le grandezze all'interno della classe decoder
 -Questione data training e data test e validation
+-mettere una baseline con rumore a 0 e stessa nuvola di punti ad 1 (loss va 300 a 0)
 
 CLASSI DA TESTARE:
 Airplane, Chair, Table,

@@ -12,6 +12,7 @@ from utils.dataset import ShapeNetDataset
 from torch.utils.data import random_split
 import matplotlib
 import matplotlib.pyplot as plt
+import printPointCloud as ptPC
 import gc
 import csv
 from utils.early_stopping import EarlyStopping
@@ -146,7 +147,7 @@ def train_example(opt):
     gc.collect()
     torch.cuda.empty_cache()
     early_stopping = EarlyStopping(patience=opt.patience, verbose=True)
-
+    flag_stampa = False
     for epoch in range(10):
         scheduler.step()
         training_losses = []
@@ -183,6 +184,19 @@ def train_example(opt):
                 autoencoder.eval()
                 val_points = val_points.cuda()
                 decoded_val_points = autoencoder(val_points)
+                if (flag_stampa is False) and (epoch == n_epoch-1):
+                    val_stamp = val_points[0,:,:].cpu().numpy()
+                    dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
+                    #np.savetxt("validation_point", val_stamp, delimiter=" ")
+                    #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
+                    flag_stampa=True
+                    #print("sono qui")
+                    ptPC.printCloud(val_stamp, "original_validation_points")
+                    ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
+
+
+
+
                 decoded_val_points = decoded_val_points.cuda()
                 chamfer_loss = PointLoss()  #  instantiate the loss
                 val_loss = chamfer_loss(decoded_val_points, val_points)
