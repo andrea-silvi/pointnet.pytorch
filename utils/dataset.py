@@ -7,7 +7,6 @@ import numpy as np
 import json
 
 
-
 class ShapeNetDataset(data.Dataset):
     def __init__(self,
                  root,

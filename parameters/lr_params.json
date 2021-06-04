@@ -1,0 +1,21 @@
+{
+    "lr": [-6, -2],
+    "size_encoder": 1024,
+    "weight_decay": 1e-3,
+    "scheduler_gamma": 0.5,
+    "nepoch": 10,
+    "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0",
+    "set_size": 1,
+    "batchSize": 32,
+    "num_points": 1024,
+    "workers": 4,
+    "outf":  "cls",
+    "model": "",
+    "train_class_choice": "None",
+    "test_class_choice": "None",
+    "scheduler_stepSize": 20,
+    "dropout": 1,
+    "beta_1": 0.9,
+    "beta_2": 0.999,
+    "patience": 7
+}
