@@ -1,7 +1,13 @@
 from sklearn.model_selection import ParameterGrid
 import subprocess
 import json
+import os
 from random import uniform
+import argparse
+from train_ae import train_example
+from utils.dataset import ShapeNetDataset
+from visualization_tools import printPointCloud as ptPC
+
 
 if __name__=='__main__':
     json_params = json.loads(open("gridParameters.json").read())
@@ -35,3 +41,34 @@ def fake_test(set_size=0.2):
         param_sets.append("--nepoch")
         param_sets.append(str(10))
         subprocess.run(["python", "train_ae.py"] + param_sets)
+
+
+def optimize_lr():
+    json_params = json.loads(open(os.path.join("parameters", "lr_params.json")).read())
+    lr_boundaries = json_params.pop("lr")
+    upper_lr = lr_boundaries[1]
+    lower_lr = lr_boundaries[0]
+    parser = argparse.ArgumentParser(description='Preliminary grid search (for learning rate)')
+    args = parser.parse_args()
+
+    for option, option_value in json_params.items():
+        setattr(args, option, option_value)
+    # try 20 different learning rate
+    for count in range(15):
+        setattr(args, "lr", 10**uniform(lower_lr, upper_lr))
+        model = train_example(args)
+        validation_dataset = ShapeNetDataset(
+            root=args.dataset,
+            split='val',
+            class_choice="Airplane",
+            npoints=1024)
+        n_point_clouds = validation_dataset.__len__()
+        point_cloud = validation_dataset.__getitem__(uniform(0, n_point_clouds-1))
+        model.eval()
+        point_cloud = point_cloud.cuda()
+        decoded_point_cloud = model(point_cloud)
+
+        point_cloud = point_cloud[0, :, :].cpu().numpy()
+        dec_val_stamp = decoded_point_cloud[0, :, :].cpu().numpy()
+        ptPC.printCloud(point_cloud, "original_validation_points")
+        ptPC.printCloud(dec_val_stamp, "decoded_validation_points")

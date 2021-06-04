@@ -1,0 +1,8 @@
+{
+    "lr": [-6, -2],
+    "size_encoder": 1024,
+    "weight_decay": 0.1,
+    "scheduler_gamma": 0.5,
+    "nepoch": 10,
+    "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0"
+}

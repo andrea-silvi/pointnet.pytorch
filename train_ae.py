@@ -9,10 +9,7 @@ import os
 import torch.optim as optim
 import torch.utils.data
 from utils.dataset import ShapeNetDataset
-from torch.utils.data import random_split
-import matplotlib
-import matplotlib.pyplot as plt
-import printPointCloud as ptPC
+from visualization_tools import printPointCloud as ptPC
 import gc
 import csv
 from utils.early_stopping import EarlyStopping
@@ -240,7 +237,7 @@ def train_example(opt):
     print(training_history)
     print(val_history)
     print_loss_graph(training_history, val_history, opt)
-
+    return autoencoder
     # total_correct = 0
     # total_testset = 0
     # for i, data in tqdm(enumerate(testdataloader, 0)):
