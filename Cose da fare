@@ -42,3 +42,5 @@ N.B.: PER TESTARE NUOVE ARCHITETTURE (e.g.: con dropout, batch normalization,  s
 
 PLOTTING risultati e nuvole di punti
 Nuove architetture
+
+salva parametri->salva

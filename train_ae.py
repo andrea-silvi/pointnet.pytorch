@@ -57,12 +57,12 @@ def example_AE_and_chamfer_loss():
 
 
 def print_loss_graph(training_history, val_history, opt):
-    folder = "grid_search_results"
+    folder = os.path.join(opt.outf, "grid_search_results")
     try:
         os.makedirs(folder)
     except OSError:
         pass
-    with open(os.path.join(folder, f'losses_{hash(str(opt))}.csv'), 'w') as f:
+    with open(os.path.join(folder, f'{hash(str(opt))}_losses.csv'), 'w') as f:
         writer = csv.writer(f)
         writer.writerows([training_history, val_history])
     # plt.plot(training_history, '-bx')
@@ -138,14 +138,14 @@ def train_example(opt):
 
     #num_batch = len(dataset) / opt.batchSize
     # TODO - modify number of epochs (from 5 to opt.nepoch)
-
+    checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
     training_history = []
     val_history = []
     gc.collect()
     torch.cuda.empty_cache()
-    early_stopping = EarlyStopping(patience=opt.patience, verbose=True)
-    flag_stampa = False
-    n_epoch = 10
+    early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=checkpoint_path)
+    # flag_stampa = False
+    n_epoch = opt.nepoch
     for epoch in range(n_epoch):
         scheduler.step()
         training_losses = []
@@ -182,15 +182,15 @@ def train_example(opt):
                 autoencoder.eval()
                 val_points = val_points.cuda()
                 decoded_val_points = autoencoder(val_points)
-                if (flag_stampa is False) and (epoch == n_epoch-1):
-                    val_stamp = val_points[0,:,:].cpu().numpy()
-                    dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
-                    #np.savetxt("validation_point", val_stamp, delimiter=" ")
-                    #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
-                    flag_stampa=True
-                    #print("sono qui")
-                    ptPC.printCloud(val_stamp, "original_validation_points")
-                    ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
+                # if (flag_stampa is False) and (epoch == n_epoch-1):
+                #     val_stamp = val_points[0,:,:].cpu().numpy()
+                #     dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
+                #     #np.savetxt("validation_point", val_stamp, delimiter=" ")
+                #     #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
+                #     flag_stampa=True
+                #     #print("sono qui")
+                #     ptPC.printCloud(val_stamp, "original_validation_points")
+                #     ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
 
 
 
@@ -230,8 +230,7 @@ def train_example(opt):
 
         #Commented: early_stopping already saves the best model
         #torch.save(autoencoder.state_dict(), '%s/cls_model_%d.pth' % (opt.outf, epoch))
-
-    autoencoder.load_state_dict(torch.load('checkpoint.pt'))
+    autoencoder.load_state_dict(torch.load(checkpoint_path))
 
     # TODO PLOT LOSSES
     print(training_history)
@@ -265,7 +264,7 @@ if __name__=='__main__':
     parser.add_argument("--size_encoder", type=int, default=1024, help="Size latent code")
     parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
     parser.add_argument('--num_points', type=int, default=1024, help='Number points from point cloud')
-    parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
+    parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
     parser.add_argument('--nepoch', type=int, default=250, help='number of epochs to train for')
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
     parser.add_argument('--model', type=str, default='', help='model path')
