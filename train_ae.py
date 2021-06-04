@@ -184,7 +184,7 @@ def train_example(opt):
 
 
                 decoded_val_points = autoencoder(val_points)
-                if (flag_stampa is False) and (epoch == n_epoch):
+                if (flag_stampa is False) and (epoch == n_epoch-1):
                     val_stamp = val_points[0,:,:].cpu().numpy()
                     dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
                     np.savetxt("validation_point", val_stamp, delimiter=" ")
