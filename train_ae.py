@@ -204,7 +204,7 @@ def train_example(opt):
 
             train_mean = np.average(training_losses)
             val_mean = np.average(val_losses)
-            print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+            print(f'----->epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
 
         early_stopping(val_mean, autoencoder)
         if early_stopping.early_stop:

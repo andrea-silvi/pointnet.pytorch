@@ -27,3 +27,4 @@ def printCloud(cloud, name, opt=None):
     except OSError:
         pass
     plt.savefig(os.path.join(folder, f"{hash(str(opt))}_{name}.png"))
+    plt.close(fig)

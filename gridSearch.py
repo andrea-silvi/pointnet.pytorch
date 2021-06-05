@@ -133,6 +133,8 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
         # val_losses is the list of losses obtained during validation
         model, val_losses = train_example(args)
         if val_losses[-1]<best_val_loss:
+            print(f"--- Best validation loss found! {val_losses[-1]} (previous one: {best_val_loss}), corresponding to"
+                  f"hyperparameters {current_hyperparams.items()}")
             best_val_loss = val_losses[-1]
             best_hyperparams = current_hyperparams
         model.eval()
@@ -157,11 +159,11 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
 
 if __name__ == '__main__':
     best_lr = optimize_params()
-    print(f"BEST LEARNING RATE: {best_lr['lr']}")
+    print(f"-------BEST LEARNING RATE: {best_lr['lr']}")
     #print(f"BEST LEARNING RATE: {0.00020589232338423906}")
     best_params = optimize_params(os.path.join("parameters", "others_params.json"), ["weight_decay"],
                                   best_lr)
-    print(f"BEST HYPERPARAMS: {best_params}")
+    print(f"-------BEST HYPERPARAMS: {best_params}")
     # json_params = json.loads(open("gridParameters.json").read())
     # setup = json_params['fixed_params']
     # param_sets = []
