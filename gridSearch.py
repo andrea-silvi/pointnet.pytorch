@@ -120,7 +120,7 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
     image_index = int(uniform(0, n_point_clouds - 1))
     point_cloud = val_dataset.__getitem__(image_index)
     # try 3 random values for each hyperparameter
-    for count in range(3):
+    for count in range(10):
         for hyperparam in hyperparams:
             value = uniform(lower_boundary[hyperparam], upper_boundary[hyperparam])
             setattr(args, hyperparam, value)
@@ -152,9 +152,11 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
 
 
 if __name__ == '__main__':
-    best_lr = optimize_params()
-    print(f"BEST LEARNING RATE: {best_lr['lr']}")
-    best_params = optimize_params(os.path.join("parameters", "others_params.json"), ["weight_decay"], best_lr)
+    #best_lr = optimize_params()
+    #print(f"BEST LEARNING RATE: {best_lr['lr']}")
+    print(f"BEST LEARNING RATE: {0.00020589232338423906}")
+    best_params = optimize_params(os.path.join("parameters", "others_params.json"), ["weight_decay"],
+                                  {'lr': 0.00020589232338423906})
     print(f"BEST HYPERPARAMS: {best_params}")
     # json_params = json.loads(open("gridParameters.json").read())
     # setup = json_params['fixed_params']
