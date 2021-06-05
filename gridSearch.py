@@ -107,6 +107,10 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
             print(e)
 
     args = parser.parse_args()
+    #Add the default parameters to the parameters downloaded from the json
+    if default_params is not None:
+        for def_param, def_value in default_params.items():
+            json_params[def_param] = def_value
     for option, option_value in json_params.items():
         if option_value == 'None':
             option_value = None
