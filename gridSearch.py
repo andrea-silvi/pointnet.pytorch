@@ -129,7 +129,7 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
             value = 10**uniform(lower_boundary[hyperparam], upper_boundary[hyperparam])
             setattr(args, hyperparam, value)
             current_hyperparams[hyperparam] = value
-        print(args)
+        print(f"\n\n------------------------------------------------------------------\nParameters: {args}\n")
         # val_losses is the list of losses obtained during validation
         model, val_losses = train_example(args)
         if val_losses[-1]<best_val_loss:
