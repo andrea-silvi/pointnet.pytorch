@@ -111,6 +111,8 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
         if option_value == 'None':
             option_value = None
         setattr(args, option, option_value)
+    for default_param, default_param_value in default_params.items():
+        setattr(args, default_param, default_param_value)
     val_dataset = ShapeNetDataset(
         root=args.dataset,
         split='val',

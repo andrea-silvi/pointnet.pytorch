@@ -2,7 +2,7 @@
     "size_encoder": 1024,
     "weight_decay": [1e-2, 100],
     "scheduler_gamma": [0.1, 0.9],
-    "nepoch": 1,
+    "nepoch": 50,
     "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0",
     "set_size": 1,
     "batchSize": 32,
