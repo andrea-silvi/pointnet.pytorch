@@ -1,5 +1,5 @@
 {
-    "lr": [1e-6, 1e-3],
+    "lr": [-6, -3],
     "size_encoder": 1024,
     "weight_decay": 1e-3,
     "scheduler_gamma": 0.5,

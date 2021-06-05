@@ -1,6 +1,6 @@
 {
     "size_encoder": 1024,
-    "weight_decay": [1e-4, 10],
+    "weight_decay": [-4, 2],
     "scheduler_gamma": 0.5,
     "nepoch": 5,
     "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0",

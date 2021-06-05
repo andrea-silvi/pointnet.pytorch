@@ -233,8 +233,8 @@ def train_example(opt):
     autoencoder.load_state_dict(torch.load(checkpoint_path))
 
     # TODO PLOT LOSSES
-    print(training_history)
-    print(val_history)
+    #print(training_history)
+    #print(val_history)
     print_loss_graph(training_history, val_history, opt)
     return autoencoder, val_history
     # total_correct = 0
