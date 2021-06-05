@@ -5,7 +5,7 @@
     "test_class_choice": ["Airplane"]
   },
   "random_params": {
-    "lr": [-2, -6],
+    "lr": [1e-6, 1e-2],
     "size_encoder":[1024, 2048],
     "weight_decay": [-5, 2],
     "scheduler_gamma": [0.25, 0.75],

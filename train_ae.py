@@ -236,7 +236,7 @@ def train_example(opt):
     print(training_history)
     print(val_history)
     print_loss_graph(training_history, val_history, opt)
-    return autoencoder
+    return autoencoder, val_history
     # total_correct = 0
     # total_testset = 0
     # for i, data in tqdm(enumerate(testdataloader, 0)):

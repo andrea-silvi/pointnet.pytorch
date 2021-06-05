@@ -8,10 +8,11 @@ from train_ae import train_example
 from utils.dataset import ShapeNetDataset
 from visualization_tools import printPointCloud as ptPC
 import torch
+import sys
 
 
 def fake_test(set_size=0.2):
-    json_params = json.loads(open("gridParameters.json").read())
+    json_params = json.loads(open("parameters/gridParameters.json").read())
     for setup in ParameterGrid(json_params):
         param_sets = []
         for i in setup:
@@ -50,7 +51,7 @@ def optimize_lr():
     point_cloud = val_dataset.__getitem__(image_index)
     # try 20 different learning rate
     for count in range(10):
-        setattr(args, "lr", 10 ** uniform(lower_lr, upper_lr))
+        setattr(args, "lr", uniform(lower_lr, upper_lr))
         print(args)
         model = train_example(args)
 
@@ -72,8 +73,89 @@ def optimize_lr():
     with open(os.path.join(folder, f'hash_params.json'), 'w') as f:
         json.dump(dict_params, f)
 
+
+def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyperparams=['lr'], default_params=None):
+    """
+    :param filepath: string: json file path (contains ALL the hyperparameters, also those fixed: see
+        lr_params.json for reference).
+        N.B.: it should not contain the hyperparameters passed through default_params
+    :param hyperparams: list of strings: contains the hyperparameters to be optimized through random search.
+        n.b.: the
+    :param default_params: DICTIONARY: {hyperparam1: value, hyperparam2: value, ...}
+        hyperparam1 and hyperparam2 should be not present inside the json file!!
+        Use this variable in order to pass the learning rate found at the first phase of
+        the random search.
+        TIP: use the dictionary 'best_hyperparams' returned by this function
+    :return:
+    """
+    json_params = json.loads(open(filepath).read())
+    parser = argparse.ArgumentParser(description=f'Random search for:{hyperparams}')
+    hyperparam_boundaries = {}
+    upper_boundary = {}
+    lower_boundary = {}
+    dict_params = {}
+    best_val_loss = sys.float_info.max
+    best_hyperparams = {}  # contains the best hyperparameters (only those randomly generated) {hyperparam: value, ...}
+    current_hyperparams = {}  # contains the best hyperparameters (only those randomly generated)
+    for hyperparam in hyperparams:
+        try:
+            # the json file should contain HYPERPARAM as key and [low_boundary, high_boundary] as VALUE!!!!
+            hyperparam_boundaries[hyperparam] = json_params.pop(hyperparam)
+            upper_boundary[hyperparam] = hyperparam_boundaries[hyperparam][1]
+            lower_boundary[hyperparam] = hyperparam_boundaries[hyperparam][0]
+        except Exception as e:
+            print(e)
+
+    args = parser.parse_args()
+    for option, option_value in json_params.items():
+        if option_value == 'None':
+            option_value = None
+        setattr(args, option, option_value)
+    val_dataset = ShapeNetDataset(
+        root=args.dataset,
+        split='val',
+        class_choice="Airplane",
+        npoints=1024)
+    n_point_clouds = val_dataset.__len__()
+    image_index = int(uniform(0, n_point_clouds - 1))
+    point_cloud = val_dataset.__getitem__(image_index)
+    # try 3 random values for each hyperparameter
+    for count in range(3):
+        for hyperparam in hyperparams:
+            value = uniform(lower_boundary[hyperparam], upper_boundary[hyperparam])
+            setattr(args, hyperparam, value)
+            current_hyperparams[hyperparam] = value
+        print(args)
+        # val_losses is the list of losses obtained during validation
+        model, val_losses = train_example(args)
+        if val_losses[-1]<best_val_loss:
+            best_val_loss = val_losses[-1]
+            best_hyperparams = current_hyperparams
+        model.eval()
+        point_cloud_np = point_cloud.cuda()
+        point_cloud_np = torch.unsqueeze(point_cloud_np, 0)
+        decoded_point_cloud = model(point_cloud_np)
+
+        point_cloud_np = point_cloud_np.cpu().numpy()
+        dec_val_stamp = decoded_point_cloud.cpu().data.numpy()
+        ptPC.printCloud(point_cloud_np, "original_validation_points", args)
+        ptPC.printCloud(dec_val_stamp, "decoded_validation_points", args)
+        dict_params[hash(str(args))] = str(args)
+    folder = args.outf
+    try:
+        os.makedirs(folder)
+    except OSError:
+        pass
+    with open(os.path.join(folder, f'hash_params.json'), 'w') as f:
+        json.dump(dict_params, f)
+    return best_hyperparams
+
+
 if __name__ == '__main__':
-    optimize_lr()
+    best_lr = optimize_params()
+    print(f"BEST LEARNING RATE: {best_lr['lr']}")
+    best_params = optimize_params(os.path.join("parameters", "others_params.json"), ["weight_decay"], best_lr)
+    print(f"BEST HYPERPARAMS: {best_params}")
     # json_params = json.loads(open("gridParameters.json").read())
     # setup = json_params['fixed_params']
     # param_sets = []
