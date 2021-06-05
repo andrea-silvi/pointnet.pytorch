@@ -162,8 +162,8 @@ def train_example(opt):
             chamfer_loss = PointLoss()  #  instantiate the loss
             # let's compute the chamfer distance between the two sets: 'points' and 'decoded'
             loss = chamfer_loss(decoded_points, points)
-            if epoch==0 and i==0:
-                print(f"LOSS: first epoch, first batch: \t {loss}")
+            #if epoch==0 and i==0:
+                #print(f"LOSS: first epoch, first batch: \t {loss}")
             training_losses.append(loss.item())
             # if opt.feature_transform:
             #     loss += feature_transform_regularizer(trans_feat) * 0.001
@@ -198,13 +198,13 @@ def train_example(opt):
                 decoded_val_points = decoded_val_points.cuda()
                 chamfer_loss = PointLoss()  #  instantiate the loss
                 val_loss = chamfer_loss(decoded_val_points, val_points)
-                if j==0:
-                    print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
+                #if j==0:
+                    #print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
                 val_losses.append(val_loss.item())
 
             train_mean = np.average(training_losses)
             val_mean = np.average(val_losses)
-            print(f'----->epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+            print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
 
         early_stopping(val_mean, autoencoder)
         if early_stopping.early_stop:
