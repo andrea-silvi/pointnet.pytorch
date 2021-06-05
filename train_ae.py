@@ -116,8 +116,8 @@ def train_example(opt):
          shuffle=True,
          num_workers=int(opt.workers))
 
-    print(f"Length training/validation/test datasets: {len(training_dataset)}, {len(validation_dataset)}, "
-          f"{len(test_dataset)}")
+    #print(f"Length training/validation/test datasets: {len(training_dataset)}, {len(validation_dataset)}, "
+    #      f"{len(test_dataset)}")
 
     try:
         os.makedirs(opt.outf)
@@ -147,7 +147,8 @@ def train_example(opt):
     # flag_stampa = False
     n_epoch = opt.nepoch
     for epoch in range(n_epoch):
-        scheduler.step()
+        if(epoch > 0):
+            scheduler.step()
         training_losses = []
         #running_loss = 0.0
         for i, points in enumerate(train_dataloader, 0):
@@ -204,7 +205,7 @@ def train_example(opt):
 
             train_mean = np.average(training_losses)
             val_mean = np.average(val_losses)
-            print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+            print(f'\tepoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
 
         early_stopping(val_mean, autoencoder)
         if early_stopping.early_stop:
@@ -283,7 +284,7 @@ if __name__=='__main__':
     parser.add_argument("--patience", type=int, default=7, help="How long to wait after last time val loss improved.")
 
     opt = parser.parse_args()
-    print(opt)
+    print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
     train_example(opt)
 
 # TODO - Implement training phase (you should also implement cross-validation for tuning the hyperparameters)
