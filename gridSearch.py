@@ -158,7 +158,8 @@ if __name__ == '__main__':
     best_lr = {}
     best_lr['lr'] = 0.0002
     print(f"BEST LEARNING RATE: {best_lr['lr']}")
-    best_params = optimize_params(os.path.join("parameters", "others_params.json"), ["weight_decay"], best_lr)
+    best_params = optimize_params(os.path.join("parameters", "others_params.json"),
+                                  ["weight_decay", "scheduler_stepSize", "scheduler_gamma"], best_lr)
     print(f"BEST HYPERPARAMS: {best_params}")
     # json_params = json.loads(open("gridParameters.json").read())
     # setup = json_params['fixed_params']
