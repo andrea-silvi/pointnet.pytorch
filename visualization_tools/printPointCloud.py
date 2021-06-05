@@ -23,7 +23,7 @@ def printCloud(cloud, name, opt=None):
     ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], 'o', alpha=alpha)
     folder = "/content/pointnet.pytorch/images/" if opt is None else os.path.join(opt.outf, "images")
     try:
-        os.makedirs("images")
+        os.makedirs(folder)
     except OSError:
         pass
     plt.savefig(os.path.join(folder, f"{hash(str(opt))}_{name}.png"))
