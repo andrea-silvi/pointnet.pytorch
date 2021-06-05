@@ -55,10 +55,10 @@ class ShapeNetDataset(data.Dataset):
                 self.datapath.append((item, fn))
 
         self.classes = dict(zip(sorted(self.cat), range(len(self.cat))))
-        if split == 'train':
-            print(self.classes)
-            #Note: len(filelist) contains the info about the point clouds of the other classes (not our 7!)
-            #print(f"Total point clouds selected: {sum([len(array) for _, array in self.meta.items()])}/{len(filelist)}")
+        # if split == 'train':
+        #     print(self.classes)
+        #     #Note: len(filelist) contains the info about the point clouds of the other classes (not our 7!)
+        #     print(f"Total point clouds selected: {sum([len(array) for _, array in self.meta.items()])}/{len(filelist)}")
 
     def __getitem__(self, index):
         fn = self.datapath[index]
