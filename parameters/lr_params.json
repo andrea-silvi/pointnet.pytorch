@@ -14,7 +14,7 @@
     "train_class_choice": "None",
     "test_class_choice": "None",
     "scheduler_stepSize": 20,
-    "dropout": 1,
+    "dropout": 0.5,
     "beta_1": 0.9,
     "beta_2": 0.999,
     "patience": 7
