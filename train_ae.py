@@ -72,7 +72,10 @@ def print_loss_graph(training_history, val_history, opt):
         pass
     with open(os.path.join(folder, f'{hash(str(opt))}_losses.csv'), 'w') as f:
         writer = csv.writer(f)
-        writer.writerows([training_history, val_history])
+        if val_history == None:
+            writer.writerows([training_history])
+        else:
+            writer.writerows([training_history, val_history])
     # plt.plot(training_history, '-bx')
     # plt.plot(val_history, '-rx')
     # plt.xlabel('epoch')
@@ -93,6 +96,28 @@ def upload_args_from_json(file_path=os.path.join("parameters", "all_params.json"
     return args
 
 
+def test_example(opt, test_dataloader, model):
+    # initialize lists to monitor test loss and accuracy
+    chamfer_loss = PointLoss()
+    test_loss = 0.0
+
+    model.eval()  # prep model for evaluation
+
+    for data in test_dataloader:
+        # forward pass: compute predicted outputs by passing inputs to the model
+        output = model(data)
+        # calculate the loss
+        loss = chamfer_loss(data, output)
+        # update test loss
+        test_loss += loss.item() * data.size(0)
+
+    # calculate and print avg test loss
+    test_loss = test_loss / len(test_dataloader.dataset)
+    print('Test Loss: {:.6f}\n'.format(test_loss))
+
+    return test_loss
+
+
 def train_example(opt):
     random_seed = 43
     torch.manual_seed(random_seed)
@@ -110,12 +135,20 @@ def train_example(opt):
         npoints=opt.num_points,
         set_size=opt.set_size)
 
-    test_dataset = ShapeNetDataset(
-        root=opt.dataset,
-        split='test',
-        class_choice=opt.test_class_choice,
-        npoints=opt.num_points,
-        set_size=opt.set_size)
+    final_training = bool(opt.final_training)
+    if final_training:
+        test_dataset = ShapeNetDataset(
+            root=opt.dataset,
+            split='test',
+            class_choice=opt.test_class_choice,
+            npoints=opt.num_points,
+            set_size=opt.set_size)
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=opt.batchSize,
+            shuffle=True,
+            num_workers=int(opt.workers))
+        training_dataset = torch.utils.data.ConcatDataset([training_dataset, validation_dataset])
 
     train_dataloader = torch.utils.data.DataLoader(
         training_dataset,
@@ -125,12 +158,6 @@ def train_example(opt):
 
     val_dataloader = torch.utils.data.DataLoader(
         validation_dataset,
-        batch_size=opt.batchSize,
-        shuffle=True,
-        num_workers=int(opt.workers))
-
-    test_dataloader = torch.utils.data.DataLoader(
-        test_dataset,
         batch_size=opt.batchSize,
         shuffle=True,
         num_workers=int(opt.workers))
@@ -164,7 +191,7 @@ def train_example(opt):
     early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=checkpoint_path)
     # flag_stampa = False
     n_epoch = opt.nepoch
-    n_batches = np.floor(training_dataset.__len__()/opt.batchSize)
+    n_batches = np.floor(training_dataset.__len__() / opt.batchSize)
     for epoch in range(n_epoch):
         if (epoch > 0):
             scheduler.step()
@@ -197,40 +224,44 @@ def train_example(opt):
         torch.cuda.empty_cache()
 
         # TODO - VALIDATION PHASE
-        with torch.no_grad():
-            val_losses = []
-            for j, val_points in enumerate(val_dataloader, 0):
-                autoencoder.eval()
-                val_points = val_points.cuda()
-                decoded_val_points = autoencoder(val_points)
-                # if (flag_stampa is False) and (epoch == n_epoch-1):
-                #     val_stamp = val_points[0,:,:].cpu().numpy()
-                #     dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
-                #     #np.savetxt("validation_point", val_stamp, delimiter=" ")
-                #     #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
-                #     flag_stampa=True
-                #     #print("sono qui")
-                #     ptPC.printCloud(val_stamp, "original_validation_points")
-                #     ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
+        if not final_training:
+            with torch.no_grad():
+                val_losses = []
+                for j, val_points in enumerate(val_dataloader, 0):
+                    autoencoder.eval()
+                    val_points = val_points.cuda()
+                    decoded_val_points = autoencoder(val_points)
+                    # if (flag_stampa is False) and (epoch == n_epoch-1):
+                    #     val_stamp = val_points[0,:,:].cpu().numpy()
+                    #     dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
+                    #     #np.savetxt("validation_point", val_stamp, delimiter=" ")
+                    #     #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
+                    #     flag_stampa=True
+                    #     #print("sono qui")
+                    #     ptPC.printCloud(val_stamp, "original_validation_points")
+                    #     ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
 
-                decoded_val_points = decoded_val_points.cuda()
-                chamfer_loss = PointLoss()  #  instantiate the loss
-                val_loss = chamfer_loss(decoded_val_points, val_points)
-                # if j==0:
-                # print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
-                val_losses.append(val_loss.item())
+                    decoded_val_points = decoded_val_points.cuda()
+                    chamfer_loss = PointLoss()  #  instantiate the loss
+                    val_loss = chamfer_loss(decoded_val_points, val_points)
+                    # if j==0:
+                    # print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
+                    val_losses.append(val_loss.item())
 
-            train_mean = np.average(training_losses)
-            val_mean = np.average(val_losses)
-            print(f'\tepoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+                train_mean = np.average(training_losses)
+                val_mean = np.average(val_losses)
+                print(f'\tepoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+            early_stopping(val_mean, autoencoder)
 
-        early_stopping(val_mean, autoencoder)
+        else:
+            early_stopping(train_mean, autoencoder)
         if early_stopping.early_stop:
             print("Early stopping")
             break
         else:
             training_history.append(train_mean)
-            val_history.append(val_mean)
+            if not final_training:
+                val_history.append(val_mean)
 
             # if i % 10 == 0:
             #     j, data = next(enumerate(testdataloader, 0))
@@ -253,39 +284,39 @@ def train_example(opt):
     # TODO PLOT LOSSES
     # print(training_history)
     # print(val_history)
-    print_loss_graph(training_history, val_history, opt)
-    return autoencoder, val_history
-    # total_correct = 0
-    # total_testset = 0
-    # for i, data in tqdm(enumerate(testdataloader, 0)):
-    #     points, target = data
-    #     target = target[:, 0]
-    #     points = points.transpose(2, 1)
-    #     points, target = points.cuda(), target.cuda()
-    #     classifier = classifier.eval()
-    #     pred, _, _ = classifier(points)
-    #     pred_choice = pred.data.max(1)[1]
-    #     correct = pred_choice.eq(target.data).cpu().sum()
-    #     total_correct += correct.item()
-    #     total_testset += points.size()[0]
-    #
-    # print("final accuracy {}".format(total_correct / float(total_testset)))
+    if not final_training:
+        print_loss_graph(training_history, val_history, opt)
+        return autoencoder, val_history
+    else:
+        print_loss_graph(training_history, None, opt)
+        test_loss = test_example(opt, test_dataloader, autoencoder)
+        return autoencoder, test_loss
 
 
 def train_model_by_class(opt):
-    classes = ["Airplane", "Car", "Chair","Lamp","Motorbike","Mug","Table"]
+    classes = ["Airplane", "Car", "Chair", "Lamp", "Motorbike", "Mug", "Table"]
     base_folder = opt.outf
     for class_choice in classes:
         setattr(opt, "train_class_choice", class_choice)
         setattr(opt, "test_class_choice", class_choice)
         output_folder = os.path.join(base_folder, class_choice)
         setattr(opt, "outf", output_folder)
+        setattr(opt, "final_training", True)
+        #Implement for transfer learning
+        #settattr(opt, "model", "path of trained general model")
         try:
             os.makedirs(output_folder)
         except Exception as e:
             print(e)
-        print(opt)
-        model, val_loss = train_example(opt)
+        print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
+        model, test_loss = train_example(opt)
+
+        #Save final model + final test loss
+        torch.save(model.state_dict(), os.path.join(opt.outf, "final_checkpoint.pt"))
+        with open(os.path.join(opt.outf, "test_loss.csv"), 'w') as f:
+            writer = csv.writer(f)
+            writer.writerow(test_loss)
+
 
 if __name__ == '__main__':
     # TODO - create a json file for setting all the arguments. Actually:
