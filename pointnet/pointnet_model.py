@@ -114,9 +114,13 @@ class Decoder(nn.Module):
     def forward(self, x):
         batchsize = x.size()[0]
         x = F.relu(self.fc1(x))
+        x = self.dp1(x)
         x = F.relu(self.fc2(x))
+        x = self.dp2(x)
         x = F.relu(self.fc3(x))
+        x = self.dp3(x)
         x = F.relu(self.fc4(x))
+        x = self.dp4(x)
         x = self.th(self.fc5(x))
         x = x.view(batchsize, 3, self.num_points)
         return x
@@ -147,7 +151,7 @@ class PointNet_AutoEncoder(nn.Module):
             nn.Linear(512, size_encoder))
 
         # Decoder Definition
-        self.decoder = Decoder(num_points=num_points, size_encoder=size_encoder, dropout=1)
+        self.decoder = Decoder(num_points=num_points, size_encoder=size_encoder, dropout=dropout)
 
     def forward(self, x):
         BS, N, dim = x.size()
