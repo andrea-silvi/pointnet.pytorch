@@ -6,6 +6,7 @@ import os
 # Insert the cloud path in order to print it
 def printCloudFile(cloud_original, cloud_decoded, name):
     alpha = 0.5
+    #aaa
     xyz = np.loadtxt(cloud_original)
     # print(xyz)
     fig = plt.figure(figsize=(15, 15))
