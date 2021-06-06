@@ -192,7 +192,7 @@ def train_example(opt):
             optimizer.step()
             # if i % 1000 == 999: #every 1000 mini batches
             # writer.add_scalar('training loss', running_loss/1000, epoch * len(train_dataloader))
-            print_there(text=f"TRAINING: \t Epoch: {epoch}/{n_epoch},\t batch: {i}/{n_batches}")
+            # print_there(text=f"TRAINING: \t Epoch: {epoch}/{n_epoch},\t batch: {i}/{n_batches}")
         gc.collect()
         torch.cuda.empty_cache()
 
