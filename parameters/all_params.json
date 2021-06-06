@@ -1,9 +1,11 @@
 {
+    "lr": 1e-3,
     "size_encoder": 1024,
+    "weight_decay": 1e-3,
     "scheduler_gamma": 0.5,
-    "nepoch": 5,
+    "nepoch": 250,
     "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0",
-    "set_size": 1,
+    "set_size": ,
     "batchSize": 32,
     "num_points": 1024,
     "workers": 2,
