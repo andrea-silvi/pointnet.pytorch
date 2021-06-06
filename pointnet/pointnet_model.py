@@ -24,14 +24,14 @@ class STN3d(nn.Module):
 
     def forward(self, x):
         batchsize = x.size()[0]
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
+        x = F.relu(self.bn1(self.conv1(x))) + x
+        x = F.relu(self.bn2(self.conv2(x))) + x
+        x = F.relu(self.bn3(self.conv3(x))) + x
         x = torch.max(x, 2, keepdim=True)[0]
         x = x.view(-1, 1024)
 
-        x = F.relu(self.bn4(self.fc1(x)))
-        x = F.relu(self.bn5(self.fc2(x)))
+        x = F.relu(self.bn4(self.fc1(x))) + x
+        x = F.relu(self.bn5(self.fc2(x))) + x
         x = self.fc3(x)
 
         iden = Variable(torch.from_numpy(np.array([1, 0, 0, 0, 1, 0, 0, 0, 1]).astype(np.float32))).view(1, 9).repeat(
@@ -65,7 +65,7 @@ class PointNetfeat(nn.Module):
         x = x.transpose(2, 1)
         x = torch.bmm(x, trans)
         x = x.transpose(2, 1)
-        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn1(self.conv1(x))) + x
 
         if self.feature_transform:
             trans_feat = self.fstn(x)
@@ -76,7 +76,7 @@ class PointNetfeat(nn.Module):
             trans_feat = None
 
         pointfeat = x
-        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn2(self.conv2(x))) + x
         x = self.bn3(self.conv3(x))  # [batch_size, num_points, emb_size]
         x = torch.max(x, 2, keepdim=True)[0]  # [batch_size, num_points, emb_size] ==> [batch_size, emb_size]
         x = x.view(-1, 1024)
@@ -97,13 +97,17 @@ class Decoder(nn.Module):
     ''' Just a lightweight Fully Connected decoder:
     '''
 
-    def __init__(self, num_points=1024, size_encoder=1024):
+    def __init__(self, num_points=1024, size_encoder=1024, dropout=1):
         super(Decoder, self).__init__()
         self.num_points = num_points
         self.fc1 = nn.Linear(size_encoder, 512)
+        self.dp1 = nn.Dropout(p=dropout)
         self.fc2 = nn.Linear(512, 512)
+        self.dp2 = nn.Dropout(p=dropout)
         self.fc3 = nn.Linear(512, 1024)
+        self.dp3 = nn.Dropout(p=dropout)
         self.fc4 = nn.Linear(1024, 1024)
+        self.dp4 = nn.Dropout(p=dropout)
         self.fc5 = nn.Linear(1024, self.num_points * 3)
         self.th = nn.Tanh()
 
@@ -131,7 +135,7 @@ class PointNet_AutoEncoder(nn.Module):
   2. 'num_points' is the parameter controlling the number of points to be generated. In general we want to generate a number of points equal to the number of input points.
   '''
 
-    def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False):
+    def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False, dropout=1):
         super(PointNet_AutoEncoder, self).__init__()
         #print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
@@ -143,7 +147,7 @@ class PointNet_AutoEncoder(nn.Module):
             nn.Linear(512, size_encoder))
 
         # Decoder Definition
-        self.decoder = Decoder(num_points=num_points, size_encoder=size_encoder)
+        self.decoder = Decoder(num_points=num_points, size_encoder=size_encoder, dropout=1)
 
     def forward(self, x):
         BS, N, dim = x.size()
