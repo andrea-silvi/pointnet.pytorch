@@ -9,7 +9,6 @@ import os
 import torch.optim as optim
 import torch.utils.data
 from utils.dataset import ShapeNetDataset
-from visualization_tools import printPointCloud as ptPC
 import gc
 import csv
 from utils.early_stopping import EarlyStopping
@@ -73,7 +72,7 @@ def print_loss_graph(training_history, val_history, opt):
     with open(os.path.join(folder, f'{hash(str(opt))}_losses.csv'), 'w') as f:
         writer = csv.writer(f)
         if val_history == None:
-            writer.writerows([training_history])
+            writer.writerow(training_history)
         else:
             writer.writerows([training_history, val_history])
     # plt.plot(training_history, '-bx')
@@ -345,7 +344,6 @@ if __name__ == '__main__':
     # parser.add_argument("--beta_1", type=float, default=0.9, help="decay rate for first moment")
     # parser.add_argument("--beta_2", type=float, default=0.999, help="decay rate for second moment")
     # parser.add_argument("--patience", type=int, default=7, help="How long to wait after last time val loss improved.")
-    #
     # opt = parser.parse_args()
     # TODO - remove the following instruction (it overrides all the previous args)
     opt = upload_args_from_json()
