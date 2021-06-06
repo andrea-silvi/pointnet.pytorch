@@ -247,7 +247,7 @@ def train_example(opt):
             #     epoch, i, num_batch, blue('test'), loss.item(), correct.item() / float(opt.batchSize)))
 
         # Commented: early_stopping already saves the best model
-    torch.save(autoencoder.state_dict(), checkpoint_path)
+    # torch.save(autoencoder.state_dict(), checkpoint_path)
     autoencoder.load_state_dict(torch.load(checkpoint_path))
 
     # TODO PLOT LOSSES
