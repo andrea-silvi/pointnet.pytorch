@@ -75,13 +75,11 @@ def optimize_lr():
         json.dump(dict_params, f)
 
 
-def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyperparams=['lr'], default_params=None):
+def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), default_params=None):
     """
     :param filepath: string: json file path (contains ALL the hyperparameters, also those fixed: see
         lr_params.json for reference).
         N.B.: it should not contain the hyperparameters passed through default_params
-    :param hyperparams: list of strings: contains the hyperparameters to be optimized through random search.
-        n.b.: the
     :param default_params: DICTIONARY: {hyperparam1: value, hyperparam2: value, ...}
         hyperparam1 and hyperparam2 should be not present inside the json file!!
         Use this variable in order to pass the learning rate found at the first phase of
@@ -90,7 +88,7 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
     :return:
     """
     json_params = json.loads(open(filepath).read())
-    parser = argparse.ArgumentParser(description=f'Random search for:{hyperparams}')
+    parser = argparse.ArgumentParser(description=f'Random search')
     hyperparam_boundaries = {}
     upper_boundary = {}
     lower_boundary = {}
@@ -98,15 +96,18 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
     best_val_loss = sys.float_info.max
     best_hyperparams = {}  # contains the best hyperparameters (only those randomly generated) {hyperparam: value, ...}
     current_hyperparams = {}  # contains the best hyperparameters (only those randomly generated)
-    for hyperparam in hyperparams:
-        try:
-            # the json file should contain HYPERPARAM as key and [low_boundary, high_boundary] as VALUE!!!!
-            hyperparam_boundaries[hyperparam] = json_params.pop(hyperparam)
-            upper_boundary[hyperparam] = hyperparam_boundaries[hyperparam][1]
-            lower_boundary[hyperparam] = hyperparam_boundaries[hyperparam][0]
-        except Exception as e:
-            print(e)
-
+    hyperparams = []
+    for hyperparam, value in json_params.items():
+        if isinstance(value, list):
+            hyperparams.append(hyperparam)
+            try:
+                # the json file should contain HYPERPARAM as key and [low_boundary, high_boundary] as VALUE!!!!
+                hyperparam_boundaries[hyperparam] = json_params[hyperparam]
+                upper_boundary[hyperparam] = hyperparam_boundaries[hyperparam][1]
+                lower_boundary[hyperparam] = hyperparam_boundaries[hyperparam][0]
+            except Exception as e:
+                print(e)
+    [json_params.pop(hyperparam) for hyperparam in hyperparams]
     args = parser.parse_args()
     # Add the default parameters to the parameters downloaded from the json
     if default_params is not None:
