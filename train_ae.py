@@ -13,6 +13,14 @@ from visualization_tools import printPointCloud as ptPC
 import gc
 import csv
 from utils.early_stopping import EarlyStopping
+import sys
+
+
+def print_there(x, y, text):
+    sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (x, y, text))
+    sys.stdout.flush()
+
+
 # the following function doesn't make the training of the network!!
 # It shows the interfaces with the classes necessary for the point cloud completion task
 # N.B.: only with PointNetAE and PointLoss (the one used for evaluating the Chamfer distance)
@@ -111,12 +119,12 @@ def train_example(opt):
         num_workers=int(opt.workers))
 
     test_dataloader = torch.utils.data.DataLoader(
-         test_dataset,
-         batch_size=opt.batchSize,
-         shuffle=True,
-         num_workers=int(opt.workers))
+        test_dataset,
+        batch_size=opt.batchSize,
+        shuffle=True,
+        num_workers=int(opt.workers))
 
-    #print(f"Length training/validation/test datasets: {len(training_dataset)}, {len(validation_dataset)}, "
+    # print(f"Length training/validation/test datasets: {len(training_dataset)}, {len(validation_dataset)}, "
     #      f"{len(test_dataset)}")
 
     try:
@@ -135,8 +143,7 @@ def train_example(opt):
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=opt.scheduler_stepSize, gamma=opt.scheduler_gamma)
     autoencoder.cuda()
 
-
-    #num_batch = len(dataset) / opt.batchSize
+    # num_batch = len(dataset) / opt.batchSize
     # TODO - modify number of epochs (from 5 to opt.nepoch)
     checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
     training_history = []
@@ -146,11 +153,12 @@ def train_example(opt):
     early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=checkpoint_path)
     # flag_stampa = False
     n_epoch = opt.nepoch
+    n_batches = np.floor(training_dataset.__len__()/opt.batchSize)
     for epoch in range(n_epoch):
-        if(epoch > 0):
+        if (epoch > 0):
             scheduler.step()
         training_losses = []
-        #running_loss = 0.0
+        # running_loss = 0.0
         for i, points in enumerate(train_dataloader, 0):
             # print(f"Points size: {points.size()}")
             # points = points.transpose(2, 1)
@@ -158,21 +166,22 @@ def train_example(opt):
             optimizer.zero_grad()
             autoencoder.train()
             decoded_points = autoencoder(points)
-            #print(f"Decoded points size: {decoded_points.size()}")
+            # print(f"Decoded points size: {decoded_points.size()}")
             decoded_points = decoded_points.cuda()
             chamfer_loss = PointLoss()  #  instantiate the loss
             # let's compute the chamfer distance between the two sets: 'points' and 'decoded'
             loss = chamfer_loss(decoded_points, points)
-            #if epoch==0 and i==0:
-                #print(f"LOSS: first epoch, first batch: \t {loss}")
+            # if epoch==0 and i==0:
+            # print(f"LOSS: first epoch, first batch: \t {loss}")
             training_losses.append(loss.item())
             # if opt.feature_transform:
             #     loss += feature_transform_regularizer(trans_feat) * 0.001
             loss.backward()
-            #running_loss += loss.item()
+            # running_loss += loss.item()
             optimizer.step()
-            #if i % 1000 == 999: #every 1000 mini batches
-                #writer.add_scalar('training loss', running_loss/1000, epoch * len(train_dataloader))
+            # if i % 1000 == 999: #every 1000 mini batches
+            # writer.add_scalar('training loss', running_loss/1000, epoch * len(train_dataloader))
+            print_there(f"TRAINING: \t Epoch: {epoch}/{n_epoch},\t batch: {i}/{n_batches}")
         gc.collect()
         torch.cuda.empty_cache()
 
@@ -193,14 +202,11 @@ def train_example(opt):
                 #     ptPC.printCloud(val_stamp, "original_validation_points")
                 #     ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
 
-
-
-
                 decoded_val_points = decoded_val_points.cuda()
                 chamfer_loss = PointLoss()  #  instantiate the loss
                 val_loss = chamfer_loss(decoded_val_points, val_points)
-                #if j==0:
-                    #print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
+                # if j==0:
+                # print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
                 val_losses.append(val_loss.item())
 
             train_mean = np.average(training_losses)
@@ -229,13 +235,13 @@ def train_example(opt):
             #     print('[%d: %d/%d] %s loss: %f accuracy: %f' % (
             #     epoch, i, num_batch, blue('test'), loss.item(), correct.item() / float(opt.batchSize)))
 
-        #Commented: early_stopping already saves the best model
-        #torch.save(autoencoder.state_dict(), '%s/cls_model_%d.pth' % (opt.outf, epoch))
+        # Commented: early_stopping already saves the best model
+    torch.save(autoencoder.state_dict(), checkpoint_path)
     autoencoder.load_state_dict(torch.load(checkpoint_path))
 
     # TODO PLOT LOSSES
-    #print(training_history)
-    #print(val_history)
+    # print(training_history)
+    # print(val_history)
     print_loss_graph(training_history, val_history, opt)
     return autoencoder, val_history
     # total_correct = 0
@@ -255,13 +261,13 @@ def train_example(opt):
     # print("final accuracy {}".format(total_correct / float(total_testset)))
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     # TODO - create a json file for setting all the arguments. Actually:
     # TODO - create a json for the FINAL arguments (after the cross-validation, e.g.: {'batchSize': 32})
     # TODO - and a json for the GRID SEARCH phase (e.g.: {'batchSize': [16, 32, 64], ...}
     parser = argparse.ArgumentParser()
     parser.add_argument("--set_size", type=float, default=1, help="Subset size (between 0 and 1) of the training set. "
-                                                                "Use it for fake test")
+                                                                  "Use it for fake test")
     parser.add_argument("--size_encoder", type=int, default=1024, help="Size latent code")
     parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
     parser.add_argument('--num_points', type=int, default=1024, help='Number points from point cloud')
