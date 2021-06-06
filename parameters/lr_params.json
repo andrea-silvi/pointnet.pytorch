@@ -5,7 +5,7 @@
     "scheduler_gamma": 0.5,
     "nepoch": 3,
     "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0",
-    "set_size": 1,
+    "set_size": 0.01,
     "batchSize": 32,
     "num_points": 1024,
     "workers": 2,

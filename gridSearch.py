@@ -146,8 +146,9 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), defau
 
         point_cloud_np = point_cloud_np.cpu().numpy()
         dec_val_stamp = decoded_point_cloud.cpu().data.numpy()
-        ptPC.printCloud(point_cloud_np, "original_validation_points", opt=args)
-        ptPC.printCloud(dec_val_stamp, "decoded_validation_points", opt=args)
+        ptPC.printCloudM(point_cloud_np, dec_val_stamp, "", opt=args)
+        #ptPC.printCloud(point_cloud_np, "original_validation_points", args)
+        #ptPC.printCloud(dec_val_stamp, "decoded_validation_points", args)
         dict_params[hash(str(args))] = str(args)
     folder = args.outf
     try:
