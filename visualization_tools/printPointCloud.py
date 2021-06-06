@@ -23,7 +23,7 @@ def printCloudFile(cloud_original, cloud_decoded, name):
 
 
 def printCloud(cloud_original, name, alpha=0.5, opt=None):
-    alpha = 0.5
+
     xyz = cloud_original[0]
     print("sono qui")
     fig = plt.figure(figsize=(15, 15))
@@ -38,7 +38,7 @@ def printCloud(cloud_original, name, alpha=0.5, opt=None):
     plt.savefig(os.path.join(folder, f"{hash(str(opt))}_{name}.png"))
 
 def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
-    alpha = 0.5
+
     xyz = cloud_original[0]
     print("sono qui")
     fig = plt.figure(figsize=(30, 15))
