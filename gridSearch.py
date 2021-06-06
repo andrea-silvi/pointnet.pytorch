@@ -155,7 +155,7 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), defau
         os.makedirs(folder)
     except OSError:
         pass
-    with open(os.path.join(fotelder, f'hash_params.json'), 'w') as f:
+    with open(os.path.join(folder, f'hash_params.json'), 'w') as f:
         json.dump(dict_params, f)
     return best_hyperparams
 
