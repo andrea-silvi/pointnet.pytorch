@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from matplotlib import gridspec
+
 
 
 # Insert the cloud path in order to print it
@@ -39,7 +41,7 @@ def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
     alpha = 0.5
     xyz = cloud_original[0]
     print("sono qui")
-    fig = plt.figure(figsize=(20, 15))
+    fig = plt.figure(figsize=(30, 15))
     ax = fig.add_subplot(1,2,1, projection='3d')
     ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], 'o', alpha=alpha)
     ax.set_title("original cloud")
