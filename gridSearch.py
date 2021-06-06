@@ -107,12 +107,14 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
             print(e)
 
     args = parser.parse_args()
+    # Add the default parameters to the parameters downloaded from the json
+    if default_params is not None:
+        for def_param, def_value in default_params.items():
+            json_params[def_param] = def_value
     for option, option_value in json_params.items():
         if option_value == 'None':
             option_value = None
         setattr(args, option, option_value)
-    for default_param, default_param_value in default_params.items():
-        setattr(args, default_param, default_param_value)
     val_dataset = ShapeNetDataset(
         root=args.dataset,
         split='val',
@@ -122,15 +124,17 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
     image_index = int(uniform(0, n_point_clouds - 1))
     point_cloud = val_dataset.__getitem__(image_index)
     # try 3 random values for each hyperparameter
-    for count in range(3):
+    for count in range(10):
         for hyperparam in hyperparams:
-            value = uniform(lower_boundary[hyperparam], upper_boundary[hyperparam])
+            value = 10**uniform(lower_boundary[hyperparam], upper_boundary[hyperparam])
             setattr(args, hyperparam, value)
             current_hyperparams[hyperparam] = value
-        print(args)
+        print(f"\n\n------------------------------------------------------------------\nParameters: {args}\n")
         # val_losses is the list of losses obtained during validation
         model, val_losses = train_example(args)
         if val_losses[-1]<best_val_loss:
+            print(f"--- Best validation loss found! {val_losses[-1]} (previous one: {best_val_loss}), corresponding to"
+                  f"hyperparameters {current_hyperparams.items()}")
             best_val_loss = val_losses[-1]
             best_hyperparams = current_hyperparams
         model.eval()
@@ -154,13 +158,11 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), hyper
 
 
 if __name__ == '__main__':
-    # best_lr = optimize_params()
-    best_lr = {}
-    best_lr['lr'] = 0.0002
-    print(f"BEST LEARNING RATE: {best_lr['lr']}")
-    best_params = optimize_params(os.path.join("parameters", "others_params.json"),
-                                  ["weight_decay", "scheduler_stepSize", "scheduler_gamma"], best_lr)
-    print(f"BEST HYPERPARAMS: {best_params}")
+    best_lr = optimize_params()
+    print(f"\t\t\t-------BEST LEARNING RATE: {best_lr['lr']}\t\t\t")
+    #print(f"BEST LEARNING RATE: {0.00020589232338423906}")
+    #best_params = optimize_params(os.path.join("parameters", "others_params.json"), ["weight_decay"], best_lr)
+    #print(f"-------BEST HYPERPARAMS: {best_params}")
     # json_params = json.loads(open("gridParameters.json").read())
     # setup = json_params['fixed_params']
     # param_sets = []

@@ -116,8 +116,8 @@ def train_example(opt):
          shuffle=True,
          num_workers=int(opt.workers))
 
-    print(f"Length training/validation/test datasets: {len(training_dataset)}, {len(validation_dataset)}, "
-          f"{len(test_dataset)}")
+    #print(f"Length training/validation/test datasets: {len(training_dataset)}, {len(validation_dataset)}, "
+    #      f"{len(test_dataset)}")
 
     try:
         os.makedirs(opt.outf)
@@ -147,7 +147,8 @@ def train_example(opt):
     # flag_stampa = False
     n_epoch = opt.nepoch
     for epoch in range(n_epoch):
-        scheduler.step()
+        if(epoch > 0):
+            scheduler.step()
         training_losses = []
         #running_loss = 0.0
         for i, points in enumerate(train_dataloader, 0):
@@ -162,8 +163,8 @@ def train_example(opt):
             chamfer_loss = PointLoss()  #  instantiate the loss
             # let's compute the chamfer distance between the two sets: 'points' and 'decoded'
             loss = chamfer_loss(decoded_points, points)
-            if epoch==0 and i==0:
-                print(f"LOSS: first epoch, first batch: \t {loss}")
+            #if epoch==0 and i==0:
+                #print(f"LOSS: first epoch, first batch: \t {loss}")
             training_losses.append(loss.item())
             # if opt.feature_transform:
             #     loss += feature_transform_regularizer(trans_feat) * 0.001
@@ -198,13 +199,13 @@ def train_example(opt):
                 decoded_val_points = decoded_val_points.cuda()
                 chamfer_loss = PointLoss()  #  instantiate the loss
                 val_loss = chamfer_loss(decoded_val_points, val_points)
-                if j==0:
-                    print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
+                #if j==0:
+                    #print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
                 val_losses.append(val_loss.item())
 
             train_mean = np.average(training_losses)
             val_mean = np.average(val_losses)
-            print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+            print(f'\tepoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
 
         early_stopping(val_mean, autoencoder)
         if early_stopping.early_stop:
@@ -233,8 +234,8 @@ def train_example(opt):
     autoencoder.load_state_dict(torch.load(checkpoint_path))
 
     # TODO PLOT LOSSES
-    print(training_history)
-    print(val_history)
+    #print(training_history)
+    #print(val_history)
     print_loss_graph(training_history, val_history, opt)
     return autoencoder, val_history
     # total_correct = 0
@@ -283,7 +284,7 @@ if __name__=='__main__':
     parser.add_argument("--patience", type=int, default=7, help="How long to wait after last time val loss improved.")
 
     opt = parser.parse_args()
-    print(opt)
+    print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
     train_example(opt)
 
 # TODO - Implement training phase (you should also implement cross-validation for tuning the hyperparameters)
