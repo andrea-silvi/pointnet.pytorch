@@ -105,9 +105,7 @@ class Decoder(nn.Module):
         self.fc2 = nn.Linear(512, 512)
         self.dp2 = nn.Dropout(p=dropout)
         self.fc3 = nn.Linear(512, 1024)
-        self.dp3 = nn.Dropout(p=dropout)
         self.fc4 = nn.Linear(1024, 1024)
-        self.dp4 = nn.Dropout(p=dropout)
         self.fc5 = nn.Linear(1024, self.num_points * 3)
         self.th = nn.Tanh()
 
@@ -118,9 +116,7 @@ class Decoder(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.dp2(x)
         x = F.relu(self.fc3(x))
-        x = self.dp3(x)
         x = F.relu(self.fc4(x))
-        x = self.dp4(x)
         x = self.th(self.fc5(x))
         x = x.view(batchsize, 3, self.num_points)
         return x
