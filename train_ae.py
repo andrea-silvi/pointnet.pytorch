@@ -16,7 +16,7 @@ from utils.early_stopping import EarlyStopping
 import sys, json
 
 
-def print_there(x, y, text):
+def print_there(x=0, y=0, text=None):
     sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (x, y, text))
     sys.stdout.flush()
 
@@ -192,7 +192,7 @@ def train_example(opt):
             optimizer.step()
             # if i % 1000 == 999: #every 1000 mini batches
             # writer.add_scalar('training loss', running_loss/1000, epoch * len(train_dataloader))
-            print_there(f"TRAINING: \t Epoch: {epoch}/{n_epoch},\t batch: {i}/{n_batches}")
+            print_there(text=f"TRAINING: \t Epoch: {epoch}/{n_epoch},\t batch: {i}/{n_batches}")
         gc.collect()
         torch.cuda.empty_cache()
 
