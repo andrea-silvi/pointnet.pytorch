@@ -284,6 +284,7 @@ def train_model_by_class(opt):
             os.makedirs(output_folder)
         except Exception as e:
             print(e)
+        print(opt)
         model, val_loss = train_example(opt)
 
 if __name__ == '__main__':
