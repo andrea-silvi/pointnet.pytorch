@@ -124,7 +124,7 @@ def train_example(opt):
     except OSError:
         pass
 
-    autoencoder = PointNet_AutoEncoder(opt.num_points, opt.size_encoder)
+    autoencoder = PointNet_AutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout)
 
     # TODO - import pointnet parameters (encoder network)
     if opt.model != '':
