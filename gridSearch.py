@@ -11,23 +11,23 @@ import torch
 import sys
 
 
-def fake_test(set_size=0.2):
-    json_params = json.loads(open("parameters/gridParameters.json").read())
-    for setup in ParameterGrid(json_params):
-        param_sets = []
-        for i in setup:
-            if i in ['nepoch', 'train_class_choice', 'test_class_choice']:
-                continue
-            command = "--" + i
-            value = str(setup[f"{i}"])
-            param_sets.append(command)
-            param_sets.append(value)
-        param_sets.append("--set_size")
-        param_sets.append(str(set_size))
-        param_sets.append("--nepoch")
-        param_sets.append(str(10))
-        subprocess.run(["python", "train_ae.py"] + param_sets)
-
+# def fake_test(set_size=0.2):
+#     json_params = json.loads(open("parameters/gridParameters.json").read())
+#     for setup in ParameterGrid(json_params):
+#         param_sets = []
+#         for i in setup:
+#             if i in ['nepoch', 'train_class_choice', 'test_class_choice']:
+#                 continue
+#             command = "--" + i
+#             value = str(setup[f"{i}"])
+#             param_sets.append(command)
+#             param_sets.append(value)
+#         param_sets.append("--set_size")
+#         param_sets.append(str(set_size))
+#         param_sets.append("--nepoch")
+#         param_sets.append(str(10))
+#         subprocess.run(["python", "train_ae.py"] + param_sets)
+#
 
 def optimize_lr():
     json_params = json.loads(open(os.path.join("parameters", "lr_params.json")).read())
@@ -62,9 +62,9 @@ def optimize_lr():
 
         point_cloud_np = point_cloud_np.cpu().numpy()
         dec_val_stamp = decoded_point_cloud.cpu().data.numpy()
-        ptPC.printCloud(point_cloud_np, dec_val_stamp, "scifi",args)
-        #ptPC.printCloud(point_cloud_np, "original_validation_points", args)
-        #ptPC.printCloud(dec_val_stamp, "decoded_validation_points", args)
+        ptPC.printCloud(point_cloud_np, dec_val_stamp, "scifi", args)
+        # ptPC.printCloud(point_cloud_np, "original_validation_points", args)
+        # ptPC.printCloud(dec_val_stamp, "decoded_validation_points", args)
         dict_params[hash(str(args))] = str(args)
     folder = args.outf
     try:
@@ -128,13 +128,13 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), defau
     # try 3 random values for each hyperparameter
     for count in range(10):
         for hyperparam in hyperparams:
-            value = 10**uniform(lower_boundary[hyperparam], upper_boundary[hyperparam])
+            value = 10 ** uniform(lower_boundary[hyperparam], upper_boundary[hyperparam])
             setattr(args, hyperparam, value)
             current_hyperparams[hyperparam] = value
         print(f"\n\n------------------------------------------------------------------\nParameters: {args}\n")
         # val_losses is the list of losses obtained during validation
         model, val_losses = train_example(args)
-        if val_losses[-1]<best_val_loss:
+        if val_losses[-1] < best_val_loss:
             print(f"--- Best validation loss found! {val_losses[-1]} (previous one: {best_val_loss}), corresponding to"
                   f"hyperparameters {current_hyperparams.items()}")
             best_val_loss = val_losses[-1]
@@ -146,8 +146,8 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), defau
 
         point_cloud_np = point_cloud_np.cpu().numpy()
         dec_val_stamp = decoded_point_cloud.cpu().data.numpy()
-        ptPC.printCloud(point_cloud_np, "original_validation_points", args)
-        ptPC.printCloud(dec_val_stamp, "decoded_validation_points", args)
+        ptPC.printCloud(point_cloud_np, "original_validation_points", opt=args)
+        ptPC.printCloud(dec_val_stamp, "decoded_validation_points", opt=args)
         dict_params[hash(str(args))] = str(args)
     folder = args.outf
     try:
@@ -159,12 +159,14 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), defau
     return best_hyperparams
 
 
+
+
 if __name__ == '__main__':
     best_lr = optimize_params()
     print(f"\t\t\t-------BEST LEARNING RATE: {best_lr['lr']}\t\t\t")
-    #print(f"BEST LEARNING RATE: {0.00020589232338423906}")
-    #best_params = optimize_params(os.path.join("parameters", "others_params.json"), ["weight_decay"], best_lr)
-    #print(f"-------BEST HYPERPARAMS: {best_params}")
+    # print(f"BEST LEARNING RATE: {0.00020589232338423906}")
+    # best_params = optimize_params(os.path.join("parameters", "others_params.json"), ["weight_decay"], best_lr)
+    # print(f"-------BEST HYPERPARAMS: {best_params}")
     # json_params = json.loads(open("gridParameters.json").read())
     # setup = json_params['fixed_params']
     # param_sets = []

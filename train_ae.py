@@ -13,7 +13,7 @@ from visualization_tools import printPointCloud as ptPC
 import gc
 import csv
 from utils.early_stopping import EarlyStopping
-import sys
+import sys, json
 
 
 def print_there(x, y, text):
@@ -80,6 +80,17 @@ def print_loss_graph(training_history, val_history, opt):
     # plt.legend(['Training', 'Validation'])
     # plt.title('Loss vs. No. of epochs')
     # plt.savefig('loss.png', bbox_inches='tight',)
+
+
+def upload_args_from_json(file_path="all_params.json"):
+    parser = argparse.ArgumentParser(description=f'Random search')
+    args = parser.parse_args()
+    json_params = json.loads(open(file_path).read())
+    for option, option_value in json_params.items():
+        if option_value == 'None':
+            option_value = None
+        setattr(args, option, option_value)
+    return args
 
 
 def train_example(opt):
@@ -261,6 +272,20 @@ def train_example(opt):
     # print("final accuracy {}".format(total_correct / float(total_testset)))
 
 
+def train_model_by_class(opt):
+    classes = ["Airplane", "Car", "Chair","Lamp","Motorbike","Mug","Table"]
+    base_folder = opt.outf
+    for class_choice in classes:
+        setattr(opt, "train_class_choice", class_choice)
+        setattr(opt, "test_class_choice", class_choice)
+        output_folder = os.path.join(base_folder, class_choice)
+        setattr(opt, "outf", output_folder)
+        try:
+            os.makedirs(output_folder)
+        except Exception as e:
+            print(e)
+        model, val_loss = train_example(opt)
+
 if __name__ == '__main__':
     # TODO - create a json file for setting all the arguments. Actually:
     # TODO - create a json for the FINAL arguments (after the cross-validation, e.g.: {'batchSize': 32})
@@ -290,8 +315,10 @@ if __name__ == '__main__':
     parser.add_argument("--patience", type=int, default=7, help="How long to wait after last time val loss improved.")
 
     opt = parser.parse_args()
+    # TODO - remove the following instruction (it overrides all the previous args)
+    opt = upload_args_from_json()
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
-    train_example(opt)
+    train_model_by_class(opt)
 
 # TODO - Implement training phase (you should also implement cross-validation for tuning the hyperparameters)
 # TODO - You should also implement the visualization tools (visualization_tools package)

@@ -40,7 +40,7 @@ def printCloud(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
 """
 def printCloud(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
     alpha = 0.5
-    xyz = cloud_original
+    xyz = cloud_original[0]
     # print("sono qui")
     fig = plt.figure(figsize=(15, 15))
     ax = fig.add_subplot(111, projection='3d')
