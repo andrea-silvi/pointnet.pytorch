@@ -133,7 +133,7 @@ class PointNet_AutoEncoder(nn.Module):
 
     def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False):
         super(PointNet_AutoEncoder, self).__init__()
-        print("PointNet AE Init - num_points (# generated): %d" % num_points)
+        #print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
         #  Encoder Definition
         self.encoder = torch.nn.Sequential(

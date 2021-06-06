@@ -9,10 +9,7 @@ import os
 import torch.optim as optim
 import torch.utils.data
 from utils.dataset import ShapeNetDataset
-from torch.utils.data import random_split
-import matplotlib
-import matplotlib.pyplot as plt
-import printPointCloud as ptPC
+from visualization_tools import printPointCloud as ptPC
 import gc
 import csv
 from utils.early_stopping import EarlyStopping
@@ -60,12 +57,12 @@ def example_AE_and_chamfer_loss():
 
 
 def print_loss_graph(training_history, val_history, opt):
-    folder = "grid_search_results"
+    folder = os.path.join(opt.outf, "grid_search_results")
     try:
         os.makedirs(folder)
     except OSError:
         pass
-    with open(os.path.join(folder, f'losses_{hash(str(opt))}.csv'), 'w') as f:
+    with open(os.path.join(folder, f'{hash(str(opt))}_losses.csv'), 'w') as f:
         writer = csv.writer(f)
         writer.writerows([training_history, val_history])
     # plt.plot(training_history, '-bx')
@@ -119,15 +116,15 @@ def train_example(opt):
          shuffle=True,
          num_workers=int(opt.workers))
 
-    print(f"Length training/validation/test datasets: {len(training_dataset)}, {len(validation_dataset)}, "
-          f"{len(test_dataset)}")
+    #print(f"Length training/validation/test datasets: {len(training_dataset)}, {len(validation_dataset)}, "
+    #      f"{len(test_dataset)}")
 
     try:
         os.makedirs(opt.outf)
     except OSError:
         pass
 
-    autoencoder = PointNet_AutoEncoder(opt.num_points, opt.size_encoder, opt.feature_transform)
+    autoencoder = PointNet_AutoEncoder(opt.num_points, opt.size_encoder)
 
     # TODO - import pointnet parameters (encoder network)
     if opt.model != '':
@@ -141,16 +138,17 @@ def train_example(opt):
 
     #num_batch = len(dataset) / opt.batchSize
     # TODO - modify number of epochs (from 5 to opt.nepoch)
-
+    checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
     training_history = []
     val_history = []
     gc.collect()
     torch.cuda.empty_cache()
-    early_stopping = EarlyStopping(patience=opt.patience, verbose=True)
-    flag_stampa = False
-    n_epoch = 10
+    early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=checkpoint_path)
+    # flag_stampa = False
+    n_epoch = opt.nepoch
     for epoch in range(n_epoch):
-        scheduler.step()
+        if(epoch > 0):
+            scheduler.step()
         training_losses = []
         #running_loss = 0.0
         for i, points in enumerate(train_dataloader, 0):
@@ -165,8 +163,8 @@ def train_example(opt):
             chamfer_loss = PointLoss()  #  instantiate the loss
             # let's compute the chamfer distance between the two sets: 'points' and 'decoded'
             loss = chamfer_loss(decoded_points, points)
-            if epoch==0 and i==0:
-                print(f"LOSS: first epoch, first batch: \t {loss}")
+            #if epoch==0 and i==0:
+                #print(f"LOSS: first epoch, first batch: \t {loss}")
             training_losses.append(loss.item())
             # if opt.feature_transform:
             #     loss += feature_transform_regularizer(trans_feat) * 0.001
@@ -185,15 +183,15 @@ def train_example(opt):
                 autoencoder.eval()
                 val_points = val_points.cuda()
                 decoded_val_points = autoencoder(val_points)
-                if (flag_stampa is False) and (epoch == n_epoch-1):
-                    val_stamp = val_points[0,:,:].cpu().numpy()
-                    dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
-                    #np.savetxt("validation_point", val_stamp, delimiter=" ")
-                    #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
-                    flag_stampa=True
-                    #print("sono qui")
-                    ptPC.printCloud(val_stamp, "original_validation_points")
-                    ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
+                # if (flag_stampa is False) and (epoch == n_epoch-1):
+                #     val_stamp = val_points[0,:,:].cpu().numpy()
+                #     dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
+                #     #np.savetxt("validation_point", val_stamp, delimiter=" ")
+                #     #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
+                #     flag_stampa=True
+                #     #print("sono qui")
+                #     ptPC.printCloud(val_stamp, "original_validation_points")
+                #     ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
 
 
 
@@ -201,13 +199,13 @@ def train_example(opt):
                 decoded_val_points = decoded_val_points.cuda()
                 chamfer_loss = PointLoss()  #  instantiate the loss
                 val_loss = chamfer_loss(decoded_val_points, val_points)
-                if j==0:
-                    print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
+                #if j==0:
+                    #print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
                 val_losses.append(val_loss.item())
 
             train_mean = np.average(training_losses)
             val_mean = np.average(val_losses)
-            print(f'epoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+            print(f'\tepoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
 
         early_stopping(val_mean, autoencoder)
         if early_stopping.early_stop:
@@ -233,14 +231,13 @@ def train_example(opt):
 
         #Commented: early_stopping already saves the best model
         #torch.save(autoencoder.state_dict(), '%s/cls_model_%d.pth' % (opt.outf, epoch))
-
-    autoencoder.load_state_dict(torch.load('checkpoint.pt'))
+    autoencoder.load_state_dict(torch.load(checkpoint_path))
 
     # TODO PLOT LOSSES
-    print(training_history)
-    print(val_history)
+    #print(training_history)
+    #print(val_history)
     print_loss_graph(training_history, val_history, opt)
-
+    return autoencoder, val_history
     # total_correct = 0
     # total_testset = 0
     # for i, data in tqdm(enumerate(testdataloader, 0)):
@@ -268,7 +265,7 @@ if __name__=='__main__':
     parser.add_argument("--size_encoder", type=int, default=1024, help="Size latent code")
     parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
     parser.add_argument('--num_points', type=int, default=1024, help='Number points from point cloud')
-    parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
+    parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
     parser.add_argument('--nepoch', type=int, default=250, help='number of epochs to train for')
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
     parser.add_argument('--model', type=str, default='', help='model path')
@@ -287,7 +284,7 @@ if __name__=='__main__':
     parser.add_argument("--patience", type=int, default=7, help="How long to wait after last time val loss improved.")
 
     opt = parser.parse_args()
-    print(opt)
+    print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
     train_example(opt)
 
 # TODO - Implement training phase (you should also implement cross-validation for tuning the hyperparameters)

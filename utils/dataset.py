@@ -7,7 +7,6 @@ import numpy as np
 import json
 
 
-
 class ShapeNetDataset(data.Dataset):
     def __init__(self,
                  root,
@@ -45,7 +44,7 @@ class ShapeNetDataset(data.Dataset):
             _, category, uuid = file.split('/')
             if category in self.cat.values():
                 # randomly select (set_size*100)% point clouds from the original ones
-                val = np.random.uniform()
+                val = np.random.uniform(0, 1)
                 if val <= set_size:  # e.g.: if set_size=1, then val<=1 will be always true
                                      # (then take 100% point clouds)
                     self.meta[self.id2cat[category]].append((os.path.join(self.root, category, 'points', uuid + '.pts')))
@@ -56,9 +55,10 @@ class ShapeNetDataset(data.Dataset):
                 self.datapath.append((item, fn))
 
         self.classes = dict(zip(sorted(self.cat), range(len(self.cat))))
-        if split == 'train':
-            print(self.classes)
-            print(f"Total point clouds selected: {sum([len(array) for _, array in self.meta.items()])}/{len(filelist)}")
+        # if split == 'train':
+        #     print(self.classes)
+        #     #Note: len(filelist) contains the info about the point clouds of the other classes (not our 7!)
+        #     print(f"Total point clouds selected: {sum([len(array) for _, array in self.meta.items()])}/{len(filelist)}")
 
     def __getitem__(self, index):
         fn = self.datapath[index]
