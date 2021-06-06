@@ -26,6 +26,7 @@ class ShapeNetDataset(data.Dataset):
         with open(self.catfile, 'r') as f:
             for line in f:
                 ls = line.strip().split()
+                # e.g.: cat['Airplane'] = 02691156
                 self.cat[ls[0]] = ls[1]
         # print(self.cat)
         if not class_choice is None:
@@ -86,3 +87,20 @@ class ShapeNetDataset(data.Dataset):
     def __len__(self):
         return len(self.datapath)
 
+    def get_point_cloud_by_category(self, category, index=0):
+        if category not in self.meta.keys():
+            print(f"Category {category} not found.")
+            print(f"Choose one of these: {self.meta.keys()}")
+            return None
+        if index > len(self.meta[category]):
+            index = 0
+        file_path = self.meta[category][index]
+        point_set = np.loadtxt(file_path).astype(np.float32)
+        choice = np.random.choice(len(point_set), self.npoints, replace=True)
+        # resample
+        point_set = point_set[choice, :]
+        point_set = point_set - np.expand_dims(np.mean(point_set, axis=0), 0)  # center
+        dist = np.max(np.sqrt(np.sum(point_set ** 2, axis=1)), 0)
+        point_set = point_set / dist  # scale
+        point_set = torch.from_numpy(point_set)
+        return point_set

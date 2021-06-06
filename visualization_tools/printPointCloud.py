@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from matplotlib import gridspec
-
+import utils.dataset as ds
+import torch
 
 
 # Insert the cloud path in order to print it
@@ -36,10 +37,9 @@ def printCloud(cloud_original, name, alpha=0.5, opt=None):
         pass
     plt.savefig(os.path.join(folder, f"{hash(str(opt))}_{name}.png"))
 
-def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
 
+def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
     xyz = cloud_original[0]
-    print("sono qui")
     fig = plt.figure(figsize=(30, 15))
     ax = fig.add_subplot(1,2,1, projection='3d')
     ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], 'o', alpha=alpha)
@@ -54,3 +54,14 @@ def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
     except OSError:
         pass
     plt.savefig(os.path.join(folder, f"{hash(str(opt))}_{name}.png"))
+
+
+def print_original_decoded_point_clouds(dataset, category, model, opt):
+    point_cloud = dataset.get_point_cloud_by_category(category)
+    model.eval()
+    point_cloud_np = point_cloud.cuda()
+    point_cloud_np = torch.unsqueeze(point_cloud_np, 0)
+    decoded_point_cloud = model(point_cloud_np)
+    point_cloud_np = point_cloud_np.cpu().numpy()
+    dec_val_stamp = decoded_point_cloud.cpu().data.numpy()
+    printCloudM(point_cloud_np, dec_val_stamp, name=category, opt=opt)

@@ -14,6 +14,7 @@ import gc
 import csv
 from utils.early_stopping import EarlyStopping
 import sys, json
+from visualization_tools.printPointCloud import *
 
 
 def print_there(x=0, y=0, text=None):
@@ -274,6 +275,11 @@ def train_example(opt):
 
 def train_model_by_class(opt):
     classes = ["Airplane", "Car", "Chair","Lamp","Motorbike","Mug","Table"]
+    dataset = ShapeNetDataset(
+        root=opt.dataset,
+        class_choice=None,
+        split='test',
+        npoints=opt.num_points)
     base_folder = opt.outf
     for class_choice in classes:
         setattr(opt, "train_class_choice", class_choice)
@@ -286,6 +292,9 @@ def train_model_by_class(opt):
             print(e)
         print(opt)
         model, val_loss = train_example(opt)
+        for class_choice_pc in classes:
+            print_original_decoded_point_clouds(dataset, class_choice_pc, model, opt)
+
 
 if __name__ == '__main__':
     # TODO - create a json file for setting all the arguments. Actually:
