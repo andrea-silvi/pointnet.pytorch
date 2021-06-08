@@ -1,5 +1,3 @@
-from sklearn.model_selection import ParameterGrid
-import subprocess
 import json
 import os
 from random import uniform
@@ -98,7 +96,7 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), defau
 
 if __name__ == '__main__':
     best_lr = optimize_params()
-    print(f"\t\t\t-------BEST LEARNING RATE: {best_lr['lr']}\t\t\t")
+    #print(f"\t\t\t-------BEST LEARNING RATE: {best_lr['lr']}\t\t\t")
     # print(f"BEST LEARNING RATE: {0.00020589232338423906}")
     # best_params = optimize_params(os.path.join("parameters", "others_params.json"), ["weight_decay"], best_lr)
     # print(f"-------BEST HYPERPARAMS: {best_params}")
