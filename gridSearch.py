@@ -76,7 +76,7 @@ def wrapper_train_by_class(json_path=os.path.join("parameters", "fixed_params.js
 
 
 if __name__ == '__main__':
-    # best_params = optimize_params()
-    # print(f"Best parameters: \t{best_params}\n")
-    wrapper_train_by_class()
+    best_params = optimize_params()
+    print(f"Best parameters: \t{best_params}\n")
+    # wrapper_train_by_class()
 
