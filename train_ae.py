@@ -15,9 +15,7 @@ from utils.early_stopping import EarlyStopping
 import sys, json
 
 
-def print_there(x=0, y=0, text=None):
-    sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (x, y, text))
-    sys.stdout.flush()
+
 
 
 # the following function doesn't make the training of the network!!
@@ -192,7 +190,7 @@ def train_example(opt):
     n_epoch = opt.nepoch
     n_batches = np.floor(training_dataset.__len__() / opt.batchSize)
     for epoch in range(n_epoch):
-        if (epoch > 0):
+        if epoch > 0:
             scheduler.step()
         training_losses = []
         # running_loss = 0.0
@@ -250,17 +248,17 @@ def train_example(opt):
                 train_mean = np.average(training_losses)
                 val_mean = np.average(val_losses)
                 print(f'\tepoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
-            early_stopping(val_mean, autoencoder)
 
-        else:
-            early_stopping(train_mean, autoencoder)
-        if early_stopping.early_stop:
-            print("Early stopping")
-            break
-        else:
-            training_history.append(train_mean)
-            if not final_training:
-                val_history.append(val_mean)
+
+        if epoch >= 50:
+            early_stopping(val_mean if not final_training else train_mean, autoencoder)
+            if early_stopping.early_stop:
+                print("Early stopping")
+                break
+
+        training_history.append(train_mean)
+        if not final_training:
+            val_history.append(val_mean)
 
             # if i % 10 == 0:
             #     j, data = next(enumerate(testdataloader, 0))
@@ -348,7 +346,7 @@ if __name__ == '__main__':
     # TODO - remove the following instruction (it overrides all the previous args)
     opt = upload_args_from_json()
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
-    train_model_by_class(opt)
+    #train_model_by_class(opt)
 
 # TODO - Implement training phase (you should also implement cross-validation for tuning the hyperparameters)
 # TODO - You should also implement the visualization tools (visualization_tools package)
