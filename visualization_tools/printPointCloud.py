@@ -56,12 +56,20 @@ def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
     plt.savefig(os.path.join(folder, f"{hash(str(opt))}_{name}.png"))
 
 
+def savePtsFile(type, category, opt, array):
+    file = open(os.path.join(opt.outf, "visualizations", category, f"{type}.pts"), 'w')
+    np.savetxt(file, array)
+    file.close()
 def print_original_decoded_point_clouds(dataset, category, model, opt):
     point_cloud = dataset.get_point_cloud_by_category(category)
     model.eval()
     point_cloud_np = point_cloud.cuda()
     point_cloud_np = torch.unsqueeze(point_cloud_np, 0)
     decoded_point_cloud = model(point_cloud_np)
-    point_cloud_np = point_cloud_np.cpu().numpy()
-    dec_val_stamp = decoded_point_cloud.cpu().data.numpy()
-    printCloudM(point_cloud_np, dec_val_stamp, name=category, opt=opt)
+    original_pc_np = point_cloud_np.cpu().numpy()
+    decoded_pc_np = decoded_point_cloud.cpu().data.numpy()
+    #printCloudM(point_cloud_np, dec_val_stamp, name=category, opt=opt)
+    original_pc_np.reshape(1024, 3)
+    decoded_pc_np.reshape(1024, 3)
+    savePtsFile("original", category, opt, original_pc_np)
+    savePtsFile("decoded", category, opt, decoded_pc_np)
