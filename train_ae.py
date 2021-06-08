@@ -85,7 +85,7 @@ def print_loss_graph(training_history, val_history, opt):
     # plt.savefig('loss.png', bbox_inches='tight',)
 
 
-def upload_args_from_json(file_path=os.path.join("parameters", "all_params.json")):
+def upload_args_from_json(file_path=os.path.join("parameters", "params.json")):
     parser = argparse.ArgumentParser(description=f'Random search')
     args = parser.parse_args()
     json_params = json.loads(open(file_path).read())
