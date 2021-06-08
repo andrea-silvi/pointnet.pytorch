@@ -57,7 +57,12 @@ def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
 
 
 def savePtsFile(type, category, opt, array):
-    file = open(os.path.join(opt.outf, "visualizations", category, f"{type}.pts"), 'w')
+    folder = os.path.join(opt.outf, "visualizations", category)
+    try:
+        os.makedirs(folder)
+    except OSError:
+        pass
+    file = open(os.path.join(folder, f"{type}.pts"), 'w')
     np.savetxt(file, array)
     file.close()
 def print_original_decoded_point_clouds(dataset, category, model, opt):
