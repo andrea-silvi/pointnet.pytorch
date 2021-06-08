@@ -133,7 +133,7 @@ def train_example(opt):
         npoints=opt.num_points,
         set_size=opt.set_size)
 
-    final_training = bool(opt.final_training)
+    final_training = opt.final_training
     if final_training:
         test_dataset = ShapeNetDataset(
             root=opt.dataset,
