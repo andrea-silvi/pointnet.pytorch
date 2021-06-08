@@ -47,3 +47,31 @@ salva parametri->salva
 
 ----------------------------------settimana 7 giugno
 1. implementare printPointCloud con possibilità di rotazione
+
+
+----------------------------------VISUALIZZAZIONI
+se ci sono casi particolari da far vedere
+
+----------------------------------GRID SEARCH
+grid search su
+1. dimensione del codice
+2. learning rate
+3. ecc...
+
+validare gli hyperparametri utilizzando solo UNA CLASSE (sedia che è difficile)
+utilizzare gli hyperparametri ottenuti al precedente passo per trainare l'architettura con tutti
+gli hyperparametri FISSI, eccetto lunghezza del codice (prova 2-3 valori, per vederne i risultati)
+e verificare che questo sia simile a quello ottenuto con il training a classe singola
+
+NUMERO EPOCHE: su classi singole, il numero di epoche è circa la metà di quelle utilizzate per trainare il modello
+su tutte le classi
+EARLY STOPPING: aumentare il valore di 'patient' ad almeno 20 (numero di epoche). oppure
+attivarlo dopo le prime 50 epoche
+
+-----------------------------------LOSS
+indicare il fattore moltiplicativo usato per la loss (al fondo della tabella)
+
+-----------------------------------08/06/2021
+0. eseguire test con singola epoch
+1. salvare nuvole di punti come file txt
+2. modificare la grid search
