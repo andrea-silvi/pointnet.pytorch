@@ -63,7 +63,7 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), defau
     for count in range(2):
         for hyperparam in hyperparams:
             #value = 10 ** uniform(lower_boundary[hyperparam], upper_boundary[hyperparam])
-            if count == 1:
+            if count == 0:
                 value =0.001
             else:
                 value = 100
