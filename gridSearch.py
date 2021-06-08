@@ -60,9 +60,13 @@ def optimize_params(filepath=os.path.join("parameters", "lr_params.json"), defau
     image_index = int(uniform(0, n_point_clouds - 1))
     point_cloud = val_dataset.__getitem__(image_index)
     # try 3 random values for each hyperparameter
-    for count in range(10):
+    for count in range(2):
         for hyperparam in hyperparams:
-            value = 10 ** uniform(lower_boundary[hyperparam], upper_boundary[hyperparam])
+            #value = 10 ** uniform(lower_boundary[hyperparam], upper_boundary[hyperparam])
+            if count == 1:
+                value =0.001
+            else:
+                value = 100
             setattr(args, hyperparam, value)
             current_hyperparams[hyperparam] = value
         print(f"\n\n------------------------------------------------------------------\nParameters: {args}\n")
