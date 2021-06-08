@@ -37,7 +37,7 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
     test_dataset = ShapeNetDataset(
         root=args.dataset,
         split='test',
-        class_choice="Airplane",
+        class_choice="Lamp",
         npoints=1024)
 
     for current_param_grid in ParameterGrid(param_grid):
@@ -52,7 +52,7 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
                   f"hyperparameters {current_hyperparams.items()}")
             best_val_loss = val_losses[-1]
             best_hyperparams = current_hyperparams
-        ptPC.print_original_decoded_point_clouds(test_dataset, "Lam", model, args)
+        ptPC.print_original_decoded_point_clouds(test_dataset, "Lamp", model, args)
         dict_params[hash(str(args))] = str(args)
     folder = args.outf
     try:

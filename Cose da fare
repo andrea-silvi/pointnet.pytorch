@@ -20,7 +20,7 @@ Lamp, Car, Motorbike, Mug
     c. gamma (0.25, 0.5)
     e. weight_decay (1e-3, 1e-4)
     f. dropout (0.5, 1)
-    g. architettura (depper_autoencoder, original_autoencoder)
+    g. architettura (deeper_autoencoder, original_autoencoder)
 TRAIN CON UNA SOLA CLASSE: nepoch: 50
 TRAIN CON TUTTO IL DATASET: nepoch: 100
 3. validare gli hyperparametri utilizzando solo UNA CLASSE
