@@ -65,6 +65,8 @@ def savePtsFile(type, category, opt, array):
     file = open(os.path.join(folder, f"{type}.pts"), 'w')
     np.savetxt(file, array)
     file.close()
+
+
 def print_original_decoded_point_clouds(dataset, category, model, opt):
     point_cloud = dataset.get_point_cloud_by_category(category)
     model.eval()
@@ -74,7 +76,9 @@ def print_original_decoded_point_clouds(dataset, category, model, opt):
     original_pc_np = point_cloud_np.cpu().numpy()
     decoded_pc_np = decoded_point_cloud.cpu().data.numpy()
     #printCloudM(point_cloud_np, dec_val_stamp, name=category, opt=opt)
-    original_pc_np.reshape(1024, 3)
-    decoded_pc_np.reshape(1024, 3)
+    np.reshape(original_pc_np, (1024, 3))
+    np.reshape(decoded_pc_np, (1024, 3))
+    print(original_pc_np.size)
+    print(original_pc_np.size)
     savePtsFile("original", category, opt, original_pc_np)
     savePtsFile("decoded", category, opt, decoded_pc_np)
