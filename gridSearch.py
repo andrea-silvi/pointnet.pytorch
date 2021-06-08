@@ -48,11 +48,11 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
         # val_losses is the list of losses obtained during validation
         model, val_losses = train_example(args)
         if val_losses[-1] < best_val_loss:
-            print(f"--- Best validation loss found! {val_losses[-1]} (previous one: {best_val_loss}), corresponding to"
+            print(f"--- Best validation loss found! {val_losses[-1]} (previous one: {best_val_loss}), corresponding to "
                   f"hyperparameters {current_hyperparams.items()}")
             best_val_loss = val_losses[-1]
             best_hyperparams = current_hyperparams
-        ptPC.print_original_decoded_point_clouds(test_dataset, model, "Airplane", args)
+        ptPC.print_original_decoded_point_clouds(test_dataset, "Airplane", model, args)
         # model.eval()
         # point_cloud_np = point_cloud.cuda()
         # point_cloud_np = torch.unsqueeze(point_cloud_np, 0)
@@ -66,7 +66,7 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
     try:
         os.makedirs(folder)
     except OSError:
-        print(f"Failed to create folder {folder}")
+        pass
     with open(os.path.join(folder, f'hash_params.json'), 'w') as f:
         json.dump(dict_params, f)
     return best_hyperparams
