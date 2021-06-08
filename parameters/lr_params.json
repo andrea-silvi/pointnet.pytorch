@@ -17,5 +17,6 @@
     "dropout": 0.5,
     "beta_1": 0.9,
     "beta_2": 0.999,
-    "patience": 7
+    "patience": 20,
+    "final_training": 0
 }
