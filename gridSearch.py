@@ -52,7 +52,7 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
                   f"hyperparameters {current_hyperparams.items()}")
             best_val_loss = val_losses[-1]
             best_hyperparams = current_hyperparams
-        ptPC.print_original_decoded_point_clouds(test_dataset, "Airplane", model, args)
+        ptPC.print_original_decoded_point_clouds(test_dataset, "Lam", model, args)
         dict_params[hash(str(args))] = str(args)
     folder = args.outf
     try:
