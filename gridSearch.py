@@ -2,7 +2,7 @@ import json
 import os
 from random import uniform
 import argparse
-from train_ae import train_example
+from train_ae import train_example, train_model_by_class
 from utils.dataset import ShapeNetDataset
 from visualization_tools import printPointCloud as ptPC
 import torch
@@ -53,14 +53,6 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
             best_val_loss = val_losses[-1]
             best_hyperparams = current_hyperparams
         ptPC.print_original_decoded_point_clouds(test_dataset, "Airplane", model, args)
-        # model.eval()
-        # point_cloud_np = point_cloud.cuda()
-        # point_cloud_np = torch.unsqueeze(point_cloud_np, 0)
-        # decoded_point_cloud = model(point_cloud_np)
-        #
-        # point_cloud_np = point_cloud_np.cpu().numpy()
-        # dec_val_stamp = decoded_point_cloud.cpu().data.numpy()
-        # ptPC.printCloudM(point_cloud_np, dec_val_stamp, "", opt=args)
         dict_params[hash(str(args))] = str(args)
     folder = args.outf
     try:
@@ -72,7 +64,19 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
     return best_hyperparams
 
 
+def wrapper_train_by_class(json_path=os.path.join("parameters", "fixed_params.json")):
+    json_params = json.loads(open(json_path).read())
+    parser = argparse.ArgumentParser(description=f'Training models with different classes')
+    args = parser.parse_args()
+    for hyperparam, value in json_params.items():
+        if value == 'None':
+            value = None
+        setattr(args, hyperparam, value)
+    train_model_by_class(args)
+
+
 if __name__ == '__main__':
-    best_params = optimize_params()
-    print(f"Best parameters: \t{best_params}\n")
+    # best_params = optimize_params()
+    # print(f"Best parameters: \t{best_params}\n")
+    wrapper_train_by_class()
 

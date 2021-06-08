@@ -3,6 +3,7 @@ from __future__ import print_function
 import numpy as np
 import torch
 from pointnet.pointnet_model import PointNet_AutoEncoder
+from pointnet.deeper_pointnet_model import PointNet_DeeperAutoEncoder
 from utils.loss import PointLoss
 import argparse
 import os
@@ -14,9 +15,6 @@ import csv
 from utils.early_stopping import EarlyStopping
 import sys, json
 from visualization_tools.printPointCloud import *
-
-
-
 
 
 # the following function doesn't make the training of the network!!
@@ -40,7 +38,7 @@ from visualization_tools.printPointCloud import *
 #     print("Input points: ", points.size())
 #
 #     # Instantiate the AE
-#     pointnet_AE = PointNet_AutoEncoder(num_points=input_points)
+#     pointnet_AE = PointNet_DeeperAutoEncoder(num_points=input_points)
 #
 #     # Move everything (data + model) to GPU
 #     assert torch.cuda.device_count() > 0, "Fail: No GPU device detected"
@@ -168,7 +166,9 @@ def train_example(opt):
     except OSError:
         pass
 
-    autoencoder = PointNet_AutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout)
+    autoencoder = PointNet_DeeperAutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout) \
+                    if opt.architecture == "deep" else \
+                    PointNet_AutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout)
 
     # TODO - import pointnet parameters (encoder network)
     if opt.model != '':
@@ -250,7 +250,6 @@ def train_example(opt):
                 val_mean = np.average(val_losses)
                 print(f'\tepoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
 
-
         if epoch >= 50:
             early_stopping(val_mean if not final_training else train_mean, autoencoder)
             if early_stopping.early_stop:
@@ -292,6 +291,8 @@ def train_example(opt):
 
 
 def train_model_by_class(opt):
+    worst_test_loss = 0
+    worst_class = ""
     dataset = ShapeNetDataset(
         root=opt.dataset,
         class_choice=None,
@@ -304,9 +305,9 @@ def train_model_by_class(opt):
         setattr(opt, "test_class_choice", class_choice)
         output_folder = os.path.join(base_folder, class_choice)
         setattr(opt, "outf", output_folder)
-        setattr(opt, "final_training", True)
-        #Implement for transfer learning
-        #settattr(opt, "model", "path of trained general model")
+        # setattr(opt, "final_training", 0)
+        # Implement for transfer learning
+        # settattr(opt, "model", "path of trained general model")
         try:
             os.makedirs(output_folder)
         except Exception as e:
@@ -314,16 +315,22 @@ def train_model_by_class(opt):
         print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
         model, test_loss = train_example(opt)
 
-        #Save final model + final test loss
-        torch.save(model.state_dict(), os.path.join(opt.outf, "final_checkpoint.pt"))
-        with open(os.path.join(opt.outf, "test_loss.csv"), 'w') as f:
-            writer = csv.writer(f)
-            writer.writerow(test_loss)
+        if test_loss[-1] > worst_test_loss:
+            print(f"--- Worst validation loss found! {test_loss[-1]} (previous one: {worst_test_loss})")
+            worst_class = class_choice
+            worst_test_loss = test_loss[-1]
 
-        print(opt)
-        model, val_loss = train_example(opt)
-        for class_choice_pc in classes:
-            print_original_decoded_point_clouds(dataset, class_choice_pc, model, opt)
+        # Save final model + final test loss
+        # torch.save(model.state_dict(), os.path.join(opt.outf, "final_checkpoint.pt"))
+        # with open(os.path.join(opt.outf, "test_loss.csv"), 'w') as f:
+        #     writer = csv.writer(f)
+        #     writer.writerow(test_loss)
+        #
+        # print(opt)
+        # model, val_loss = train_example(opt)
+        # for class_choice_pc in classes:
+        #     print_original_decoded_point_clouds(dataset, class_choice_pc, model, opt)
+    print(f"Worst class: {worst_class},\t last loss: {worst_test_loss} (20th epoch)")
 
 
 if __name__ == '__main__':
@@ -357,7 +364,7 @@ if __name__ == '__main__':
     # TODO - remove the following instruction (it overrides all the previous args)
     opt = upload_args_from_json()
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
-    #train_model_by_class(opt)
+    # train_model_by_class(opt)
 
 # TODO - Implement training phase (you should also implement cross-validation for tuning the hyperparameters)
 # TODO - You should also implement the visualization tools (visualization_tools package)

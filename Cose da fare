@@ -1,4 +1,3 @@
--Gridsearch su batchSize, learningRate, parametri scheduler
 -Plottare grafico: loss vs. n° epoch
 -Chiedere alliegro il 0.5 a riga 58
 -CD_Loss = cd_weight * ( 0.5 * AVG_Y2X + 0.5 * AVG_X2Y )
@@ -13,65 +12,29 @@ CLASSI DA TESTARE:
 Airplane, Chair, Table,
 Lamp, Car, Motorbike, Mug
 
------------------------------PER SABATO
-PRINT POINT CLOUD
-IMPLEMENTA EARLY STOPPING
-GRID SEARCH:
-1 - FAKE TEST (10 epoch su  un SUBSET del training set, considerando TUTTE le classi),
-2 - modifica range hyperparametri (in base a quanto ottenuto al punto precedente) ed
-    esegui gridsearch (o random search) con numero di epoch elevato (250 in su)
-    su tutto il training set (con TUTTE le classi).
-    Per semplicità, imposta learning rate fisso, ma applica gridsearch su step_lr
-3 - gridsearch su learning rate
-IMPLEMENTARE RANDOM BASELINE: misurare distanza tra
-1 - NUVOLA DI PUNTI dopo sampling (1024) e
-2 - NUVOLA DI PUNTI dopo sampling e dopo aggiunta NOISE
-3 - MISURARE DISTANZA Chamfer loss e mostrarla come baseline nei grafici.
-MODIFICA ARCHITETTURE
-
------------------------------PROSSIMA SETTIMANA
-GRID SEARCH: (N.B.: va usata l'intera classe di training!!!)
-1 - learning rate 10^-6 a 10^-2, per 10 epochs, 10 learning rate nel range (TUTTI GLI ALTRI PARAMETRI FISSI)
-2 - grid and random search sui restanti parametri con lr fisso (ottimo del punto precedente) per 10 epoch
-3 - grid and random search su learning rate (intorno del valore ottimo ottenuto al punto 1)
-    utilizzando i parametri ottimi ottenuti al punto precedente.
-    training per 500 epochs con early stopping
-N.B.: PER TESTARE NUOVE ARCHITETTURE (e.g.: con dropout, batch normalization,  skip connection, etc...)
-      utilizzare subset del training set (per il training). Effettuare il training per un numero ridotto di epoch
-      e vedere se l'ARCHITETTURA converge
-
-PLOTTING risultati e nuvole di punti
-Nuove architetture
-
-salva parametri->salva
-
 ----------------------------------settimana 7 giugno
 1. implementare printPointCloud con possibilità di rotazione
-
-
-----------------------------------VISUALIZZAZIONI
-se ci sono casi particolari da far vedere
-
-----------------------------------GRID SEARCH
-grid search su
-1. dimensione del codice
-2. learning rate
-3. ecc...
-
-validare gli hyperparametri utilizzando solo UNA CLASSE (sedia che è difficile)
-utilizzare gli hyperparametri ottenuti al precedente passo per trainare l'architettura con tutti
-gli hyperparametri FISSI, eccetto lunghezza del codice (prova 2-3 valori, per vederne i risultati)
-e verificare che questo sia simile a quello ottenuto con il training a classe singola
-
-NUMERO EPOCHE: su classi singole, il numero di epoche è circa la metà di quelle utilizzate per trainare il modello
-su tutte le classi
-EARLY STOPPING: aumentare il valore di 'patient' ad almeno 20 (numero di epoche). oppure
-attivarlo dopo le prime 50 epoche
+2. grid search su
+    a. dimensione del codice (128, 512, 1024)
+    b. learning rate (1e-3, 0.5e-3, 1e-4)
+    c. gamma (0.25, 0.5)
+    e. weight_decay (1e-3, 1e-4)
+    f. dropout (0.5, 1)
+    g. architettura (depper_autoencoder, original_autoencoder)
+TRAIN CON UNA SOLA CLASSE: nepoch: 50
+TRAIN CON TUTTO IL DATASET: nepoch: 100
+3. validare gli hyperparametri utilizzando solo UNA CLASSE
+4. svolgere il punto precedente due volte, con due classi distinte. Una difficile (chair), una semplice (airplane)
+5. confronta gli hyperparametri ottenuti
+6. utilizzare gli hyperparametri ottenuti ai punti precedenti (usa quelli ottenuti con la classe difficile)
+    per trainare il MODELLO MIGLIORE.
+    PROVA DIVERSI VALORI DI: size_encoder (2-3, anche più grandi di 1024)
 
 -----------------------------------LOSS
-indicare il fattore moltiplicativo usato per la loss (al fondo della tabella)
+indicare il fattore moltiplicativo usato per la loss (al fondo della tabella)... sulla relazione finale
 
------------------------------------08/06/2021
-0. eseguire test con singola epoch
-1. salvare nuvole di punti come file txt
-2. modificare la grid search
+-----------------------------------DOMANDE:
+1. quale classe usare per fare cross validation? una qualsiasi oppure usiamo quella più complessa?
+    come 'identificare la più complessa':
+    eseguire training con 25 epoche e hyperparametri fissi
+2. dropout: dove lo inseriamo? su tutti i layer del decoder? o solo su un paio?
