@@ -41,3 +41,7 @@ indicare il fattore moltiplicativo usato per la loss (al fondo della tabella)...
 3. scheduler: conviene usarlo? Quale sarebbe il 'migliore' nel nostro caso?
     usare sia gamma che stepSize come hyperparametri?
 4. early stopping: dopo la 50esima epoca, prima che modello salvare? miglior validation loss o ultimo?
+
+-----------------------------------------BUG
+1) nei results 1 loss.csv in più del n. di parametri. hash key non esiste. conviene spostarsi su interi perchè hash
+non è deterministica.

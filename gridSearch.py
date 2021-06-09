@@ -40,10 +40,12 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
         class_choice="Lamp",
         npoints=1024)
 
+    counter = 0
     for current_param_grid in ParameterGrid(param_grid):
         for hyperparam, value in current_param_grid.items():
             setattr(args, hyperparam, value)
             current_hyperparams[hyperparam] = value
+        setattr(args, 'runNumber', counter)
         print(f"\n\n------------------------------------------------------------------\nParameters: {args}\n")
         # val_losses is the list of losses obtained during validation
         model, val_losses = train_example(args)
@@ -53,7 +55,9 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
             best_val_loss = min(val_losses)
             best_hyperparams = current_hyperparams
         ptPC.print_original_decoded_point_clouds(test_dataset, "Lamp", model, args)
-        dict_params[hash(str(args))] = str(args)
+        #dict_params[hash(str(args))] = str(args)
+        dict_params[counter] = str(args)
+        counter = counter + 1
     folder = args.outf
     try:
         os.makedirs(folder)
