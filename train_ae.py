@@ -82,7 +82,7 @@ def print_loss_graph(training_history, val_history, opt):
 
 
 def upload_args_from_json(file_path=os.path.join("parameters", "params.json")):
-    parser = argparse.ArgumentParser(description=f'Random search')
+    parser = argparse.ArgumentParser(description=f'Arguments from json')
     args = parser.parse_args()
     json_params = json.loads(open(file_path).read())
     for option, option_value in json_params.items():
