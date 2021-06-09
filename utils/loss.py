@@ -62,9 +62,11 @@ def abs_density_error(decoded_pc, original_pc, side_cells):
     if n_cells_decoded < max_cell_value:
         points_in_cell_decoded = torch.zeros(max_cell_value).cuda()
         points_in_cell_decoded[:n_cells_decoded] = n_points_in_cell__decoded
+        n_points_in_cell__decoded = points_in_cell_decoded
     if n_cells_original < max_cell_value:
         points_in_cell_original = torch.zeros(max_cell_value).cuda()
         points_in_cell_original[:n_cells_original] = n_points_in_cell__original
+        n_points_in_cell__original = points_in_cell_original
     return torch.sum(
         torch.abs(n_points_in_cell__decoded - n_points_in_cell__original) / (
                     1 + torch.sqrt(n_points_in_cell__original)))
