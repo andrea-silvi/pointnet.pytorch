@@ -48,7 +48,7 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
         # val_losses is the list of losses obtained during validation
         model, val_losses = train_example(args)
         if min(val_losses) < best_val_loss:
-            print(f"--- Best validation loss found! {val_losses[-1]} (previous one: {best_val_loss}), corresponding to "
+            print(f"--- Best validation loss found! {min(val_losses)} (previous one: {best_val_loss}), corresponding to "
                   f"hyperparameters {current_hyperparams.items()}")
             best_val_loss = min(val_losses)
             best_hyperparams = current_hyperparams
