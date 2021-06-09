@@ -364,6 +364,7 @@ if __name__ == '__main__':
     # TODO - remove the following instruction (it overrides all the previous args)
     opt = upload_args_from_json()
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
+    train_example(opt)
     # train_model_by_class(opt)
 
 # TODO - Implement training phase (you should also implement cross-validation for tuning the hyperparameters)

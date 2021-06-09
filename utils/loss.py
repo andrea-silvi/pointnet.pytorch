@@ -49,8 +49,9 @@ def abs_density_error(decoded_pc, original_pc, side_cells):
     # now multiply each point (3 coordinates) with the tensor [1, 2, 4]
     # and then sum the returned tensor along the rows (the final result should be a tensor of length num_points)
     # to each point correspond a CELL ID (a numerical value between 0 and side_cells**3-1)
-    decoded_points_cellId = torch.sum(mapped_decoded_pc * torch.tensor([1, side_cells, side_cells ** 2]), 1)
-    original_points_cellId = torch.sum(mapped_original_pc * torch.tensor([1, side_cells, side_cells ** 2]), 1)
+    coordinate_weights = torch.tensor([1, side_cells, side_cells ** 2]).cuda()
+    decoded_points_cellId = torch.sum(mapped_decoded_pc * coordinate_weights, 1)
+    original_points_cellId = torch.sum(mapped_original_pc * coordinate_weights, 1)
     decoded_points_cellId = decoded_points_cellId.to(torch.int32)
     original_points_cellId = original_points_cellId.to(torch.int32)
     n_points_in_cell__decoded = torch.bincount(decoded_points_cellId)
@@ -59,10 +60,10 @@ def abs_density_error(decoded_pc, original_pc, side_cells):
     n_cells_decoded = len(n_points_in_cell__decoded)
     max_cell_value = max(n_cells_original, n_cells_decoded)
     if n_cells_decoded < max_cell_value:
-        points_in_cell_decoded = torch.zeros(max_cell_value)
+        points_in_cell_decoded = torch.zeros(max_cell_value).cuda()
         points_in_cell_decoded[:n_cells_decoded] = n_points_in_cell__decoded
     if n_cells_original < max_cell_value:
-        points_in_cell_original = torch.zeros(max_cell_value)
+        points_in_cell_original = torch.zeros(max_cell_value).cuda()
         points_in_cell_original[:n_cells_original] = n_points_in_cell__original
     return torch.sum(
         torch.abs(n_points_in_cell__decoded - n_points_in_cell__original) / (
