@@ -40,3 +40,4 @@ indicare il fattore moltiplicativo usato per la loss (al fondo della tabella)...
 2. dropout: dove lo inseriamo? su tutti i layer del decoder? o solo su un paio?
 3. scheduler: conviene usarlo? Quale sarebbe il 'migliore' nel nostro caso?
     usare sia gamma che stepSize come hyperparametri?
+4. early stopping: dopo la 50esima epoca, prima che modello salvare? miglior validation loss o ultimo?
