@@ -220,6 +220,7 @@ def train_example(opt):
             # print_there(text=f"TRAINING: \t Epoch: {epoch}/{n_epoch},\t batch: {i}/{n_batches}")
         gc.collect()
         torch.cuda.empty_cache()
+        train_mean = np.average(training_losses)
 
         # TODO - VALIDATION PHASE
         if not final_training:
@@ -246,9 +247,10 @@ def train_example(opt):
                     # print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
                     val_losses.append(val_loss.item())
 
-                train_mean = np.average(training_losses)
                 val_mean = np.average(val_losses)
                 print(f'\tepoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+        else:
+            print(f'\tepoch: {epoch} , training loss: {train_mean}')
 
         if epoch >= 50:
             early_stopping(val_mean if not final_training else train_mean, autoencoder)
