@@ -105,6 +105,7 @@ class Decoder(nn.Module):
         self.fc2 = nn.Linear(512, 512)
         self.dp2 = nn.Dropout(p=dropout)
         self.fc3 = nn.Linear(512, 680)
+        self.dp3 = nn.Dropout(p=dropout)
         self.fc4 = nn.Linear(680, 880)
         self.fc5 = nn.Linear(880, 1024)
         self.fc6 = nn.Linear(1024, 1024)
@@ -114,8 +115,11 @@ class Decoder(nn.Module):
     def forward(self, x):
         batchsize = x.size()[0]
         x = F.relu(self.fc1(x))
+        x = self.dp1(x)
         x = F.relu(self.fc2(x))
+        x = self.dp2(x)
         x = F.relu(self.fc3(x))
+        x = self.dp3(x)
         x = F.relu(self.fc4(x))
         x = F.relu(self.fc5(x))
         x = F.relu(self.fc6(x))
