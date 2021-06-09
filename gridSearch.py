@@ -47,10 +47,10 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
         print(f"\n\n------------------------------------------------------------------\nParameters: {args}\n")
         # val_losses is the list of losses obtained during validation
         model, val_losses = train_example(args)
-        if val_losses[-1] < best_val_loss:
+        if min(val_losses) < best_val_loss:
             print(f"--- Best validation loss found! {val_losses[-1]} (previous one: {best_val_loss}), corresponding to "
                   f"hyperparameters {current_hyperparams.items()}")
-            best_val_loss = val_losses[-1]
+            best_val_loss = min(val_losses)
             best_hyperparams = current_hyperparams
         ptPC.print_original_decoded_point_clouds(test_dataset, "Lamp", model, args)
         dict_params[hash(str(args))] = str(args)
