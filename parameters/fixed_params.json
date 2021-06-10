@@ -1,8 +1,9 @@
 {
-    "size_encoder": 1024,
-    "weight_decay": [-4, 2],
+    "lr": 0.5e-3,
+    "size_encoder": 512,
+    "weight_decay": 1e-3,
     "scheduler_gamma": 0.5,
-    "nepoch": 5,
+    "nepoch": 20,
     "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0",
     "set_size": 1,
     "batchSize": 32,
@@ -10,11 +11,13 @@
     "workers": 2,
     "outf":  "cls",
     "model": "",
-    "train_class_choice": "None",
-    "test_class_choice": "None",
-    "scheduler_stepSize": 20,
+    "train_class_choice": "Airplane",
+    "test_class_choice": "Airplane",
+    "scheduler_stepSize": 10,
     "dropout": 1,
     "beta_1": 0.9,
     "beta_2": 0.999,
-    "patience": 7
+    "patience": 20,
+    "final_training": 0,
+    "architecture": "original"
 }

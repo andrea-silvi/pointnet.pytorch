@@ -97,11 +97,13 @@ class Decoder(nn.Module):
     ''' Just a lightweight Fully Connected decoder:
     '''
 
-    def __init__(self, num_points=1024, size_encoder=1024):
+    def __init__(self, num_points=1024, size_encoder=1024, dropout=1):
         super(Decoder, self).__init__()
         self.num_points = num_points
         self.fc1 = nn.Linear(size_encoder, 512)
+        self.dp1 = nn.Dropout(p=dropout)
         self.fc2 = nn.Linear(512, 512)
+        self.dp2 = nn.Dropout(p=dropout)
         self.fc3 = nn.Linear(512, 1024)
         self.fc4 = nn.Linear(1024, 1024)
         self.fc5 = nn.Linear(1024, self.num_points * 3)
@@ -110,7 +112,9 @@ class Decoder(nn.Module):
     def forward(self, x):
         batchsize = x.size()[0]
         x = F.relu(self.fc1(x))
+        x = self.dp1(x)
         x = F.relu(self.fc2(x))
+        x = self.dp2(x)
         x = F.relu(self.fc3(x))
         x = F.relu(self.fc4(x))
         x = self.th(self.fc5(x))
@@ -131,7 +135,7 @@ class PointNet_AutoEncoder(nn.Module):
   2. 'num_points' is the parameter controlling the number of points to be generated. In general we want to generate a number of points equal to the number of input points.
   '''
 
-    def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False):
+    def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False, dropout=1):
         super(PointNet_AutoEncoder, self).__init__()
         #print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
@@ -143,7 +147,7 @@ class PointNet_AutoEncoder(nn.Module):
             nn.Linear(512, size_encoder))
 
         # Decoder Definition
-        self.decoder = Decoder(num_points=num_points, size_encoder=size_encoder)
+        self.decoder = Decoder(num_points=num_points, size_encoder=size_encoder, dropout=dropout)
 
     def forward(self, x):
         BS, N, dim = x.size()
