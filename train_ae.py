@@ -186,7 +186,7 @@ def train_example(opt):
     # num_batch = len(dataset) / opt.batchSize
     # TODO - modify number of epochs (from 5 to opt.nepoch)
     #checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
-    checkpoint_path = os.path.join(opt.outf, f"{opt.runNumber}_checkpoint.pt")
+    checkpoint_path = os.path.join(opt.outf, "checkpoint.pt")
     training_history = []
     val_history = []
     gc.collect()
