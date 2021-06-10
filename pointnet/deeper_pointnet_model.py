@@ -104,10 +104,11 @@ class Decoder(nn.Module):
         self.dp1 = nn.Dropout(p=dropout)
         self.fc2 = nn.Linear(512, 512)
         self.dp2 = nn.Dropout(p=dropout)
-        self.fc3 = nn.Linear(512, 680)
+        self.fc3 = nn.Linear(512, 800)
         self.dp3 = nn.Dropout(p=dropout)
-        self.fc4 = nn.Linear(680, 880)
-        self.fc5 = nn.Linear(880, 1024)
+        self.fc4 = nn.Linear(800, 900)
+        self.dp4 = nn.Dropout(p=dropout)
+        self.fc5 = nn.Linear(900, 1024)
         self.fc6 = nn.Linear(1024, 1024)
         self.fc7 = nn.Linear(1024, self.num_points * 3)
         self.th = nn.Tanh()
@@ -121,6 +122,7 @@ class Decoder(nn.Module):
         x = F.relu(self.fc3(x))
         x = self.dp3(x)
         x = F.relu(self.fc4(x))
+        x = self.dp4(x)
         x = F.relu(self.fc5(x))
         x = F.relu(self.fc6(x))
         x = self.th(self.fc7(x))
@@ -148,10 +150,12 @@ class PointNet_DeeperAutoEncoder(nn.Module):
         #  Encoder Definition
         self.encoder = torch.nn.Sequential(
             PointNetfeat(global_feat=True, feature_transform=feature_transform),
-            nn.Linear(1024, 880),
-            nn.ReLU(),
-            nn.Linear(880, 512),
-            nn.ReLU(),
+            nn.Linear(1024, 900),
+            nn.LeakyReLU(),
+            nn.Linear(900, 700),
+            nn.LeakyReLU(),
+            nn.Linear(700, 512),
+            nn.LeakyReLU(),
             nn.Linear(512, size_encoder))
 
         # Decoder Definition
