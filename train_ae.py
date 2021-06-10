@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import numpy as np
 import torch
-from pointnet.pointnet_model import PointNet_AutoEncoder
+from pointnet.model_custom import PointNet_AutoEncoder
 from utils.loss import PointLoss
 import argparse
 import os
