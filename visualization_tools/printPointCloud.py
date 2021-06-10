@@ -57,7 +57,7 @@ def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
 
 
 def savePtsFile(type, category, opt, array):
-    folder = os.path.join(opt.outf, "visualizations", str(hash(str(opt))), category)
+    folder = os.path.join(opt.outf, "visualizations", opt.runNumber, category)
     try:
         os.makedirs(folder)
     except OSError:
