@@ -57,7 +57,7 @@ def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
 
 
 def savePtsFile(type, category, opt, array):
-    folder = os.path.join(opt.outf, "visualizations", category)
+    folder = os.path.join(opt.outf, "visualizations", f"{opt.runNumber}", category)
     try:
         os.makedirs(folder)
     except OSError:
@@ -76,7 +76,7 @@ def print_original_decoded_point_clouds(dataset, category, model, opt):
     original_pc_np = point_cloud_np.cpu().numpy()
     decoded_pc_np = decoded_point_cloud.cpu().data.numpy()
     #printCloudM(point_cloud_np, dec_val_stamp, name=category, opt=opt)
-    original_pc_np = np.reshape(original_pc_np, (1024, 3))
-    decoded_pc_np =np.reshape(decoded_pc_np, (1024, 3))
+    original_pc_np = original_pc_np.reshape((1024, 3))
+    decoded_pc_np = decoded_pc_np.reshape((1024, 3))
     savePtsFile("original", category, opt, original_pc_np)
     savePtsFile("decoded", category, opt, decoded_pc_np)

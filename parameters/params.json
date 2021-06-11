@@ -14,7 +14,7 @@
     "train_class_choice": "Lamp",
     "test_class_choice": "Lamp",
     "scheduler_stepSize": 10,
-    "dropout": [0.5, 1],
+    "dropout": [0.5, 0],
     "beta_1": 0.9,
     "beta_2": 0.999,
     "patience": 20,

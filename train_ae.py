@@ -66,7 +66,8 @@ def print_loss_graph(training_history, val_history, opt):
         os.makedirs(folder)
     except OSError:
         pass
-    with open(os.path.join(folder, f'{hash(str(opt))}_losses.csv'), 'w') as f:
+    #with open(os.path.join(folder, f'{hash(str(opt))}_losses.csv'), 'w') as f:
+    with open(os.path.join(folder, f'{opt.runNumber}_losses.csv'), 'w') as f:
         writer = csv.writer(f)
         if val_history == None:
             writer.writerow(training_history)
@@ -133,6 +134,8 @@ def train_example(opt):
 
     final_training = opt.final_training
     if final_training:
+        if opt.runNumber == 0:
+            print("!!!!!!Final training starts!!!!!!")
         test_dataset = ShapeNetDataset(
             root=opt.dataset,
             split='test',
@@ -169,7 +172,8 @@ def train_example(opt):
     autoencoder = PointNet_DeeperAutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout) \
                     if opt.architecture == "deep" else \
                     PointNet_AutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout)
-
+    if opt.runNumber == 0 and opt.architecture == "deep":
+        print("!!!!!!Training a deeper model!!!!!!")
     # TODO - import pointnet parameters (encoder network)
     if opt.model != '':
         autoencoder.load_state_dict(torch.load(opt.model))
@@ -181,7 +185,8 @@ def train_example(opt):
 
     # num_batch = len(dataset) / opt.batchSize
     # TODO - modify number of epochs (from 5 to opt.nepoch)
-    checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
+    #checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
+    checkpoint_path = os.path.join(opt.outf, "checkpoint.pt")
     training_history = []
     val_history = []
     gc.collect()
@@ -220,6 +225,7 @@ def train_example(opt):
             # print_there(text=f"TRAINING: \t Epoch: {epoch}/{n_epoch},\t batch: {i}/{n_batches}")
         gc.collect()
         torch.cuda.empty_cache()
+        train_mean = np.average(training_losses)
 
         # TODO - VALIDATION PHASE
         if not final_training:
@@ -246,9 +252,10 @@ def train_example(opt):
                     # print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
                     val_losses.append(val_loss.item())
 
-                train_mean = np.average(training_losses)
                 val_mean = np.average(val_losses)
                 print(f'\tepoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+        else:
+            print(f'\tepoch: {epoch} , training loss: {train_mean}')
 
         if epoch >= 50:
             early_stopping(val_mean if not final_training else train_mean, autoencoder)

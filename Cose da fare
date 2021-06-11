@@ -12,7 +12,7 @@ CLASSI DA TESTARE:
 Airplane, Chair, Table,
 Lamp, Car, Motorbike, Mug
 
-----------------------------------settimana 7 giugno
+ CON UNA SOLA CLASSE: nepoch: 50----------------------------------settimana 7 giugno
 1. implementare printPointCloud con possibilità di rotazione
 2. grid search su
     a. dimensione del codice (128, 512, 1024)
@@ -20,8 +20,8 @@ Lamp, Car, Motorbike, Mug
     c. gamma (0.25, 0.5)
     e. weight_decay (1e-3, 1e-4)
     f. dropout (0.5, 1)
-    g. architettura (depper_autoencoder, original_autoencoder)
-TRAIN CON UNA SOLA CLASSE: nepoch: 50
+    g. architettura (deeper_autoencoder, original_autoencoder)
+TRAIN
 TRAIN CON TUTTO IL DATASET: nepoch: 100
 3. validare gli hyperparametri utilizzando solo UNA CLASSE
 4. svolgere il punto precedente due volte, con due classi distinte. Una difficile (chair), una semplice (airplane)
@@ -40,3 +40,8 @@ indicare il fattore moltiplicativo usato per la loss (al fondo della tabella)...
 2. dropout: dove lo inseriamo? su tutti i layer del decoder? o solo su un paio?
 3. scheduler: conviene usarlo? Quale sarebbe il 'migliore' nel nostro caso?
     usare sia gamma che stepSize come hyperparametri?
+4. early stopping: dopo la 50esima epoca, prima che modello salvare? miglior validation loss o ultimo?
+
+-----------------------------------------BUG
+1) nei results 1 loss.csv in più del n. di parametri. hash key non esiste. conviene spostarsi su interi perchè hash
+non è deterministica.
