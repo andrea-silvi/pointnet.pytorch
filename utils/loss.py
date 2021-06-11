@@ -119,4 +119,4 @@ class PointLoss(nn.Module):
         self.cd_weight = cd_weight
 
     def forward(self, array1, array2):
-        return chamfer_distance_numpy(array1, array2, self.cd_weight)loss
+        return chamfer_distance_numpy(array1, array2, self.cd_weight)
