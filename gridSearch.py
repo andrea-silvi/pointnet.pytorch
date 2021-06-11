@@ -38,7 +38,7 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
     test_dataset = ShapeNetDataset(
         root=args.dataset,
         split='test',
-        class_choice="Lamp",
+        class_choice=args.test_class_choice,
         npoints=1024)
 
     counter = 0
@@ -55,7 +55,7 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
                   f"hyperparameters {current_hyperparams.items()}")
             best_val_loss = min(val_losses)
             best_hyperparams = current_hyperparams
-        ptPC.print_original_decoded_point_clouds(test_dataset, "Lamp", model, args)
+        ptPC.print_original_decoded_point_clouds(test_dataset, args.test_class_choice, model, args)
         #dict_params[hash(str(args))] = str(args)
         dict_params[counter] = str(args)
         counter = counter + 1
@@ -64,12 +64,12 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
         os.makedirs(folder)
     except OSError:
         pass
-    with open(os.path.join(folder, f'hash_params.json'), 'w') as f:
+    with open(os.path.join(folder, f'params_dictionary.json'), 'w') as f:
         json.dump(dict_params, f)
     return best_hyperparams
 
 
-def wrapper_train_by_class(json_path=os.path.join("parameters", "fixed_params.json")):
+def wrapper_train_by_class(json_path=os.path.join("parameters", "params.json")):
     json_params = json.loads(open(json_path).read())
     parser = argparse.ArgumentParser(description=f'Training models with different classes')
     args = parser.parse_args()
@@ -81,7 +81,7 @@ def wrapper_train_by_class(json_path=os.path.join("parameters", "fixed_params.js
 
 
 if __name__ == '__main__':
-    best_params = optimize_params()
-    print(f"Best parameters: \t{best_params}\n")
+    best_params = optimize_params(filepath=os.path.join("parameters", "gridsearch_table_parameters.json"))
+    #print(f"Best parameters: \t{best_params}\n")
     # wrapper_train_by_class()
 

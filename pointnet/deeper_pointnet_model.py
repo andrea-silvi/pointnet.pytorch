@@ -97,32 +97,28 @@ class Decoder(nn.Module):
     ''' Just a lightweight Fully Connected decoder:
     '''
 
-    def __init__(self, num_points=1024, size_encoder=1024, dropout=1):
+    def __init__(self, num_points=1024, size_encoder=1024, dropout=0):
         super(Decoder, self).__init__()
         self.num_points = num_points
         self.fc1 = nn.Linear(size_encoder, 512)
-        self.dp1 = nn.Dropout(p=dropout)
         self.fc2 = nn.Linear(512, 512)
-        self.dp2 = nn.Dropout(p=dropout)
         self.fc3 = nn.Linear(512, 680)
-        self.dp3 = nn.Dropout(p=dropout)
         self.fc4 = nn.Linear(680, 880)
         self.fc5 = nn.Linear(880, 1024)
         self.fc6 = nn.Linear(1024, 1024)
         self.fc7 = nn.Linear(1024, self.num_points * 3)
+        self.dp = nn.Dropout(p=dropout)
         self.th = nn.Tanh()
 
     def forward(self, x):
         batchsize = x.size()[0]
         x = F.relu(self.fc1(x))
-        x = self.dp1(x)
         x = F.relu(self.fc2(x))
-        x = self.dp2(x)
         x = F.relu(self.fc3(x))
-        x = self.dp3(x)
         x = F.relu(self.fc4(x))
         x = F.relu(self.fc5(x))
         x = F.relu(self.fc6(x))
+        x = self.dp(x)
         x = self.th(self.fc7(x))
         x = x.view(batchsize, 3, self.num_points)
         return x
