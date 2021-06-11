@@ -253,9 +253,9 @@ def train_example(opt):
                     val_losses.append(val_loss.item())
 
                 val_mean = np.average(val_losses)
-                print(f'\tepoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+                print(f'\tepoch: {epoch}, training loss: {train_mean}, validation loss: {val_mean}')
         else:
-            print(f'\tepoch: {epoch} , training loss: {train_mean}')
+            print(f'\tepoch: {epoch}, training loss: {train_mean}')
 
         if epoch >= 50:
             early_stopping(val_mean if not final_training else train_mean, autoencoder)
