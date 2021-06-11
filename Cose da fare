@@ -12,7 +12,7 @@ CLASSI DA TESTARE:
 Airplane, Chair, Table,
 Lamp, Car, Motorbike, Mug
 
-----------------------------------settimana 7 giugno
+ CON UNA SOLA CLASSE: nepoch: 50----------------------------------settimana 7 giugno
 1. implementare printPointCloud con possibilità di rotazione
 2. grid search su
     a. dimensione del codice (128, 512, 1024)
@@ -21,7 +21,7 @@ Lamp, Car, Motorbike, Mug
     e. weight_decay (1e-3, 1e-4)
     f. dropout (0.5, 1)
     g. architettura (deeper_autoencoder, original_autoencoder)
-TRAIN CON UNA SOLA CLASSE: nepoch: 50
+TRAIN
 TRAIN CON TUTTO IL DATASET: nepoch: 100
 3. validare gli hyperparametri utilizzando solo UNA CLASSE
 4. svolgere il punto precedente due volte, con due classi distinte. Una difficile (chair), una semplice (airplane)
