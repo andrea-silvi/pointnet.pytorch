@@ -133,7 +133,7 @@ class PointNet_AutoEncoder(nn.Module):
   2. 'num_points' is the parameter controlling the number of points to be generated. In general we want to generate a number of points equal to the number of input points.
   '''
 
-    def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False, dropout=1):
+    def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False, dropout=0):
         super(PointNet_AutoEncoder, self).__init__()
         #print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
