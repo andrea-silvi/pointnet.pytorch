@@ -1,5 +1,5 @@
 {
-    "lr": [1e-3, 0.5e-3],
+    "lr": 0.5e-3,
     "size_encoder": [128, 512, 1024],
     "weight_decay": [0, 1e-3],
     "scheduler_gamma": 0.5,
@@ -19,5 +19,5 @@
     "beta_2": 0.999,
     "patience": 20,
     "final_training": 0,
-    "architecture": "deep"
+    "architecture": "original"
 }
