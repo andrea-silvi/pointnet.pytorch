@@ -90,6 +90,7 @@ def upload_args_from_json(file_path=os.path.join("parameters", "fixed_params.jso
         if option_value == 'None':
             option_value = None
         setattr(args, option, option_value)
+    setattr(args, "runNumber", 0)
     return args
 
 

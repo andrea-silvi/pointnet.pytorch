@@ -12,12 +12,6 @@ CLASSI DA TESTARE:
 Airplane, Chair, Table,
 Lamp, Car, Motorbike, Mug
 
-# TODO - DA INSERIRE NEL REPORT:
-1. nell'attachment del report, aggiungere motivazioni relative alla scelta del LEARNING RATE:
-    mostrare tabella con risultati della grid search (con classe singola Lamp).
-    Per semplicità, proietta i dati considerando SIZE_ENCODER e ARCHITECTURE prefissati (in modo da ridurre la
-    quantità di dati in tabella)
-
 ----------------------------------settimana 7 giugno
 1. implementare printPointCloud con possibilità di rotazione
 2. grid search su
@@ -35,9 +29,6 @@ TRAIN CON TUTTO IL DATASET: nepoch: 100
 6. utilizzare gli hyperparametri ottenuti ai punti precedenti (usa quelli ottenuti con la classe difficile)
     per trainare il MODELLO MIGLIORE.
     PROVA DIVERSI VALORI DI: size_encoder (2-3, anche più grandi di 1024)
-
------------------------------------LOSS
-indicare il fattore moltiplicativo usato per la loss (al fondo della tabella)... sulla relazione finale
 
 -----------------------------------DOMANDE:
 1. quale classe usare per fare cross validation? una qualsiasi oppure usiamo quella più complessa?
