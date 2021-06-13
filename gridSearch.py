@@ -2,7 +2,7 @@ import json
 import os
 from random import uniform
 import argparse
-from train_ae import train_example, train_model_by_class
+from train_ae import train_example
 from utils.dataset import ShapeNetDataset
 from visualization_tools import printPointCloud as ptPC
 import torch
