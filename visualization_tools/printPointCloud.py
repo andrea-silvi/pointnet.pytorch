@@ -56,18 +56,22 @@ def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
     plt.savefig(os.path.join(folder, f"{hash(str(opt))}_{name}.png"))
 
 
-def savePtsFile(type, category, opt, array):
+def savePtsFile(type, category, opt, array, run=None, train=True):
     folder = os.path.join(opt.outf, "visualizations", f"{opt.runNumber}", category)
+    string_neptune_path = f"point_clouds/train/{category}/{type}" if train else \
+        f"point_clouds/test/{category}/{type}"
     try:
         os.makedirs(folder)
     except OSError:
         pass
     file = open(os.path.join(folder, f"{type}.pts"), 'w')
     np.savetxt(file, array)
+    if run is not None:
+        run[string_neptune_path].uploadFiles(file)
     file.close()
 
 
-def print_original_decoded_point_clouds(dataset, category, model, opt, run=None):
+def print_original_decoded_point_clouds(dataset, category, model, opt, run=None, train=True):
     categories = [category]
     if category is None:
         categories = dataset.get_categories()
@@ -83,9 +87,5 @@ def print_original_decoded_point_clouds(dataset, category, model, opt, run=None)
             #printCloudM(point_cloud_np, dec_val_stamp, name=category, opt=opt)
             original_pc_np = original_pc_np.reshape((1024, 3))
             decoded_pc_np = decoded_pc_np.reshape((1024, 3))
-            if run is not None:
-                run[f"point_clouds/{category}/original_{index}"] = original_pc_np
-                run[f"point_clouds/{category}/decoded_{index}"] = decoded_pc_np
-            else:
-                savePtsFile(f"original_n{index}", category, opt, original_pc_np)
-                savePtsFile(f"decoded_n{index}", category, opt, decoded_pc_np)
+            savePtsFile(f"original_n{index}", category, opt, original_pc_np, run, train)
+            savePtsFile(f"decoded_n{index}", category, opt, decoded_pc_np, run, train)
