@@ -1,0 +1,11 @@
+1. grid search su table (classe più numerosa... usa questa come motivazione della classe scelta)
+    su parametri lr, weight_decay, ....
+2. risultati size encoder classe per classe
+3. nell'attachment del report, aggiungere motivazioni relative alla scelta del LEARNING RATE:
+    mostrare tabella con risultati della grid search (con classe singola).
+    Per semplicità, proietta i dati considerando SIZE_ENCODER e ARCHITECTURE prefissati (in modo da ridurre la
+    quantità di dati in tabella)
+
+
+-----------------------------------LOSS
+indicare il fattore moltiplicativo usato per la loss (al fondo della tabella)... sulla relazione finale

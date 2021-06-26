@@ -104,3 +104,6 @@ class ShapeNetDataset(data.Dataset):
         point_set = point_set / dist  # scale
         point_set = torch.from_numpy(point_set)
         return point_set
+
+    def get_categories(self):
+        return self.meta.keys()

@@ -1,8 +1,8 @@
 {
-    "lr": [0.5e-2, 1e-3, 0.5e-3],
+    "lr": 1e-3,
     "size_encoder": [128, 512, 1024],
-    "weight_decay": [1e-3, 1e-4],
-    "scheduler_gamma": [0.25, 0.5],
+    "weight_decay": 1e-4,
+    "scheduler_gamma": 0.5,
     "nepoch": 50,
     "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0",
     "set_size": 1,
@@ -13,11 +13,11 @@
     "model": "",
     "train_class_choice": "Lamp",
     "test_class_choice": "Lamp",
-    "scheduler_stepSize": 10,
-    "dropout": [0.5, 1],
+    "scheduler_stepSize": 20,
+    "dropout": [0.5, 0],
     "beta_1": 0.9,
     "beta_2": 0.999,
     "patience": 20,
     "final_training": 0,
-    "architecture": "original"
+    "architecture": ["original", "deep"]
 }

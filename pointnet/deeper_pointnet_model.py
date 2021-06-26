@@ -97,34 +97,28 @@ class Decoder(nn.Module):
     ''' Just a lightweight Fully Connected decoder:
     '''
 
-    def __init__(self, num_points=1024, size_encoder=1024, dropout=1):
+    def __init__(self, num_points=1024, size_encoder=1024, dropout=0):
         super(Decoder, self).__init__()
         self.num_points = num_points
         self.fc1 = nn.Linear(size_encoder, 512)
-        self.dp1 = nn.Dropout(p=dropout)
         self.fc2 = nn.Linear(512, 512)
-        self.dp2 = nn.Dropout(p=dropout)
-        self.fc3 = nn.Linear(512, 800)
-        self.dp3 = nn.Dropout(p=dropout)
-        self.fc4 = nn.Linear(800, 900)
-        self.dp4 = nn.Dropout(p=dropout)
-        self.fc5 = nn.Linear(900, 1024)
+        self.fc3 = nn.Linear(512, 680)
+        self.fc4 = nn.Linear(680, 880)
+        self.fc5 = nn.Linear(880, 1024)
         self.fc6 = nn.Linear(1024, 1024)
         self.fc7 = nn.Linear(1024, self.num_points * 3)
+        self.dp = nn.Dropout(p=dropout)
         self.th = nn.Tanh()
 
     def forward(self, x):
         batchsize = x.size()[0]
         x = F.relu(self.fc1(x))
-        x = self.dp1(x)
         x = F.relu(self.fc2(x))
-        x = self.dp2(x)
         x = F.relu(self.fc3(x))
-        x = self.dp3(x)
         x = F.relu(self.fc4(x))
-        x = self.dp4(x)
         x = F.relu(self.fc5(x))
         x = F.relu(self.fc6(x))
+        x = self.dp(x)
         x = self.th(self.fc7(x))
         x = x.view(batchsize, 3, self.num_points)
         return x
@@ -143,19 +137,17 @@ class PointNet_DeeperAutoEncoder(nn.Module):
   2. 'num_points' is the parameter controlling the number of points to be generated. In general we want to generate a number of points equal to the number of input points.
   '''
 
-    def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False, dropout=1):
+    def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False, dropout=0):
         super(PointNet_DeeperAutoEncoder, self).__init__()
         #print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
         #  Encoder Definition
         self.encoder = torch.nn.Sequential(
             PointNetfeat(global_feat=True, feature_transform=feature_transform),
-            nn.Linear(1024, 900),
-            nn.LeakyReLU(),
-            nn.Linear(900, 700),
-            nn.LeakyReLU(),
-            nn.Linear(700, 512),
-            nn.LeakyReLU(),
+            nn.Linear(1024, 880),
+            nn.ReLU(),
+            nn.Linear(880, 512),
+            nn.ReLU(),
             nn.Linear(512, size_encoder))
 
         # Decoder Definition

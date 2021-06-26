@@ -65,16 +65,27 @@ def savePtsFile(type, category, opt, array):
     file = open(os.path.join(folder, f"{type}.pts"), 'w')
     np.savetxt(file, array)
     file.close()
-def print_original_decoded_point_clouds(dataset, category, model, opt):
-    point_cloud = dataset.get_point_cloud_by_category(category)
-    model.eval()
-    point_cloud_np = point_cloud.cuda()
-    point_cloud_np = torch.unsqueeze(point_cloud_np, 0)
-    decoded_point_cloud = model(point_cloud_np)
-    original_pc_np = point_cloud_np.cpu().numpy()
-    decoded_pc_np = decoded_point_cloud.cpu().data.numpy()
-    #printCloudM(point_cloud_np, dec_val_stamp, name=category, opt=opt)
-    original_pc_np = original_pc_np.reshape((1024, 3))
-    decoded_pc_np = decoded_pc_np.reshape((1024, 3))
-    savePtsFile("original", category, opt, original_pc_np)
-    savePtsFile("decoded", category, opt, decoded_pc_np)
+
+
+def print_original_decoded_point_clouds(dataset, category, model, opt, run=None):
+    categories = [category]
+    if category is None:
+        categories = dataset.get_categories()
+    for category in categories:
+        for index in range(10):
+            point_cloud = dataset.get_point_cloud_by_category(category, index=index)
+            model.eval()
+            point_cloud_np = point_cloud.cuda()
+            point_cloud_np = torch.unsqueeze(point_cloud_np, 0)
+            decoded_point_cloud = model(point_cloud_np)
+            original_pc_np = point_cloud_np.cpu().numpy()
+            decoded_pc_np = decoded_point_cloud.cpu().data.numpy()
+            #printCloudM(point_cloud_np, dec_val_stamp, name=category, opt=opt)
+            original_pc_np = original_pc_np.reshape((1024, 3))
+            decoded_pc_np = decoded_pc_np.reshape((1024, 3))
+            if run is not None:
+                run[f"point_clouds/{category}/original_{index}"] = original_pc_np
+                run[f"point_clouds/{category}/decoded_{index}"] = decoded_pc_np
+            else:
+                savePtsFile(f"original_n{index}", category, opt, original_pc_np)
+                savePtsFile(f"decoded_n{index}", category, opt, decoded_pc_np)

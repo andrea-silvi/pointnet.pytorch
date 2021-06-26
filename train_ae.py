@@ -1,5 +1,4 @@
 from __future__ import print_function
-
 import numpy as np
 import torch
 from pointnet.pointnet_model import PointNet_AutoEncoder
@@ -14,7 +13,11 @@ import gc
 import csv
 from utils.early_stopping import EarlyStopping
 import sys, json
+
+from visualization_tools import printPointCloud
 from visualization_tools.printPointCloud import *
+
+import neptune.new as neptune
 
 
 # the following function doesn't make the training of the network!!
@@ -82,14 +85,15 @@ def print_loss_graph(training_history, val_history, opt):
     # plt.savefig('loss.png', bbox_inches='tight',)
 
 
-def upload_args_from_json(file_path=os.path.join("parameters", "params.json")):
-    parser = argparse.ArgumentParser(description=f'Random search')
+def upload_args_from_json(file_path=os.path.join("parameters", "fixed_params.json")):
+    parser = argparse.ArgumentParser(description=f'Arguments from json')
     args = parser.parse_args()
     json_params = json.loads(open(file_path).read())
     for option, option_value in json_params.items():
         if option_value == 'None':
             option_value = None
         setattr(args, option, option_value)
+    setattr(args, "runNumber", 0)
     return args
 
 
@@ -116,6 +120,9 @@ def test_example(opt, test_dataloader, model):
 
 
 def train_example(opt):
+    run = neptune.init(project='vittoriop.17/PointNet',
+                   api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI0NzIxMmE4MC05OTBjLTRiMTMtODAzZi0yNzgzZTMwNjQ3OGUifQ==')
+    run['params'] = vars(opt)
     random_seed = 43
     torch.manual_seed(random_seed)
     # writer = SummaryWriter('runs/train_ae_experiment_1')
@@ -182,7 +189,7 @@ def train_example(opt):
                            weight_decay=opt.weight_decay)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=opt.scheduler_stepSize, gamma=opt.scheduler_gamma)
     autoencoder.cuda()
-
+    run["model"] = autoencoder
     # num_batch = len(dataset) / opt.batchSize
     # TODO - modify number of epochs (from 5 to opt.nepoch)
     #checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
@@ -215,6 +222,7 @@ def train_example(opt):
             # if epoch==0 and i==0:
             # print(f"LOSS: first epoch, first batch: \t {loss}")
             training_losses.append(loss.item())
+            run["train/batch_loss"].log(loss.item())
             # if opt.feature_transform:
             #     loss += feature_transform_regularizer(trans_feat) * 0.001
             loss.backward()
@@ -226,6 +234,7 @@ def train_example(opt):
         gc.collect()
         torch.cuda.empty_cache()
         train_mean = np.average(training_losses)
+        run["train/epoch_loss"].log(train_mean)
 
         # TODO - VALIDATION PHASE
         if not final_training:
@@ -251,11 +260,13 @@ def train_example(opt):
                     # if j==0:
                     # print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
                     val_losses.append(val_loss.item())
-
+                    run["validation/batch_loss"].log(val_loss.item())
                 val_mean = np.average(val_losses)
-                print(f'\tepoch: {epoch} , training loss: {train_mean}, validation loss: {val_mean}')
+                run["validation/epoch_loss"].log(val_mean)
+
+                print(f'\tepoch: {epoch}, training loss: {train_mean}, validation loss: {val_mean}')
         else:
-            print(f'\tepoch: {epoch} , training loss: {train_mean}')
+            print(f'\tepoch: {epoch}, training loss: {train_mean}')
 
         if epoch >= 50:
             early_stopping(val_mean if not final_training else train_mean, autoencoder)
@@ -284,16 +295,24 @@ def train_example(opt):
         # Commented: early_stopping already saves the best model
     torch.save(autoencoder.state_dict(), checkpoint_path)
     autoencoder.load_state_dict(torch.load(checkpoint_path))
+    printPointCloud.print_original_decoded_point_clouds(ShapeNetDataset(
+            root=opt.dataset,
+            split='test',
+            class_choice=opt.test_class_choice,
+            npoints=opt.num_points,
+            set_size=opt.set_size), opt.test_class_choice, autoencoder, opt, run)
 
     # TODO PLOT LOSSES
     # print(training_history)
     # print(val_history)
     if not final_training:
         print_loss_graph(training_history, val_history, opt)
+        run.stop()
         return autoencoder, val_history
     else:
         print_loss_graph(training_history, None, opt)
         test_loss = test_example(opt, test_dataloader, autoencoder)
+        run.stop()
         return autoencoder, test_loss
 
 
@@ -371,6 +390,7 @@ if __name__ == '__main__':
     # TODO - remove the following instruction (it overrides all the previous args)
     opt = upload_args_from_json()
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
+    train_example(opt)
     # train_model_by_class(opt)
 
 # TODO - Implement training phase (you should also implement cross-validation for tuning the hyperparameters)
