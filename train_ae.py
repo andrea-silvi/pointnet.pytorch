@@ -301,7 +301,7 @@ def train_example(opt):
             split='test',
             class_choice=opt.test_class_choice,
             npoints=opt.num_points,
-            set_size=opt.set_size), opt.test_class_choice, autoencoder, opt, run)
+            set_size=opt.set_size), opt.test_class_choice, autoencoder, opt, run, train=True)
 
     # TODO PLOT LOSSES
     # print(training_history)
