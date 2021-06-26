@@ -2,7 +2,7 @@ import json
 import os
 from random import uniform
 import argparse
-from train_ae import train_example, train_model_by_class
+from train_ae import train_example
 from utils.dataset import ShapeNetDataset
 from visualization_tools import printPointCloud as ptPC
 import torch
@@ -69,15 +69,15 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
     return best_hyperparams
 
 
-def wrapper_train_by_class(json_path=os.path.join("parameters", "params.json")):
-    json_params = json.loads(open(json_path).read())
-    parser = argparse.ArgumentParser(description=f'Training models with different classes')
-    args = parser.parse_args()
-    for hyperparam, value in json_params.items():
-        if value == 'None':
-            value = None
-        setattr(args, hyperparam, value)
-    train_model_by_class(args)
+# def wrapper_train_by_class(json_path=os.path.join("parameters", "params.json")):
+#     json_params = json.loads(open(json_path).read())
+#     parser = argparse.ArgumentParser(description=f'Training models with different classes')
+#     args = parser.parse_args()
+#     for hyperparam, value in json_params.items():
+#         if value == 'None':
+#             value = None
+#         setattr(args, hyperparam, value)
+#     train_model_by_class(args)
 
 
 if __name__ == '__main__':
