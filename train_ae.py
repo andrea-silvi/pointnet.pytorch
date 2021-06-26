@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 import numpy as np
 import torch
 from pointnet.pointnet_model import PointNet_AutoEncoder
@@ -112,9 +113,9 @@ def test_example(opt, test_dataloader, model):
         # update test loss
         test_loss += loss.item() * data.size(0)
 
-    # calculate and print avg test loss
-    test_loss = test_loss / len(test_dataloader.dataset)
-    print('Test Loss: {:.6f}\n'.format(test_loss))
+    # caculate and print avg test loss
+    #     test_loss = test_loss / len(test_dataloader.dataset)
+    #     print('Test Loss: {:.6f}\n'.format(test_loss))l
 
     return test_loss
 
@@ -313,50 +314,52 @@ def train_example(opt):
         print_loss_graph(training_history, None, opt)
         test_loss = test_example(opt, test_dataloader, autoencoder)
         run.stop()
+        print_original_decoded_point_clouds(test_dataset, opt.test_class_choice, autoencoder, opt)
+
         return autoencoder, test_loss
 
 
-def train_model_by_class(opt):
-    worst_test_loss = 0
-    worst_class = ""
-    dataset = ShapeNetDataset(
-        root=opt.dataset,
-        class_choice=None,
-        split='test',
-        npoints=opt.num_points)
-    classes = ["Airplane", "Car", "Chair", "Lamp", "Motorbike", "Mug", "Table"]
-    base_folder = opt.outf
-    for class_choice in classes:
-        setattr(opt, "train_class_choice", class_choice)
-        setattr(opt, "test_class_choice", class_choice)
-        output_folder = os.path.join(base_folder, class_choice)
-        setattr(opt, "outf", output_folder)
-        # setattr(opt, "final_training", 0)
-        # Implement for transfer learning
-        # settattr(opt, "model", "path of trained general model")
-        try:
-            os.makedirs(output_folder)
-        except Exception as e:
-            print(e)
-        print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
-        model, test_loss = train_example(opt)
-
-        if test_loss[-1] > worst_test_loss:
-            print(f"--- Worst validation loss found! {test_loss[-1]} (previous one: {worst_test_loss})")
-            worst_class = class_choice
-            worst_test_loss = test_loss[-1]
-
-        # Save final model + final test loss
-        # torch.save(model.state_dict(), os.path.join(opt.outf, "final_checkpoint.pt"))
-        # with open(os.path.join(opt.outf, "test_loss.csv"), 'w') as f:
-        #     writer = csv.writer(f)
-        #     writer.writerow(test_loss)
-        #
-        # print(opt)
-        # model, val_loss = train_example(opt)
-        # for class_choice_pc in classes:
-        #     print_original_decoded_point_clouds(dataset, class_choice_pc, model, opt)
-    print(f"Worst class: {worst_class},\t last loss: {worst_test_loss} (20th epoch)")
+# def train_model_by_class(opt):
+#     worst_test_loss = 0
+#     worst_class = ""
+#     dataset = ShapeNetDataset(
+#         root=opt.dataset,
+#         class_choice=None,
+#         split='test',
+#         npoints=opt.num_points)
+#     classes = ["Airplane", "Car", "Chair", "Lamp", "Motorbike", "Mug", "Table"]
+#     base_folder = opt.outf
+#     for class_choice in classes:
+#         setattr(opt, "train_class_choice", class_choice)
+#         setattr(opt, "test_class_choice", class_choice)
+#         output_folder = os.path.join(base_folder, class_choice)
+#         setattr(opt, "outf", output_folder)
+#         # setattr(opt, "final_training", 0)
+#         # Implement for transfer learning
+#         # settattr(opt, "model", "path of trained general model")
+#         try:
+#             os.makedirs(output_folder)
+#         except Exception as e:
+#             print(e)
+#         print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
+#         model, test_loss = train_example(opt)
+#
+#         if test_loss[-1] > worst_test_loss:
+#             print(f"--- Worst validation loss found! {test_loss[-1]} (previous one: {worst_test_loss})")
+#             worst_class = class_choice
+#             worst_test_loss = test_loss[-1]
+#
+#         # Save final model + final test loss
+#         # torch.save(model.state_dict(), os.path.join(opt.outf, "final_checkpoint.pt"))
+#         # with open(os.path.join(opt.outf, "test_loss.csv"), 'w') as f:
+#         #     writer = csv.writer(f)
+#         #     writer.writerow(test_loss)
+#         #
+#         # print(opt)
+#         # model, val_loss = train_example(opt)
+#         # for class_choice_pc in classes:
+#         #     print_original_decoded_point_clouds(dataset, class_choice_pc, model, opt)
+#     print(f"Worst class: {worst_class},\t last loss: {worst_test_loss} (20th epoch)")
 
 
 if __name__ == '__main__':
