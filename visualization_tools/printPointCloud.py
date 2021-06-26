@@ -67,7 +67,7 @@ def savePtsFile(type, category, opt, array, run=None, train=True):
     file = open(os.path.join(folder, f"{type}.pts"), 'w')
     np.savetxt(file, array)
     if run is not None:
-        run[string_neptune_path].uploadFiles(file)
+        run[string_neptune_path].upload(file.name)
     file.close()
 
 

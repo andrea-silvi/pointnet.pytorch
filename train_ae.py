@@ -114,7 +114,7 @@ def test_example(opt, test_dataloader, model):
         test_loss += loss.item() * data.size(0)
 
     # caculate and print avg test loss
-    #     test_loss = test_loss / len(test_dataloader.dataset)
+    test_loss = test_loss / len(test_dataloader.dataset)
     #     print('Test Loss: {:.6f}\n'.format(test_loss))l
 
     return test_loss
@@ -313,9 +313,9 @@ def train_example(opt):
     else:
         print_loss_graph(training_history, None, opt)
         test_loss = test_example(opt, test_dataloader, autoencoder)
+        run["test/loss"].log(test_loss)
+        print_original_decoded_point_clouds(test_dataset, opt.test_class_choice, autoencoder, opt, run, train=False)
         run.stop()
-        print_original_decoded_point_clouds(test_dataset, opt.test_class_choice, autoencoder, opt)
-
         return autoencoder, test_loss
 
 
