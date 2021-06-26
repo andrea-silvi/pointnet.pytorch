@@ -120,8 +120,8 @@ def test_example(opt, test_dataloader, model):
 
 
 def train_example(opt):
-    run = neptune.init(project='vittoriop.17/PointNet',
-                   api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI0NzIxMmE4MC05OTBjLTRiMTMtODAzZi0yNzgzZTMwNjQ3OGUifQ==')
+    run = neptune.init(project='fbtattix/Pointnet',
+                       api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJiNjM5YTI3Yi03NmNmLTRhMjctOWY5MC0zNDA1ZTFkNWI4MjMifQ==')
     run['params'] = vars(opt)
     random_seed = 43
     torch.manual_seed(random_seed)
