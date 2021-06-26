@@ -11,13 +11,13 @@
     "workers": 2,
     "outf":  "cls",
     "model": "",
-    "train_class_choice": "Lamp",
-    "test_class_choice": "Lamp",
+    "train_class_choice": "Chair",
+    "test_class_choice": "Chair",
     "scheduler_stepSize": 20,
-    "dropout": [0.5, 0],
+    "dropout":  0,
     "beta_1": 0.9,
     "beta_2": 0.999,
     "patience": 20,
     "final_training": 0,
-    "architecture": ["original", "deep"]
+    "architecture": "original"
 }
