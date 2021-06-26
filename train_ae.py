@@ -123,7 +123,7 @@ def train_example(opt):
     neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
     run = neptune.init(project=neptune_info['project'],
                    api_token=neptune_info['api_token'])
-    run['sys/id'] = opt.train_class_choice+"_"+opt.size_encoder
+    run['sys/id'] = opt.train_class_choice+"_"+str(opt.size_encoder)
     run['params'] = vars(opt)
     random_seed = 43
     torch.manual_seed(random_seed)
