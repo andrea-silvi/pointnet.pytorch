@@ -64,11 +64,11 @@ def savePtsFile(type, category, opt, array, run=None, train=True):
         os.makedirs(folder)
     except OSError:
         pass
-    file = open(os.path.join(folder, f"{type}.pts"), 'w')
-    np.savetxt(file, array)
+    pc_file = open(os.path.join(folder, f"{type}.pts"), 'w')
+    np.savetxt(pc_file, array)
     if run is not None:
-        run[string_neptune_path].uploadFiles(file)
-    file.close()
+        run[string_neptune_path].upload(pc_file.name)
+    pc_file.close()
 
 
 def print_original_decoded_point_clouds(dataset, category, model, opt, run=None, train=True):
