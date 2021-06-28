@@ -319,6 +319,7 @@ def train_example(opt):
         # print_loss_graph(training_history, None, opt)
         run["model_dictionary"].upload(checkpoint_path)
         test_loss = test_example(opt, test_dataloader, autoencoder)
+        run["test/loss"].log(test_loss.item())
         run.stop()
         return autoencoder, test_loss
 
