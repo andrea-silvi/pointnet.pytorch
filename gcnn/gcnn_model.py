@@ -103,6 +103,7 @@ class DGCNN(nn.Module):
         x1 = F.adaptive_max_pool1d(x, 1).view(batch_size, -1)
         x2 = F.adaptive_avg_pool1d(x, 1).view(batch_size, -1)
         x = torch.cat((x1, x2), 1)
+        x = x.view(batch_size, self.args.size_encoder*2)
         return x
 
 class Decoder(nn.Module):
