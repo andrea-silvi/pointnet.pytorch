@@ -1,3 +1,4 @@
+parameters/neptune_params.json
 .ipynb_checkpoints/
 data
 *.pyc
@@ -8,4 +9,3 @@ shapenetcore_partanno_segmentation_benchmark_v0/
 cls/
 seg/
 *.egg-info/
-parameters/neptune_params.json

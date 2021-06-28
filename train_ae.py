@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from pointnet.pointnet_model import PointNet_AutoEncoder
 from pointnet.deeper_pointnet_model import PointNet_DeeperAutoEncoder
+from gcnn.gcnn_model import DGCNN_AutoEncoder
 from utils.loss import PointLoss
 import argparse
 import os
@@ -63,27 +64,27 @@ import neptune.new as neptune
 #     print(loss)
 #
 
-def print_loss_graph(training_history, val_history, opt):
-    folder = os.path.join(opt.outf, "grid_search_results")
-    try:
-        os.makedirs(folder)
-    except OSError:
-        pass
-    #with open(os.path.join(folder, f'{hash(str(opt))}_losses.csv'), 'w') as f:
-    with open(os.path.join(folder, f'{opt.runNumber}_losses.csv'), 'w') as f:
-        writer = csv.writer(f)
-        if val_history == None:
-            writer.writerow(training_history)
-        else:
-            writer.writerows([training_history, val_history])
-    # plt.plot(training_history, '-bx')
-    # plt.plot(val_history, '-rx')
-    # plt.xlabel('epoch')
-    # plt.ylabel('loss')
-    # plt.legend(['Training', 'Validation'])
-    # plt.title('Loss vs. No. of epochs')
-    # plt.savefig('loss.png', bbox_inches='tight',)
-
+# def print_loss_graph(training_history, val_history, opt):
+#     folder = os.path.join(opt.outf, "grid_search_results")
+#     try:
+#         os.makedirs(folder)
+#     except OSError:
+#         pass
+#     #with open(os.path.join(folder, f'{hash(str(opt))}_losses.csv'), 'w') as f:
+#     with open(os.path.join(folder, f'{opt.runNumber}_losses.csv'), 'w') as f:
+#         writer = csv.writer(f)
+#         if val_history == None:
+#             writer.writerow(training_history)
+#         else:
+#             writer.writerows([training_history, val_history])
+#     # plt.plot(training_history, '-bx')
+#     # plt.plot(val_history, '-rx')
+#     # plt.xlabel('epoch')
+#     # plt.ylabel('loss')
+#     # plt.legend(['Training', 'Validation'])
+#     # plt.title('Loss vs. No. of epochs')
+#     # plt.savefig('loss.png', bbox_inches='tight',)
+#
 
 def upload_args_from_json(file_path=os.path.join("parameters", "fixed_params.json")):
     parser = argparse.ArgumentParser(description=f'Arguments from json')
@@ -106,7 +107,9 @@ def test_example(opt, test_dataloader, model):
 
     for data in test_dataloader:
         # forward pass: compute predicted outputs by passing inputs to the model
+        data = data.cuda()
         output = model(data)
+        output = output.cuda()
         # calculate the loss
         loss = chamfer_loss(data, output)
         # update test loss
@@ -176,13 +179,16 @@ def train_example(opt):
         os.makedirs(opt.outf)
     except OSError:
         pass
-
-    autoencoder = PointNet_DeeperAutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout) \
+    if opt.type_encoder=="pointnet":
+        autoencoder = PointNet_DeeperAutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout) \
                     if opt.architecture == "deep" else \
                     PointNet_AutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout)
+    elif opt.type_encoder=='dgcnn':
+        autoencoder = DGCNN_AutoEncoder(opt)
+    else:
+        raise IOError(f"Invalid type_eccoder!! Should be 'pointnet' or 'dgcnn'. Found: {opt.type_encoder}")
     if opt.runNumber == 0 and opt.architecture == "deep":
         print("!!!!!!Training a deeper model!!!!!!")
-    # TODO - import pointnet parameters (encoder network)
     if opt.model != '':
         autoencoder.load_state_dict(torch.load(opt.model))
 
@@ -192,7 +198,6 @@ def train_example(opt):
     autoencoder.cuda()
     run["model"] = autoencoder
     # num_batch = len(dataset) / opt.batchSize
-    # TODO - modify number of epochs (from 5 to opt.nepoch)
     #checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
     checkpoint_path = os.path.join(opt.outf, "checkpoint.pt")
     training_history = []
@@ -202,7 +207,7 @@ def train_example(opt):
     early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=checkpoint_path)
     # flag_stampa = False
     n_epoch = opt.nepoch
-    n_batches = np.floor(training_dataset.__len__() / opt.batchSize)
+    # n_batches = np.floor(training_dataset.__len__() / opt.batchSize)
     for epoch in range(n_epoch):
         if epoch > 0:
             scheduler.step()
@@ -307,11 +312,12 @@ def train_example(opt):
     # print(training_history)
     # print(val_history)
     if not final_training:
-        print_loss_graph(training_history, val_history, opt)
+        # print_loss_graph(training_history, val_history, opt)
         run.stop()
         return autoencoder, val_history
     else:
-        print_loss_graph(training_history, None, opt)
+        # print_loss_graph(training_history, None, opt)
+        run["model_dictionary"].upload(checkpoint_path)
         test_loss = test_example(opt, test_dataloader, autoencoder)
         run.stop()
         return autoencoder, test_loss

@@ -1,5 +1,5 @@
 {
-    "lr": 0.1e-3,
+    "lr": 0.0005,
     "size_encoder": [128, 512, 1024],
     "weight_decay": 0,
     "scheduler_gamma": 0.5,
@@ -11,13 +11,15 @@
     "workers": 2,
     "outf":  "cls",
     "model": "",
-    "train_class_choice": "Motorbike",
-    "test_class_choice": "Motorbike",
+    "train_class_choice": "Mug",
+    "test_class_choice": "Mug",
     "scheduler_stepSize": 20,
     "dropout": 0,
     "beta_1": 0.9,
     "beta_2": 0.999,
     "patience": 20,
     "final_training": 0,
-    "architecture": "original"
+    "architecture": "original",
+    "type_encoder":"pointnet",
+    "k": 20
 }

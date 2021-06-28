@@ -12,6 +12,7 @@ import sys
 import copy
 import math
 import numpy as np
+import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -24,7 +25,6 @@ def knn(x, k):
 
     idx = pairwise_distance.topk(k=k, dim=-1)[1]  # (batch_size, num_points, k)
     return idx
-
 
 def get_graph_feature(x, k=20, idx=None):
     batch_size = x.size(0)
@@ -54,7 +54,7 @@ def get_graph_feature(x, k=20, idx=None):
 
 
 class DGCNN(nn.Module):
-    def __init__(self, args, output_channels=40):
+    def __init__(self, args):
         super(DGCNN, self).__init__()
         self.args = args
         self.k = args.k
@@ -63,7 +63,7 @@ class DGCNN(nn.Module):
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)
         self.bn4 = nn.BatchNorm2d(256)
-        self.bn5 = nn.BatchNorm1d(args.emb_dims)
+        self.bn5 = nn.BatchNorm1d(args.size_encoder)
 
         self.conv1 = nn.Sequential(nn.Conv2d(6, 64, kernel_size=1, bias=False),
                                    self.bn1,
@@ -77,45 +77,114 @@ class DGCNN(nn.Module):
         self.conv4 = nn.Sequential(nn.Conv2d(128 * 2, 256, kernel_size=1, bias=False),
                                    self.bn4,
                                    nn.LeakyReLU(negative_slope=0.2))
-        self.conv5 = nn.Sequential(nn.Conv1d(512, args.emb_dims, kernel_size=1, bias=False),
+        self.conv5 = nn.Sequential(nn.Conv1d(512, args.size_encoder, kernel_size=1, bias=False),
                                    self.bn5,
                                    nn.LeakyReLU(negative_slope=0.2))
-        self.linear1 = nn.Linear(args.emb_dims * 2, 512, bias=False)
-        self.bn6 = nn.BatchNorm1d(512)
-        self.dp1 = nn.Dropout(p=args.dropout)
-        self.linear2 = nn.Linear(512, 256)
-        self.bn7 = nn.BatchNorm1d(256)
-        self.dp2 = nn.Dropout(p=args.dropout)
-        self.linear3 = nn.Linear(256, output_channels)
+        # TODO - la rete riportata sopra rappresenta l'ENCODER
+        # TODO - inserire i seguenti layer all'interno di una classe DECODER
+
 
     def forward(self, x):
         batch_size = x.size(0)
         x = get_graph_feature(x, k=self.k)
         x = self.conv1(x)
         x1 = x.max(dim=-1, keepdim=False)[0]
-
         x = get_graph_feature(x1, k=self.k)
         x = self.conv2(x)
         x2 = x.max(dim=-1, keepdim=False)[0]
-
         x = get_graph_feature(x2, k=self.k)
         x = self.conv3(x)
         x3 = x.max(dim=-1, keepdim=False)[0]
-
         x = get_graph_feature(x3, k=self.k)
         x = self.conv4(x)
         x4 = x.max(dim=-1, keepdim=False)[0]
-
         x = torch.cat((x1, x2, x3, x4), dim=1)
-
         x = self.conv5(x)
         x1 = F.adaptive_max_pool1d(x, 1).view(batch_size, -1)
         x2 = F.adaptive_avg_pool1d(x, 1).view(batch_size, -1)
         x = torch.cat((x1, x2), 1)
-
-        x = F.leaky_relu(self.bn6(self.linear1(x)), negative_slope=0.2)
-        x = self.dp1(x)
-        x = F.leaky_relu(self.bn7(self.linear2(x)), negative_slope=0.2)
-        x = self.dp2(x)
-        x = self.linear3(x)
+        x = x.view(batch_size, self.args.size_encoder*2)
         return x
+
+class Decoder(nn.Module):
+    ''' Just a lightweight Fully Connected decoder:
+    '''
+
+    class Decoder(nn.Module):
+        ''' Just a lightweight Fully Connected decoder:
+        '''
+
+        def __init__(self, args):
+            super(Decoder, self).__init__()
+            self.num_points = args.num_points
+            self.linear1 = nn.Linear(args.size_encoder * 2, 512, bias=False)
+            self.bn1 = nn.BatchNorm1d(512)
+            self.linear2 = nn.Linear(512, 512)
+            self.bn2 = nn.BatchNorm1d(512)
+            self.linear3 = nn.Linear(512, 1024)
+            self.bn3 = nn.BatchNorm1d(1024)
+            self.linear4 = nn.Linear(1024, 1024)
+            self.bn4 = nn.BatchNorm1d(1024)
+            self.dp = nn.Dropout(p=args.dropout)
+            self.linear5 = nn.Linear(1024, 1024 * 3)
+            self.th = nn.Tanh()
+
+        def forward(self, x):
+            batch_size = x.size(0)
+            x = F.leaky_relu(self.bn1(self.linear1(x)), negative_slope=0.2)
+            x = F.leaky_relu(self.bn2(self.linear2(x)), negative_slope=0.2)
+            x = F.leaky_relu(self.bn3(self.linear3(x)), negative_slope=0.2)
+            x = F.leaky_relu(self.bn4(self.linear4(x)), negative_slope=0.2)
+            x = self.dp(x)
+            x = self.th(self.linear5(x))
+            x = x.view(batch_size, 3, self.num_points)
+            return x
+
+class DGCNN_AutoEncoder(nn.Module):
+    '''
+  Complete AutoEncoder Model:
+  Given an input point cloud X:
+      - Step 1: encode the point cloud X into a latent low-dimensional code
+      - Step 2: Starting from the code geneate a representation Y as close as possible to the original input X
+
+
+  '''
+
+    def __init__(self, args):
+        super(DGCNN_AutoEncoder, self).__init__()
+        #print("PointNet AE Init - num_points (# generated): %d" % num_points)
+
+        # Encoder Definition
+        self.encoder = DGCNN(args=args)
+
+
+        # Decoder Definition
+        self.decoder = Decoder(args=args)
+
+    def forward(self, x):
+        BS, N, dim = x.size()
+        #print(x.size())
+        assert dim == 3, f"Fail: expecting 3 (x-y-z) as last tensor dimension! Found {dim}"
+
+        #  Refactoring batch for 'PointNetfeat' processing
+        x = x.permute(0, 2, 1)  # [BS, N, 3] => [BS, 3, N]
+
+        # Encoding
+        code = self.encoder(x)  # [BS, 3, N] => [BS, size_encoder]
+
+        # Decoding
+        decoded = self.decoder(code)  #  [BS, 3, num_points]
+
+        # Reshaping decoded output before returning..
+        decoded = decoded.permute(0, 2, 1)  #  [BS, 3, num_points] => [BS, num_points, 3]
+
+        return decoded
+
+if __name__=='__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--k", type=int, default=0.999, help="decay rate for second moment")
+    parser.add_argument("--size_encoder", type=int, default=7, help="How long to wait after last time val loss improved.")
+    parser.add_argument("--dropout", type=int, default=0, help="How long to wait after last time val loss improved.")
+    opt = parser.parse_args()
+    model = DGCNN(opt)
+    model.forward(torch.rand((32, 3, 1024)))
