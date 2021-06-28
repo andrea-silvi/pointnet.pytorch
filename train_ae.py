@@ -121,8 +121,9 @@ def test_example(opt, test_dataloader, model):
 
 
 def train_example(opt):
-    run = neptune.init(project='vittoriop.17/PointNet', tags=[opt.train_class_choice, opt.size_encoder, opt.type_encoder],
-                   api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI0NzIxMmE4MC05OTBjLTRiMTMtODAzZi0yNzgzZTMwNjQ3OGUifQ==')
+    neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
+    run = neptune.init(project=neptune_info['project'],
+                   api_token=neptune_info['api_token'])
     run['params'] = vars(opt)
     random_seed = 43
     torch.manual_seed(random_seed)
@@ -316,6 +317,7 @@ def train_example(opt):
         return autoencoder, val_history
     else:
         # print_loss_graph(training_history, None, opt)
+        run["model_dictionary"].upload(checkpoint_path)
         test_loss = test_example(opt, test_dataloader, autoencoder)
         run.stop()
         return autoencoder, test_loss
