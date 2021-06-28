@@ -107,7 +107,9 @@ def test_example(opt, test_dataloader, model):
 
     for data in test_dataloader:
         # forward pass: compute predicted outputs by passing inputs to the model
+        data = data.cuda()
         output = model(data)
+        output = output.cuda()
         # calculate the loss
         loss = chamfer_loss(data, output)
         # update test loss
