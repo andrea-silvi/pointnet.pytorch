@@ -3,8 +3,7 @@ import numpy as np
 import torch
 from pointnet.pointnet_model import PointNet_AutoEncoder
 from pointnet.deeper_pointnet_model import PointNet_DeeperAutoEncoder
-from gcnn.gcnn_model import GCNN_AutoEncoder
-from gcnn.gcnn_model import *
+from gcnn.gcnn_model import DGCNN_AutoEncoder
 from utils.loss import PointLoss
 import argparse
 import os
@@ -183,8 +182,7 @@ def train_example(opt):
                     if opt.architecture == "deep" else \
                     PointNet_AutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout)
     elif opt.type_encoder=='dgcnn':
-        # N.B.: DGCNN è solo l'encoder!
-        autoencoder = GCNN_AutoEncoder(opt)
+        autoencoder = DGCNN_AutoEncoder(opt)
     else:
         raise IOError(f"Invalid type_eccoder!! Should be 'pointnet' or 'dgcnn'. Found: {opt.type_encoder}")
     if opt.runNumber == 0 and opt.architecture == "deep":

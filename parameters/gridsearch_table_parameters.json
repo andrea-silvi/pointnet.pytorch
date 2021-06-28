@@ -20,5 +20,6 @@
     "patience": 20,
     "final_training": 0,
     "architecture": "original",
-    "type_encoder":"pointnet"
+    "type_encoder":"pointnet",
+    "k": 20
 }

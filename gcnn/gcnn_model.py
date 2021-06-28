@@ -111,6 +111,7 @@ class Decoder(nn.Module):
 
     def __init__(self, args):
         super(Decoder, self).__init__()
+        self.num_points = args.num_points
         self.linear1 = nn.Linear(args.size_encoder * 2, 512, bias=False)
         self.bn1 = nn.BatchNorm1d(512)
         self.dp1 = nn.Dropout(p=args.dropout)
@@ -129,7 +130,7 @@ class Decoder(nn.Module):
         x = x.view(batch_size, 3, self.num_points)
         return x
 
-class GCNN_AutoEncoder(nn.Module):
+class DGCNN_AutoEncoder(nn.Module):
     '''
   Complete AutoEncoder Model:
   Given an input point cloud X:
@@ -139,8 +140,8 @@ class GCNN_AutoEncoder(nn.Module):
 
   '''
 
-    def __init__(self, args, output_channels):
-        super(GCNN_AutoEncoder, self).__init__()
+    def __init__(self, args):
+        super(DGCNN_AutoEncoder, self).__init__()
         #print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
         # Encoder Definition
