@@ -186,7 +186,7 @@ def train_example(opt):
     elif opt.type_encoder=='dgcnn':
         autoencoder = DGCNN_AutoEncoder(opt)
     else:
-        raise IOError(f"Invalid type_eccoder!! Should be 'pointnet' or 'dgcnn'. Found: {opt.type_encoder}")
+        raise IOError(f"Invalid type_encoder!! Should be 'pointnet' or 'dgcnn'. Found: {opt.type_encoder}")
     if opt.runNumber == 0 and opt.architecture == "deep":
         print("!!!!!!Training a deeper model!!!!!!")
     if opt.model != '':

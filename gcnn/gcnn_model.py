@@ -110,35 +110,32 @@ class Decoder(nn.Module):
     ''' Just a lightweight Fully Connected decoder:
     '''
 
-    class Decoder(nn.Module):
-        ''' Just a lightweight Fully Connected decoder:
-        '''
 
-        def __init__(self, args):
-            super(Decoder, self).__init__()
-            self.num_points = args.num_points
-            self.linear1 = nn.Linear(args.size_encoder * 2, 512, bias=False)
-            self.bn1 = nn.BatchNorm1d(512)
-            self.linear2 = nn.Linear(512, 512)
-            self.bn2 = nn.BatchNorm1d(512)
-            self.linear3 = nn.Linear(512, 1024)
-            self.bn3 = nn.BatchNorm1d(1024)
-            self.linear4 = nn.Linear(1024, 1024)
-            self.bn4 = nn.BatchNorm1d(1024)
-            self.dp = nn.Dropout(p=args.dropout)
-            self.linear5 = nn.Linear(1024, 1024 * 3)
-            self.th = nn.Tanh()
+    def __init__(self, args):
+        super(Decoder, self).__init__()
+        self.num_points = args.num_points
+        self.linear1 = nn.Linear(args.size_encoder * 2, 512, bias=False)
+        self.bn1 = nn.BatchNorm1d(512)
+        self.linear2 = nn.Linear(512, 512)
+        self.bn2 = nn.BatchNorm1d(512)
+        self.linear3 = nn.Linear(512, 1024)
+        self.bn3 = nn.BatchNorm1d(1024)
+        self.linear4 = nn.Linear(1024, 1024)
+        self.bn4 = nn.BatchNorm1d(1024)
+        self.dp = nn.Dropout(p=args.dropout)
+        self.linear5 = nn.Linear(1024, 1024 * 3)
+        self.th = nn.Tanh()
 
-        def forward(self, x):
-            batch_size = x.size(0)
-            x = F.relu(self.bn1(self.linear1(x)))
-            x = F.relu(self.bn2(self.linear2(x)))
-            x = F.relu(self.bn3(self.linear3(x)))
-            x = F.relu(self.bn4(self.linear4(x)))
-            x = self.dp(x)
-            x = self.th(self.linear5(x))
-            x = x.view(batch_size, 3, self.num_points)
-            return x
+    def forward(self, x):
+        batch_size = x.size(0)
+        x = F.relu(self.bn1(self.linear1(x)))
+        x = F.relu(self.bn2(self.linear2(x)))
+        x = F.relu(self.bn3(self.linear3(x)))
+        x = F.relu(self.bn4(self.linear4(x)))
+        x = self.dp(x)
+        x = self.th(self.linear5(x))
+        x = x.view(batch_size, 3, self.num_points)
+        return x
 
 class DGCNN_AutoEncoder(nn.Module):
     '''
