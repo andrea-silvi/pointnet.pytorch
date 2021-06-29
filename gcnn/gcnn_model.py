@@ -120,7 +120,7 @@ class Decoder(nn.Module):
         self.linear2 = nn.Linear(1280, 1536)
         self.bn2 = nn.BatchNorm1d(1536)
         self.linear3 = nn.Linear(1536, 1792)
-        self.bn3 = nn.BatchNorm1d(1536)
+        self.bn3 = nn.BatchNorm1d(1792)
         self.linear4 = nn.Linear(1792, 2048)
         self.bn4 = nn.BatchNorm1d(2048)
         self.dp = nn.Dropout(p=args.dropout)
