@@ -111,27 +111,28 @@ class Decoder(nn.Module):
     '''
 
 
+
     def __init__(self, args):
         super(Decoder, self).__init__()
         self.num_points = args.num_points
-        self.linear1 = nn.Linear(args.size_encoder * 2, 512, bias=False)
-        self.bn1 = nn.BatchNorm1d(512)
-        self.linear2 = nn.Linear(512, 512)
-        self.bn2 = nn.BatchNorm1d(512)
-        self.linear3 = nn.Linear(512, 1024)
-        self.bn3 = nn.BatchNorm1d(1024)
-        self.linear4 = nn.Linear(1024, 1024)
-        self.bn4 = nn.BatchNorm1d(1024)
+        self.linear1 = nn.Linear(args.size_encoder * 2, 1024, bias=False)
+        self.bn1 = nn.BatchNorm1d(1024)
+        self.linear2 = nn.Linear(1024, 1280)
+        self.bn2 = nn.BatchNorm1d(1280)
+        self.linear3 = nn.Linear(1280, 1280)
+        self.bn3 = nn.BatchNorm1d(1280)
+        self.linear4 = nn.Linear(1280, 1536)
+        self.bn4 = nn.BatchNorm1d(1536)
         self.dp = nn.Dropout(p=args.dropout)
-        self.linear5 = nn.Linear(1024, 1024 * 3)
+        self.linear5 = nn.Linear(1536, self.num_points * 3)
         self.th = nn.Tanh()
 
     def forward(self, x):
         batch_size = x.size(0)
-        x = F.relu(self.bn1(self.linear1(x)))
-        x = F.relu(self.bn2(self.linear2(x)))
-        x = F.relu(self.bn3(self.linear3(x)))
-        x = F.relu(self.bn4(self.linear4(x)))
+        x = F.leaky_relu(self.bn1(self.linear1(x)), negative_slope=0.2)
+        x = F.leaky_relu(self.bn2(self.linear2(x)), negative_slope=0.2)
+        x = F.leaky_relu(self.bn3(self.linear3(x)), negative_slope=0.2)
+        x = F.leaky_relu(self.bn4(self.linear4(x)), negative_slope=0.2)
         x = self.dp(x)
         x = self.th(self.linear5(x))
         x = x.view(batch_size, 3, self.num_points)
