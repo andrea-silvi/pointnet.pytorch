@@ -1,6 +1,6 @@
 {
     "lr": 0.0005,
-    "size_encoder": 512,
+    "size_encoder": 1024,
     "weight_decay": 0,
     "scheduler_gamma": 0.5,
     "nepoch": 200,
@@ -11,8 +11,8 @@
     "workers": 2,
     "outf":  "cls",
     "model": "",
-    "train_class_choice": "Chair",
-    "test_class_choice": "Chair",
+    "train_class_choice": "None",
+    "test_class_choice": "None",
     "scheduler_stepSize": 20,
     "dropout": 0,
     "beta_1": 0.9,
@@ -20,6 +20,6 @@
     "patience": 30,
     "final_training": 1,
     "architecture": "original",
-    "type_encoder": "pointnet",
+    "type_encoder":"pointnet",
     "k": 20
 }

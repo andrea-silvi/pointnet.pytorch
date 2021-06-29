@@ -125,6 +125,7 @@ def test_example(opt, test_dataloader, model):
 def train_example(opt):
     neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
     run = neptune.init(project=neptune_info['project'],
+                       tags=[str(opt.type_encoder), str(opt.train_class_choice), str(opt.size_encoder)],
                    api_token=neptune_info['api_token'])
     run['params'] = vars(opt)
     random_seed = 43
@@ -319,6 +320,7 @@ def train_example(opt):
         # print_loss_graph(training_history, None, opt)
         run["model_dictionary"].upload(checkpoint_path)
         test_loss = test_example(opt, test_dataloader, autoencoder)
+        run["test/loss"].log(test_loss.item())
         run.stop()
         return autoencoder, test_loss
 
