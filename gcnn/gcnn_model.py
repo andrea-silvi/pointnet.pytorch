@@ -155,9 +155,9 @@ class DGCNN_AutoEncoder(nn.Module):
         # Encoder Definition
         self.encoder = torch.nn.Sequential(
             DGCNN(args=args),
-            nn.Linear(2048, 1536),
+            nn.Linear(args.size_encoder, int(2*args.size_encoder/3)),
             nn.ReLU(),
-            nn.Linear(1536, 1024))
+            nn.Linear(int(2*args.size_encoder/3), 1024))
 
 
         # Decoder Definition
