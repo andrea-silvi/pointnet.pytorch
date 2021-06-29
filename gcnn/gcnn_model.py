@@ -32,7 +32,7 @@ def get_graph_feature(x, k=20, idx=None):
     x = x.view(batch_size, -1, num_points)
     if idx is None:
         idx = knn(x, k=k)  # (batch_size, num_points, k)
-    device = torch.device('cpu')
+    device = torch.device('cuda')
 
     idx_base = torch.arange(0, batch_size, device=device).view(-1, 1, 1) * num_points
 
@@ -54,7 +54,7 @@ def get_graph_feature(x, k=20, idx=None):
 
 
 class DGCNN(nn.Module):
-    def __init__(self, args, output_channels=1024*3):
+    def __init__(self, args):
         super(DGCNN, self).__init__()
         self.args = args
         self.k = args.k
@@ -82,57 +82,103 @@ class DGCNN(nn.Module):
                                    nn.LeakyReLU(negative_slope=0.2))
         # TODO - la rete riportata sopra rappresenta l'ENCODER
         # TODO - inserire i seguenti layer all'interno di una classe DECODER
-        self.linear1 = nn.Linear(args.size_encoder * 2, 512, bias=False)
-        self.bn6 = nn.BatchNorm1d(512)
-        self.dp1 = nn.Dropout(p=args.dropout)
-        self.linear2 = nn.Linear(512, 256)
-        self.bn7 = nn.BatchNorm1d(256)
-        self.dp2 = nn.Dropout(p=args.dropout)
-        self.linear3 = nn.Linear(256, output_channels)
+
 
     def forward(self, x):
         batch_size = x.size(0)
-        print(f"Input x size: {x.size()}")
         x = get_graph_feature(x, k=self.k)
-        print(f"x size after get_graph_feature {x.size()}")
         x = self.conv1(x)
-        print(f"x size after conv1: {x.size()}")
         x1 = x.max(dim=-1, keepdim=False)[0]
-        print(f"x1 size after max operation: {x1.size()}")
         x = get_graph_feature(x1, k=self.k)
-        print(f"x size after get_graph_feature: {x.size()}")
         x = self.conv2(x)
-        print(f"x size after convs: {x.size()}")
         x2 = x.max(dim=-1, keepdim=False)[0]
-        print(f"x2 size after max operation: {x2.size()}")
         x = get_graph_feature(x2, k=self.k)
-        print(f"x size after get_graph_feature: {x.size()}")
         x = self.conv3(x)
-        print(f"x size after conv3: {x.size()}")
         x3 = x.max(dim=-1, keepdim=False)[0]
-        print(f"x3 size after max operation: {x3.size()}")
         x = get_graph_feature(x3, k=self.k)
-        print(f"x size after get_graph_feature: {x.size()}")
         x = self.conv4(x)
-        print(f"x size after conv4: {x.size()}")
         x4 = x.max(dim=-1, keepdim=False)[0]
-        print(f"x4 size after max operation: {x4.size()}")
         x = torch.cat((x1, x2, x3, x4), dim=1)
-        print(f"x size after concatenation of x1, x2, x3, x4: {x.size()}")
         x = self.conv5(x)
-        print(f"x size after conv5: {x.size()}")
         x1 = F.adaptive_max_pool1d(x, 1).view(batch_size, -1)
-        print(f"x1 size after adaptive max pool: {x1.size()}")
         x2 = F.adaptive_avg_pool1d(x, 1).view(batch_size, -1)
-        print(f"x2 size after adaptive avg pool: {x2.size()}")
         x = torch.cat((x1, x2), 1)
-        print(f"x size after concatenation x1, x2: {x.size()}")
-        x = F.leaky_relu(self.bn6(self.linear1(x)), negative_slope=0.2)
-        x = self.dp1(x)
-        x = F.leaky_relu(self.bn7(self.linear2(x)), negative_slope=0.2)
-        x = self.dp2(x)
-        x = self.linear3(x)
+        x = x.view(batch_size, self.args.size_encoder*2)
         return x
+
+class Decoder(nn.Module):
+    ''' Just a lightweight Fully Connected decoder:
+    '''
+
+    class Decoder(nn.Module):
+        ''' Just a lightweight Fully Connected decoder:
+        '''
+
+        def __init__(self, args):
+            super(Decoder, self).__init__()
+            self.num_points = args.num_points
+            self.linear1 = nn.Linear(args.size_encoder * 2, 512, bias=False)
+            self.bn1 = nn.BatchNorm1d(512)
+            self.linear2 = nn.Linear(512, 512)
+            self.bn2 = nn.BatchNorm1d(512)
+            self.linear3 = nn.Linear(512, 1024)
+            self.bn3 = nn.BatchNorm1d(1024)
+            self.linear4 = nn.Linear(1024, 1024)
+            self.bn4 = nn.BatchNorm1d(1024)
+            self.dp = nn.Dropout(p=args.dropout)
+            self.linear5 = nn.Linear(1024, 1024 * 3)
+            self.th = nn.Tanh()
+
+        def forward(self, x):
+            batch_size = x.size(0)
+            x = F.leaky_relu(self.bn1(self.linear1(x)), negative_slope=0.2)
+            x = F.leaky_relu(self.bn2(self.linear2(x)), negative_slope=0.2)
+            x = F.leaky_relu(self.bn3(self.linear3(x)), negative_slope=0.2)
+            x = F.leaky_relu(self.bn4(self.linear4(x)), negative_slope=0.2)
+            x = self.dp(x)
+            x = self.th(self.linear5(x))
+            x = x.view(batch_size, 3, self.num_points)
+            return x
+
+class DGCNN_AutoEncoder(nn.Module):
+    '''
+  Complete AutoEncoder Model:
+  Given an input point cloud X:
+      - Step 1: encode the point cloud X into a latent low-dimensional code
+      - Step 2: Starting from the code geneate a representation Y as close as possible to the original input X
+
+
+  '''
+
+    def __init__(self, args):
+        super(DGCNN_AutoEncoder, self).__init__()
+        #print("PointNet AE Init - num_points (# generated): %d" % num_points)
+
+        # Encoder Definition
+        self.encoder = DGCNN(args=args)
+
+
+        # Decoder Definition
+        self.decoder = Decoder(args=args)
+
+    def forward(self, x):
+        BS, N, dim = x.size()
+        #print(x.size())
+        assert dim == 3, f"Fail: expecting 3 (x-y-z) as last tensor dimension! Found {dim}"
+
+        #  Refactoring batch for 'PointNetfeat' processing
+        x = x.permute(0, 2, 1)  # [BS, N, 3] => [BS, 3, N]
+
+        # Encoding
+        code = self.encoder(x)  # [BS, 3, N] => [BS, size_encoder]
+
+        # Decoding
+        decoded = self.decoder(code)  #  [BS, 3, num_points]
+
+        # Reshaping decoded output before returning..
+        decoded = decoded.permute(0, 2, 1)  #  [BS, 3, num_points] => [BS, num_points, 3]
+
+        return decoded
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()

@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from pointnet.pointnet_model import PointNet_AutoEncoder
 from pointnet.deeper_pointnet_model import PointNet_DeeperAutoEncoder
-from gcnn.gcnn_model import *
+from gcnn.gcnn_model import DGCNN_AutoEncoder
 from utils.loss import PointLoss
 import argparse
 import os
@@ -107,7 +107,9 @@ def test_example(opt, test_dataloader, model):
 
     for data in test_dataloader:
         # forward pass: compute predicted outputs by passing inputs to the model
+        data = data.cuda()
         output = model(data)
+        output = output.cuda()
         # calculate the loss
         loss = chamfer_loss(data, output)
         # update test loss
@@ -182,9 +184,7 @@ def train_example(opt):
                     if opt.architecture == "deep" else \
                     PointNet_AutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout)
     elif opt.type_encoder=='dgcnn':
-        # N.B.: DGCNN è solo l'encoder!
-        autoencoder = DGCNN(opt)
-        raise Exception("Implementa DECODER dgcnn")
+        autoencoder = DGCNN_AutoEncoder(opt)
     else:
         raise IOError(f"Invalid type_eccoder!! Should be 'pointnet' or 'dgcnn'. Found: {opt.type_encoder}")
     if opt.runNumber == 0 and opt.architecture == "deep":
@@ -319,6 +319,7 @@ def train_example(opt):
         # print_loss_graph(training_history, None, opt)
         run["model_dictionary"].upload(checkpoint_path)
         test_loss = test_example(opt, test_dataloader, autoencoder)
+        run["test/loss"].log(test_loss.item())
         run.stop()
         return autoencoder, test_loss
 
