@@ -131,7 +131,7 @@ class Decoder(nn.Module):
         self.bn7 = nn.BatchNorm1d(1024)
         self.dp = nn.Dropout(p=args.dropout)
         self.linear8 = nn.Linear(1024, self.num_points*3)
-        self.re = nn.ReLU()
+        self.tan = nn.Tanh()
 
     def forward(self, x):
         batch_size = x.size(0)
@@ -143,7 +143,7 @@ class Decoder(nn.Module):
         x = F.leaky_relu(self.bn6(self.linear6(x)), negative_slope=0.2)
         x = F.leaky_relu(self.bn7(self.linear7(x)), negative_slope=0.2)
         x = self.dp(x)
-        x = self.re(self.linear8(x))
+        x = self.tan(self.linear8(x))
         x = x.view(batch_size, 3, self.num_points)
         return x
 
