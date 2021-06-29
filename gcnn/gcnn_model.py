@@ -153,7 +153,6 @@ class DGCNN_AutoEncoder(nn.Module):
         #print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
         # Encoder Definition
-        self.encoder = DGCNN(args=args)
         self.encoder = torch.nn.Sequential(
             DGCNN(args=args),
             nn.Linear(2048, 1536),
