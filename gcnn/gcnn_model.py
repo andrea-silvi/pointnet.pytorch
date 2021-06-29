@@ -106,44 +106,35 @@ class DGCNN(nn.Module):
         x = x.view(batch_size, self.args.size_encoder*2)
         return x
 
-
-
 class Decoder(nn.Module):
     ''' Just a lightweight Fully Connected decoder:
     '''
 
+
+
     def __init__(self, args):
         super(Decoder, self).__init__()
         self.num_points = args.num_points
-        self.linear1 = nn.Linear(args.size_encoder * 2, 600, bias=False)
-        self.bn1 = nn.BatchNorm1d(600)
-        self.linear2 = nn.Linear(600, 800)
-        self.bn2 = nn.BatchNorm1d(800)
-        self.linear3 = nn.Linear(800, 1000)
-        self.bn3 = nn.BatchNorm1d(1000)
-        #self.linear4 = nn.Linear(800, 900)
-        #self.bn4 = nn.BatchNorm1d(900)
-        #self.linear5 = nn.Linear(900, 1000)
-        #self.bn5 = nn.BatchNorm1d(1000)
-        self.linear6 = nn.Linear(1000, 2000)
-        self.bn6 = nn.BatchNorm1d(2000)
-        self.linear7 = nn.Linear(2000, 1024)
-        self.bn7 = nn.BatchNorm1d(1024)
+        self.linear1 = nn.Linear(args.size_encoder, 1280, bias=False)
+        self.bn1 = nn.BatchNorm1d(1280)
+        self.linear2 = nn.Linear(1280, 1536)
+        self.bn2 = nn.BatchNorm1d(1536)
+        self.linear3 = nn.Linear(1536, 1792)
+        self.bn3 = nn.BatchNorm1d(1792)
+        self.linear4 = nn.Linear(1792, 2048)
+        self.bn4 = nn.BatchNorm1d(2048)
         self.dp = nn.Dropout(p=args.dropout)
-        self.linear8 = nn.Linear(1024, self.num_points*3)
-        self.tan = nn.Tanh()
+        self.linear5 = nn.Linear(2048, self.num_points * 3)
+        self.th = nn.Tanh()
 
     def forward(self, x):
         batch_size = x.size(0)
         x = F.leaky_relu(self.bn1(self.linear1(x)), negative_slope=0.2)
         x = F.leaky_relu(self.bn2(self.linear2(x)), negative_slope=0.2)
         x = F.leaky_relu(self.bn3(self.linear3(x)), negative_slope=0.2)
-        #x = F.leaky_relu(self.bn4(self.linear4(x)), negative_slope=0.2)
-        #x = F.leaky_relu(self.bn5(self.linear5(x)), negative_slope=0.2)
-        x = F.leaky_relu(self.bn6(self.linear6(x)), negative_slope=0.2)
-        x = F.leaky_relu(self.bn7(self.linear7(x)), negative_slope=0.2)
+        x = F.leaky_relu(self.bn4(self.linear4(x)), negative_slope=0.2)
         x = self.dp(x)
-        x = self.tan(self.linear8(x))
+        x = self.th(self.linear5(x))
         x = x.view(batch_size, 3, self.num_points)
         return x
 
@@ -162,7 +153,11 @@ class DGCNN_AutoEncoder(nn.Module):
         #print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
         # Encoder Definition
-        self.encoder = DGCNN(args=args)
+        self.encoder = torch.nn.Sequential(
+            DGCNN(args=args),
+            nn.Linear(2048, 1536),
+            nn.ReLU(),
+            nn.Linear(1536, 1024))
 
 
         # Decoder Definition
