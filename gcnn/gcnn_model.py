@@ -131,10 +131,10 @@ class Decoder(nn.Module):
 
         def forward(self, x):
             batch_size = x.size(0)
-            x = F.leaky_relu(self.bn1(self.linear1(x)), negative_slope=0.2)
-            x = F.leaky_relu(self.bn2(self.linear2(x)), negative_slope=0.2)
-            x = F.leaky_relu(self.bn3(self.linear3(x)), negative_slope=0.2)
-            x = F.leaky_relu(self.bn4(self.linear4(x)), negative_slope=0.2)
+            x = F.relu(self.bn1(self.linear1(x)))
+            x = F.relu(self.bn2(self.linear2(x)))
+            x = F.relu(self.bn3(self.linear3(x)))
+            x = F.relu(self.bn4(self.linear4(x)))
             x = self.dp(x)
             x = self.th(self.linear5(x))
             x = x.view(batch_size, 3, self.num_points)
