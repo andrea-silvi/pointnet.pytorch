@@ -141,6 +141,7 @@ class Decoder(nn.Module):
         x = F.leaky_relu(self.bn4(self.linear4(x)), negative_slope=0.2)
         x = F.leaky_relu(self.bn5(self.linear5(x)), negative_slope=0.2)
         x = F.leaky_relu(self.bn6(self.linear6(x)), negative_slope=0.2)
+        x = F.leaky_relu(self.bn7(self.linear7(x)), negative_slope=0.2)
         x = self.dp(x)
         x = self.re(self.linear8(x))
         x = x.view(batch_size, 3, self.num_points)
