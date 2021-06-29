@@ -157,7 +157,7 @@ class DGCNN_AutoEncoder(nn.Module):
             DGCNN(args=args),
             nn.Linear(args.size_encoder, int(2*args.size_encoder/3)),
             nn.ReLU(),
-            nn.Linear(int(2*args.size_encoder/3), 1024))
+            nn.Linear(int(2*args.size_encoder/3), args.size_encoder))
 
 
         # Decoder Definition
