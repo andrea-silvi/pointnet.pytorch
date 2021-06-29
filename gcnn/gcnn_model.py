@@ -115,24 +115,16 @@ class Decoder(nn.Module):
     def __init__(self, args):
         super(Decoder, self).__init__()
         self.num_points = args.num_points
-        self.linear1 = nn.Linear(args.size_encoder, 1024, bias=False)
-        self.bn1 = nn.BatchNorm1d(1024)
-        self.linear2 = nn.Linear(1024, 1280)
-        self.bn2 = nn.BatchNorm1d(1280)
-        self.linear3 = nn.Linear(1280, 1280)
-        self.bn3 = nn.BatchNorm1d(1280)
-        self.linear4 = nn.Linear(1280, 1536)
-        self.bn4 = nn.BatchNorm1d(1536)
-        self.linear5 = nn.Linear(1536, 1636)
-        self.bn5 = nn.BatchNorm1d(1636)
-        self.linear6 = nn.Linear(1636, 1736)
-        self.bn6 = nn.BatchNorm1d(1736)
-        self.linear7 = nn.Linear(1736, 1836)
-        self.bn7 = nn.BatchNorm1d(1836)
-        self.linear8 = nn.Linear(1836, 1936)
-        self.bn8 = nn.BatchNorm1d(1936)
+        self.linear1 = nn.Linear(args.size_encoder, 1280, bias=False)
+        self.bn1 = nn.BatchNorm1d(1280)
+        self.linear2 = nn.Linear(1280, 1536)
+        self.bn2 = nn.BatchNorm1d(1536)
+        self.linear3 = nn.Linear(1536, 1536)
+        self.bn3 = nn.BatchNorm1d(1536)
+        self.linear4 = nn.Linear(1536, 1792)
+        self.bn4 = nn.BatchNorm1d(1792)
         self.dp = nn.Dropout(p=args.dropout)
-        self.linear9 = nn.Linear(1936, self.num_points * 3)
+        self.linear5 = nn.Linear(2048, self.num_points * 3)
         self.th = nn.Tanh()
 
     def forward(self, x):
@@ -141,12 +133,8 @@ class Decoder(nn.Module):
         x = F.leaky_relu(self.bn2(self.linear2(x)), negative_slope=0.2)
         x = F.leaky_relu(self.bn3(self.linear3(x)), negative_slope=0.2)
         x = F.leaky_relu(self.bn4(self.linear4(x)), negative_slope=0.2)
-        x = F.leaky_relu(self.bn5(self.linear5(x)), negative_slope=0.2)
-        x = F.leaky_relu(self.bn6(self.linear6(x)), negative_slope=0.2)
-        x = F.leaky_relu(self.bn7(self.linear7(x)), negative_slope=0.2)
-        x = F.leaky_relu(self.bn8(self.linear8(x)), negative_slope=0.2)
         x = self.dp(x)
-        x = self.th(self.linear9(x))
+        x = self.th(self.linear5(x))
         x = x.view(batch_size, 3, self.num_points)
         return x
 
@@ -168,9 +156,9 @@ class DGCNN_AutoEncoder(nn.Module):
         self.encoder = DGCNN(args=args)
         self.encoder = torch.nn.Sequential(
             DGCNN(args=args),
-            nn.Linear(2048, 1024),
+            nn.Linear(2048, 1536),
             nn.ReLU(),
-            nn.Linear(1024, args.size_encoder))
+            nn.Linear(1536, 1024))
 
 
         # Decoder Definition
