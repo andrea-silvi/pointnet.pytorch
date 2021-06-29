@@ -125,6 +125,7 @@ def test_example(opt, test_dataloader, model):
 def train_example(opt):
     neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
     run = neptune.init(project=neptune_info['project'],
+                       tags=[str(opt.type_encoder), str(opt.train_class_choice), str(opt.size_encoder)],
                    api_token=neptune_info['api_token'])
     run['params'] = vars(opt)
     random_seed = 43
