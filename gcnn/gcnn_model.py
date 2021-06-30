@@ -115,28 +115,52 @@ class Decoder(nn.Module):
     def __init__(self, args):
         super(Decoder, self).__init__()
         self.num_points = args.num_points
-        self.linear1 = nn.Linear(args.size_encoder, 1280, bias=False)
-        self.bn1 = nn.BatchNorm1d(1280)
-        self.linear2 = nn.Linear(1280, 1536)
-        self.bn2 = nn.BatchNorm1d(1536)
-        self.linear3 = nn.Linear(1536, 1792)
-        self.bn3 = nn.BatchNorm1d(1792)
-        self.linear4 = nn.Linear(1792, 2048)
-        self.bn4 = nn.BatchNorm1d(2048)
-        self.dp = nn.Dropout(p=args.dropout)
-        self.linear5 = nn.Linear(2048, self.num_points * 3)
+        self.fc1 = nn.Linear(args.size_encoder*2, 1024)
+        self.fc2 = nn.Linear(1024, 512)
+        self.fc3 = nn.Linear(512, 256)
+
+        self.fc1_1 = nn.Linear(1024, 256 * 1024)
+        self.fc2_1 = nn.Linear(512, 128 * 256)  # nn.Linear(512,64*256) !
+        self.fc3_1 = nn.Linear(256, 128 * 3)
+
+        self.conv1_1 = torch.nn.Conv1d(1024, 1024, 1)  # torch.nn.Conv1d(256,256,1) !
+        self.conv1_2 = torch.nn.Conv1d(1024, 512, 1)
+        self.conv1_3 = torch.nn.Conv1d(512, int((self.num_points * 3) / 256), 1)
+        self.conv2_1 = torch.nn.Conv1d(256, 6, 1)  # torch.nn.Conv1d(256,12,1) !
+        #self.linear5 = nn.Linear(2048, self.num_points * 3)
         self.th = nn.Tanh()
 
     def forward(self, x):
         batch_size = x.size(0)
-        x = F.leaky_relu(self.bn1(self.linear1(x)), negative_slope=0.2)
-        x = F.leaky_relu(self.bn2(self.linear2(x)), negative_slope=0.2)
-        x = F.leaky_relu(self.bn3(self.linear3(x)), negative_slope=0.2)
-        x = F.leaky_relu(self.bn4(self.linear4(x)), negative_slope=0.2)
-        x = self.dp(x)
-        x = self.th(self.linear5(x))
-        x = x.view(batch_size, 3, self.num_points)
-        return x
+        x_1 = F.relu(self.fc1(x))  # 1024
+        x_2 = F.relu(self.fc2(x_1))  # 512
+        x_3 = F.relu(self.fc3(x_2))  # 256
+
+        pc1_feat = self.fc3_1(x_3)
+        pc1_xyz = pc1_feat.reshape(-1, 128, 3)  # 128x3 center1
+
+        pc2_feat = F.relu(self.fc2_1(x_2))
+        pc2_feat = pc2_feat.reshape(-1, 256, 128)
+        pc2_xyz = self.conv2_1(pc2_feat)  # 6x128 center2
+        pc3_feat = F.relu(self.fc1_1(x_1))
+        pc3_feat = pc3_feat.reshape(-1, 1024, 256)
+        pc3_feat = F.relu(self.conv1_1(pc3_feat))
+        pc3_feat = F.relu(self.conv1_2(pc3_feat))
+        pc3_xyz = self.conv1_3(pc3_feat)  # 12x128 fine
+        pc1_xyz_expand = torch.unsqueeze(pc1_xyz, 2)
+        pc2_xyz = pc2_xyz.transpose(1, 2)
+        pc2_xyz = pc2_xyz.reshape(-1, 128, 2, 3)
+        pc2_xyz = pc1_xyz_expand + pc2_xyz
+        pc2_xyz = pc2_xyz.reshape(-1, 256, 3)
+        pc2_xyz_expand = torch.unsqueeze(pc2_xyz, 2)
+        pc3_xyz = pc3_xyz.transpose(1, 2)
+        pc3_xyz = pc3_xyz.reshape(-1, 256, int(self.num_points / 256), 3)
+        pc3_xyz = pc2_xyz_expand + pc3_xyz
+        pc3_xyz = pc3_xyz.reshape(-1, self.num_points, 3)
+        #x = self.dp(x)
+        #x = self.th(self.linear5(x))
+        #x = x.view(batch_size, 3, self.num_points)
+        return pc3_xyz
 
 class DGCNN_AutoEncoder(nn.Module):
     '''
@@ -154,10 +178,7 @@ class DGCNN_AutoEncoder(nn.Module):
 
         # Encoder Definition
         self.encoder = torch.nn.Sequential(
-            DGCNN(args=args),
-            nn.Linear(2048, 1536),
-            nn.ReLU(),
-            nn.Linear(1536, 1024))
+            DGCNN(args=args))
 
 
         # Decoder Definition
