@@ -43,7 +43,7 @@ def evaluate_loss_by_class(model=None):
 
         chamfer_loss = PointLoss()
         test_loss = 0.0
-        model.eval()  # prep model for evaluation
+        autoencoder.eval()  # prep model for evaluation
         for dat in test_dataloader:
             # forward pass: compute predicted outputs by passing inputs to the model
             dat = dat.cuda()
