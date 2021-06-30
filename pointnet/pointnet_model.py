@@ -116,9 +116,69 @@ class Decoder(nn.Module):
         x = F.relu(self.fc4(x))
         x = self.dp(x)
         x = self.th(self.fc5(x))
-        x = x.view(batchsize, 3, self.num_points)
+        x = x.view(batchsize, self.num_points, 3)
         return x
 
+class PyramidDecoder(nn.Module):
+    ''' Point pyramid decoder from PF_Net:
+    '''
+
+    def __init__(self, args):
+        super(PyramidDecoder, self).__init__()
+        self.num_points = args.num_points
+        self.fc1 = nn.Linear(args.size_encoder, 1024)
+        self.fc2 = nn.Linear(1024, 512)
+        self.fc3 = nn.Linear(512, 256)
+
+        self.fc1_1 = nn.Linear(1024, 128 * self.num_points)
+        self.fc2_1 = nn.Linear(512, 64 * 128)  # nn.Linear(512,64*256) !
+        self.fc3_1 = nn.Linear(256, 64 * 3)
+
+        #        self.bn1 = nn.BatchNorm1d(1024)
+        #        self.bn2 = nn.BatchNorm1d(512)
+        #        self.bn3 = nn.BatchNorm1d(256)#nn.BatchNorm1d(64*256) !
+        #        self.bn4 = nn.BatchNorm1d(128*512)#nn.BatchNorm1d(256)
+        #        self.bn5 = nn.BatchNorm1d(64*128)
+        #
+        self.conv1_1 = torch.nn.Conv1d(self.num_points, self.num_points, 1)  # torch.nn.Conv1d(256,256,1) !
+        self.conv1_2 = torch.nn.Conv1d(self.num_points, 512, 1)
+        self.conv1_3 = torch.nn.Conv1d(512, int((self.num_points * 3) / 128), 1)
+        self.conv2_1 = torch.nn.Conv1d(128, 6, 1)  # torch.nn.Conv1d(256,12,1) !
+
+        #        self.bn1_ = nn.BatchNorm1d(512)
+        #        self.bn2_ = nn.BatchNorm1d(256)
+
+    def forward(self, x):
+        x_1 = F.relu(self.fc1(x))  # 1024
+        x_2 = F.relu(self.fc2(x_1))  # 512
+        x_3 = F.relu(self.fc3(x_2))  # 256
+
+        pc1_feat = self.fc3_1(x_3)
+        pc1_xyz = pc1_feat.reshape(-1, 64, 3)  # 64x3 center1
+
+        pc2_feat = F.relu(self.fc2_1(x_2))
+        pc2_feat = pc2_feat.reshape(-1, 128, 64)
+        pc2_xyz = self.conv2_1(pc2_feat)  # 6x64 center2
+
+        pc3_feat = F.relu(self.fc1_1(x_1))
+        pc3_feat = pc3_feat.reshape(-1, self.num_points, 128)
+        pc3_feat = F.relu(self.conv1_1(pc3_feat))
+        pc3_feat = F.relu(self.conv1_2(pc3_feat))
+        pc3_xyz = self.conv1_3(pc3_feat)  # 12x128 fine
+
+        pc1_xyz_expand = torch.unsqueeze(pc1_xyz, 2)
+        pc2_xyz = pc2_xyz.transpose(1, 2)
+        pc2_xyz = pc2_xyz.reshape(-1, 64, 2, 3)
+        pc2_xyz = pc1_xyz_expand + pc2_xyz
+        pc2_xyz = pc2_xyz.reshape(-1, 128, 3)
+
+        pc2_xyz_expand = torch.unsqueeze(pc2_xyz, 2)
+        pc3_xyz = pc3_xyz.transpose(1, 2)
+        pc3_xyz = pc3_xyz.reshape(-1, 128, int(self.num_points / 128), 3)
+        pc3_xyz = pc2_xyz_expand + pc3_xyz
+        pc3_xyz = pc3_xyz.reshape(-1, self.num_points, 3)
+
+        return pc1_xyz, pc2_xyz, pc3_xyz  # center1 ,center2 ,fine
 
 class PointNet_AutoEncoder(nn.Module):
     '''
@@ -133,7 +193,7 @@ class PointNet_AutoEncoder(nn.Module):
   2. 'num_points' is the parameter controlling the number of points to be generated. In general we want to generate a number of points equal to the number of input points.
   '''
 
-    def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False, dropout=0):
+    def __init__(self, args, num_points=1024, size_encoder=1024, feature_transform=False, dropout=0):
         super(PointNet_AutoEncoder, self).__init__()
         #print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
@@ -145,7 +205,8 @@ class PointNet_AutoEncoder(nn.Module):
             nn.Linear(512, size_encoder))
 
         # Decoder Definition
-        self.decoder = Decoder(num_points=num_points, size_encoder=size_encoder, dropout=dropout)
+        self.decoder = PyramidDecoder(args=args) if args.type_decoder == "pyramid" else \
+            Decoder(num_points=num_points, size_encoder=size_encoder, dropout=dropout)
 
     def forward(self, x):
         BS, N, dim = x.size()
@@ -156,13 +217,10 @@ class PointNet_AutoEncoder(nn.Module):
         x = x.permute(0, 2, 1)  # [BS, N, 3] => [BS, 3, N]
 
         # Encoding
-        code = self.encoder(x)  # [BS, 3, N] => [BS, 100]
+        code = self.encoder(x)  # [BS, 3, N] => [BS, size_encoder]
 
         # Decoding
-        decoded = self.decoder(code)  #  [BS, 3, num_points]
-
-        # Reshaping decoded output before returning..
-        decoded = decoded.permute(0, 2, 1)  #  [BS, 3, num_points] => [BS, num_points, 3]
+        decoded = self.decoder(code)  #either a [BS, N, 3] pointcloud or 3 X [BS, N, 3] pointclouds (based on decoder)
 
         return decoded
 

@@ -186,7 +186,7 @@ def train_example(opt):
     if opt.type_encoder=="pointnet":
         autoencoder = PointNet_DeeperAutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout) \
                     if opt.architecture == "deep" else \
-                    PointNet_AutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout)
+                    PointNet_AutoEncoder(opt, opt.num_points, opt.size_encoder, dropout=opt.dropout)
     elif opt.type_encoder=='dgcnn':
         autoencoder = DGCNN_AutoEncoder(opt)
     else:
@@ -252,14 +252,14 @@ def train_example(opt):
                 fine_sampling = index_points(decoded_input, fine_sampling_idx)
                 fine_sampling = fine_sampling.cuda()
 
-                CD_loss = chamfer_loss(decoded_input, points)
+                CD_loss = chamfer_loss(points, decoded_input)
 
-                loss = chamfer_loss(decoded_input, points) \
-                          + alpha1 * chamfer_loss(decoded_coarse, coarse_sampling) \
-                          + alpha2 * chamfer_loss(decoded_fine, fine_sampling)
+                loss = chamfer_loss(points, decoded_input) \
+                          + alpha1 * chamfer_loss(coarse_sampling, decoded_coarse) \
+                          + alpha2 * chamfer_loss(fine_sampling, decoded_fine)
             else:
                 decoded_points = decoded_points.cuda()
-                CD_loss = loss = chamfer_loss(decoded_points, points)
+                CD_loss = loss = chamfer_loss(points, decoded_points)
             # if epoch==0 and i==0:
             # print(f"LOSS: first epoch, first batch: \t {loss}")
             training_losses.append(CD_loss.item())
@@ -288,7 +288,7 @@ def train_example(opt):
                     if opt.type_decoder == "pyramid":
                         decoded_val_points = decoded_val_points[2] #take only the actual prediction (num_points)
                     decoded_val_points = decoded_val_points.cuda()
-                    val_loss = chamfer_loss(decoded_val_points, val_points)
+                    val_loss = chamfer_loss(val_points, decoded_val_points)
                     # if j==0:
                     # print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
                     val_losses.append(val_loss.item())
