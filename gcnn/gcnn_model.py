@@ -110,57 +110,89 @@ class Decoder(nn.Module):
     ''' Just a lightweight Fully Connected decoder:
     '''
 
-
-
     def __init__(self, args):
         super(Decoder, self).__init__()
+        self.num_points = args.num_points
+        self.fc1 = nn.Linear(args.size_encoder, 512)
+        self.fc2 = nn.Linear(512, 512)
+        self.fc3 = nn.Linear(512, 1024)
+        self.fc4 = nn.Linear(1024, 1024)
+        self.fc5 = nn.Linear(1024, self.num_points * 3)
+        self.dp = nn.Dropout(p=args.dropout)
+        self.th = nn.Tanh()
+
+    def forward(self, x):
+        batch_size = x.size()[0]
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        x = F.relu(self.fc4(x))
+        x = self.dp(x)
+        x = self.th(self.fc5(x))
+        x = x.view(batch_size, self.num_points, 3)
+        return x
+
+
+class PyramidDecoder(nn.Module):
+    ''' Point pyramid decoder from PF_Net:
+    '''
+
+    def __init__(self, args):
+        super(PyramidDecoder, self).__init__()
         self.num_points = args.num_points
         self.fc1 = nn.Linear(args.size_encoder*2, 1024)
         self.fc2 = nn.Linear(1024, 512)
         self.fc3 = nn.Linear(512, 256)
 
-        self.fc1_1 = nn.Linear(1024, 256 * 1024)
-        self.fc2_1 = nn.Linear(512, 128 * 256)  # nn.Linear(512,64*256) !
-        self.fc3_1 = nn.Linear(256, 128 * 3)
+        self.fc1_1 = nn.Linear(1024, 128 * self.num_points)
+        self.fc2_1 = nn.Linear(512, 64 * 128)  # nn.Linear(512,64*256) !
+        self.fc3_1 = nn.Linear(256, 64 * 3)
 
-        self.conv1_1 = torch.nn.Conv1d(1024, 1024, 1)  # torch.nn.Conv1d(256,256,1) !
-        self.conv1_2 = torch.nn.Conv1d(1024, 512, 1)
-        self.conv1_3 = torch.nn.Conv1d(512, int((self.num_points * 3) / 256), 1)
-        self.conv2_1 = torch.nn.Conv1d(256, 6, 1)  # torch.nn.Conv1d(256,12,1) !
-        #self.linear5 = nn.Linear(2048, self.num_points * 3)
-        self.th = nn.Tanh()
+        #        self.bn1 = nn.BatchNorm1d(1024)
+        #        self.bn2 = nn.BatchNorm1d(512)
+        #        self.bn3 = nn.BatchNorm1d(256)#nn.BatchNorm1d(64*256) !
+        #        self.bn4 = nn.BatchNorm1d(128*512)#nn.BatchNorm1d(256)
+        #        self.bn5 = nn.BatchNorm1d(64*128)
+        #
+        self.conv1_1 = torch.nn.Conv1d(self.num_points, self.num_points, 1)  # torch.nn.Conv1d(256,256,1) !
+        self.conv1_2 = torch.nn.Conv1d(self.num_points, 512, 1)
+        self.conv1_3 = torch.nn.Conv1d(512, int((self.num_points * 3) / 128), 1)
+        self.conv2_1 = torch.nn.Conv1d(128, 6, 1)  # torch.nn.Conv1d(256,12,1) !
+
+        #        self.bn1_ = nn.BatchNorm1d(512)
+        #        self.bn2_ = nn.BatchNorm1d(256)
 
     def forward(self, x):
-        batch_size = x.size(0)
         x_1 = F.relu(self.fc1(x))  # 1024
         x_2 = F.relu(self.fc2(x_1))  # 512
         x_3 = F.relu(self.fc3(x_2))  # 256
 
         pc1_feat = self.fc3_1(x_3)
-        pc1_xyz = pc1_feat.reshape(-1, 128, 3)  # 128x3 center1
+        pc1_xyz = pc1_feat.reshape(-1, 64, 3)  # 64x3 center1
 
         pc2_feat = F.relu(self.fc2_1(x_2))
-        pc2_feat = pc2_feat.reshape(-1, 256, 128)
-        pc2_xyz = self.conv2_1(pc2_feat)  # 6x128 center2
+        pc2_feat = pc2_feat.reshape(-1, 128, 64)
+        pc2_xyz = self.conv2_1(pc2_feat)  # 6x64 center2
+
         pc3_feat = F.relu(self.fc1_1(x_1))
-        pc3_feat = pc3_feat.reshape(-1, 1024, 256)
+        pc3_feat = pc3_feat.reshape(-1, self.num_points, 128)
         pc3_feat = F.relu(self.conv1_1(pc3_feat))
         pc3_feat = F.relu(self.conv1_2(pc3_feat))
         pc3_xyz = self.conv1_3(pc3_feat)  # 12x128 fine
+
         pc1_xyz_expand = torch.unsqueeze(pc1_xyz, 2)
         pc2_xyz = pc2_xyz.transpose(1, 2)
-        pc2_xyz = pc2_xyz.reshape(-1, 128, 2, 3)
+        pc2_xyz = pc2_xyz.reshape(-1, 64, 2, 3)
         pc2_xyz = pc1_xyz_expand + pc2_xyz
-        pc2_xyz = pc2_xyz.reshape(-1, 256, 3)
+        pc2_xyz = pc2_xyz.reshape(-1, 128, 3)
+
         pc2_xyz_expand = torch.unsqueeze(pc2_xyz, 2)
         pc3_xyz = pc3_xyz.transpose(1, 2)
-        pc3_xyz = pc3_xyz.reshape(-1, 256, int(self.num_points / 256), 3)
+        pc3_xyz = pc3_xyz.reshape(-1, 128, int(self.num_points / 128), 3)
         pc3_xyz = pc2_xyz_expand + pc3_xyz
-        pc3_xyz = pc3_xyz.reshape(-1, 3, self.num_points)
-        #x = self.dp(x)
-        #x = self.th(self.linear5(x))
-        #x = x.view(batch_size, 3, self.num_points)
-        return pc3_xyz
+        pc3_xyz = pc3_xyz.reshape(-1, self.num_points, 3)
+
+        return pc1_xyz, pc2_xyz, pc3_xyz  # center1 ,center2 ,fine
 
 class DGCNN_AutoEncoder(nn.Module):
     '''
@@ -177,12 +209,11 @@ class DGCNN_AutoEncoder(nn.Module):
         #print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
         # Encoder Definition
-        self.encoder = torch.nn.Sequential(
-            DGCNN(args=args))
+        self.encoder = DGCNN(args=args)
 
 
         # Decoder Definition
-        self.decoder = Decoder(args=args)
+        self.decoder = PyramidDecoder(args=args) if args.type_decoder == "pyramid" else Decoder(args=args)
 
     def forward(self, x):
         BS, N, dim = x.size()
@@ -196,10 +227,9 @@ class DGCNN_AutoEncoder(nn.Module):
         code = self.encoder(x)  # [BS, 3, N] => [BS, size_encoder]
 
         # Decoding
-        decoded = self.decoder(code)  #  [BS, 3, num_points]
+        decoded = self.decoder(code)
 
-        # Reshaping decoded output before returning..
-        decoded = decoded.permute(0, 2, 1)  #  [BS, 3, num_points] => [BS, num_points, 3]
+        return decoded #either a pointcloud [BS, num_points, 3] or a tuple of 3 pointclouds 3 x [BS, 3, num_points]
 
         return decoded
 

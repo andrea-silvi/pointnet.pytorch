@@ -82,6 +82,8 @@ def print_original_decoded_point_clouds(dataset, category, model, opt, run=None,
             point_cloud_np = point_cloud.cuda()
             point_cloud_np = torch.unsqueeze(point_cloud_np, 0)
             decoded_point_cloud = model(point_cloud_np)
+            if opt.type_decoder == "pyramid":
+                decoded_point_cloud = decoded_point_cloud[2] #take only the actual input reconstruction
             original_pc_np = point_cloud_np.cpu().numpy()
             decoded_pc_np = decoded_point_cloud.cpu().data.numpy()
             #printCloudM(point_cloud_np, dec_val_stamp, name=category, opt=opt)
