@@ -1,5 +1,6 @@
 import torch
 
+
 def index_points(points, idx):
     """
     Input:
@@ -17,6 +18,7 @@ def index_points(points, idx):
     batch_indices = torch.arange(B, dtype=torch.long).to(device).view(view_shape).repeat(repeat_shape)
     new_points = points[batch_indices, idx, :]
     return new_points
+
 
 def farthest_point_sample(xyz, npoint, RAN=True):
     """

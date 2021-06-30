@@ -245,10 +245,10 @@ def train_example(opt):
                 decoded_fine = decoded_fine.cuda()
                 decoded_input = decoded_input.cuda()
 
-                coarse_sampling_idx = farthest_point_sample(decoded_input, 64, RAN=False)
+                coarse_sampling_idx = farthest_point_sample(decoded_input, 128, RAN=False)
                 coarse_sampling = index_points(decoded_input, coarse_sampling_idx)
                 coarse_sampling = coarse_sampling.cuda()
-                fine_sampling_idx = farthest_point_sample(decoded_input, 128, RAN=True)
+                fine_sampling_idx = farthest_point_sample(decoded_input, 256, RAN=True)
                 fine_sampling = index_points(decoded_input, fine_sampling_idx)
                 fine_sampling = fine_sampling.cuda()
 
