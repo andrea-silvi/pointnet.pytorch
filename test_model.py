@@ -30,6 +30,7 @@ def evaluate_loss_by_class(model=None):
     else:
         model = model if opt.model=="" else opt.model
     autoencoder.load_state_dict(torch.load(model))
+    autoencoder.cuda()
     for classs in classes:
         test_dataset = ShapeNetDataset(opt.dataset,
                                        opt.num_points,
@@ -47,7 +48,7 @@ def evaluate_loss_by_class(model=None):
         for dat in test_dataloader:
             # forward pass: compute predicted outputs by passing inputs to the model
             dat = dat.cuda()
-            output = model(dat)
+            output = autoencoder(dat)
             if opt.type_decoder == "pyramid":
                 output = output[2] #take only the actual prediction (not the sampling predictions)
             output = output.cuda()
