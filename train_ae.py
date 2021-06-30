@@ -262,6 +262,7 @@ def train_example(opt):
                     #     ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
 
                     decoded_val_points = decoded_val_points.cuda()
+
                     chamfer_loss = PointLoss()  #  instantiate the loss
                     val_loss = chamfer_loss(decoded_val_points, val_points)
                     # if j==0:
