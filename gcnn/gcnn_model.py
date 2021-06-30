@@ -158,9 +158,9 @@ class Decoder(nn.Module):
         pc3_xyz = pc2_xyz_expand + pc3_xyz
         pc3_xyz = pc3_xyz.reshape(-1, 3, self.num_points)
         #x = self.dp(x)
-        #x = self.th(self.linear5(x))
+        x = self.th(pc3_xyz)
         #x = x.view(batch_size, 3, self.num_points)
-        return pc3_xyz
+        return x
 
 class DGCNN_AutoEncoder(nn.Module):
     '''
