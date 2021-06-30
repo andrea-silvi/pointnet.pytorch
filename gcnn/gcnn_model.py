@@ -156,7 +156,7 @@ class Decoder(nn.Module):
         pc3_xyz = pc3_xyz.transpose(1, 2)
         pc3_xyz = pc3_xyz.reshape(-1, 256, int(self.num_points / 256), 3)
         pc3_xyz = pc2_xyz_expand + pc3_xyz
-        pc3_xyz = pc3_xyz.reshape(-1, self.num_points, 3)
+        pc3_xyz = pc3_xyz.reshape(-1, 3, self.num_points)
         #x = self.dp(x)
         #x = self.th(self.linear5(x))
         #x = x.view(batch_size, 3, self.num_points)
