@@ -1,4 +1,4 @@
-from dataset import *
+from utils.dataset import *
 from train_ae import upload_args_from_json
 from pointnet.pointnet_model import *
 from pointnet.deeper_pointnet_model import *
