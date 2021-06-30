@@ -100,24 +100,53 @@ class Decoder(nn.Module):
     def __init__(self, num_points=1024, size_encoder=1024, dropout=0):
         super(Decoder, self).__init__()
         self.num_points = num_points
-        self.fc1 = nn.Linear(size_encoder, 512)
-        self.fc2 = nn.Linear(512, 512)
-        self.fc3 = nn.Linear(512, 1024)
-        self.fc4 = nn.Linear(1024, 1024)
-        self.fc5 = nn.Linear(1024, self.num_points * 3)
+        self.size_encoder
+        self.fc1 = nn.Linear(size_encoder, 1024)
+        self.fc2 = nn.Linear(1024, 512)
+        self.fc3 = nn.Linear(512, 256)
+
+        self.fc1_1 = nn.Linear(1024, 256 * 1024)
+        self.fc2_1 = nn.Linear(512, 128 * 256)  # nn.Linear(512,64*256) !
+        self.fc3_1 = nn.Linear(256, 128 * 3)
         self.dp = nn.Dropout(p=dropout)
+        self.conv1_1 = torch.nn.Conv1d(1024, 1024, 1)  # torch.nn.Conv1d(256,256,1) !
+        self.conv1_2 = torch.nn.Conv1d(1024, 512, 1)
+        self.conv1_3 = torch.nn.Conv1d(512, int((self.num_points * 3) / 256), 1)
+        self.conv2_1 = torch.nn.Conv1d(256, 6, 1)  # torch.nn.Conv1d(256,12,1) !
+        # self.linear5 = nn.Linear(2048, self.num_points * 3)
         self.th = nn.Tanh()
 
     def forward(self, x):
-        batchsize = x.size()[0]
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = F.relu(self.fc4(x))
-        x = self.dp(x)
-        x = self.th(self.fc5(x))
-        x = x.view(batchsize, 3, self.num_points)
-        return x
+        batch_size = x.size(0)
+        x_1 = F.relu(self.fc1(x))  # 1024
+        x_2 = F.relu(self.fc2(x_1))  # 512
+        x_3 = F.relu(self.fc3(x_2))  # 256
+
+        pc1_feat = self.fc3_1(x_3)
+        pc1_xyz = pc1_feat.reshape(-1, 128, 3)  # 128x3 center1
+
+        pc2_feat = F.relu(self.fc2_1(x_2))
+        pc2_feat = pc2_feat.reshape(-1, 256, 128)
+        pc2_xyz = self.conv2_1(pc2_feat)  # 6x128 center2
+        pc3_feat = F.relu(self.fc1_1(x_1))
+        pc3_feat = pc3_feat.reshape(-1, 1024, 256)
+        pc3_feat = F.relu(self.conv1_1(pc3_feat))
+        pc3_feat = F.relu(self.conv1_2(pc3_feat))
+        pc3_xyz = self.conv1_3(pc3_feat)  # 12x128 fine
+        pc1_xyz_expand = torch.unsqueeze(pc1_xyz, 2)
+        pc2_xyz = pc2_xyz.transpose(1, 2)
+        pc2_xyz = pc2_xyz.reshape(-1, 128, 2, 3)
+        pc2_xyz = pc1_xyz_expand + pc2_xyz
+        pc2_xyz = pc2_xyz.reshape(-1, 256, 3)
+        pc2_xyz_expand = torch.unsqueeze(pc2_xyz, 2)
+        pc3_xyz = pc3_xyz.transpose(1, 2)
+        pc3_xyz = pc3_xyz.reshape(-1, 256, int(self.num_points / 256), 3)
+        pc3_xyz = pc2_xyz_expand + pc3_xyz
+        pc3_xyz = pc3_xyz.reshape(-1, 3, self.num_points)
+        # x = self.dp(x)
+        #x = self.th(pc3_xyz)
+        # x = x.view(batch_size, 3, self.num_points)
+        return pc3_xyz
 
 
 class PointNet_AutoEncoder(nn.Module):
