@@ -100,7 +100,7 @@ class Decoder(nn.Module):
     def __init__(self, num_points=1024, size_encoder=1024, dropout=0):
         super(Decoder, self).__init__()
         self.num_points = num_points
-        self.size_encoder
+        self.size_encoder = size_encoder
         self.fc1 = nn.Linear(size_encoder, 1024)
         self.fc2 = nn.Linear(1024, 512)
         self.fc3 = nn.Linear(512, 256)
