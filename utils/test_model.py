@@ -60,3 +60,7 @@ def evaluate_loss_by_class(model=None):
         test_loss = test_loss / len(test_dataloader.dataset)
         run[f"loss/{classs}"] = test_loss
     run.stop()
+
+
+if __name__=="__main__":
+    evaluate_loss_by_class()
