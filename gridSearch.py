@@ -9,7 +9,7 @@ import torch
 import sys
 from sklearn.model_selection import ParameterGrid
 import numpy as np
-
+import gc
 
 def optimize_params(filepath=os.path.join("parameters", "params.json")):
     """
@@ -66,6 +66,9 @@ def optimize_params(filepath=os.path.join("parameters", "params.json")):
         pass
     with open(os.path.join(folder, f'params_dictionary.json'), 'w') as f:
         json.dump(dict_params, f)
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
     return best_hyperparams
 
 

@@ -1,7 +1,7 @@
 {
     "lr": 1e-4,
     "size_encoder": 1024,
-    "weight_decay": [1e-3,0],
+    "weight_decay": [1e-3, 0],
     "scheduler_gamma": 0.5,
     "nepoch": 50,
     "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0",
@@ -21,6 +21,6 @@
     "final_training": 0,
     "architecture": "original",
     "type_encoder":"dgcnn",
-    "type_decoder":"pyramid",
-    "k": [10,20,40]
+    "type_decoder": "pyramid",
+    "k": [20, 40]
 }
