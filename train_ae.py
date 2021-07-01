@@ -13,6 +13,7 @@ from utils.dataset import ShapeNetDataset
 import gc
 import csv
 from utils.early_stopping import EarlyStopping
+from utils.FPS import farthest_point_sample, index_points
 import sys, json
 
 from visualization_tools import printPointCloud
@@ -109,6 +110,8 @@ def test_example(opt, test_dataloader, model):
         # forward pass: compute predicted outputs by passing inputs to the model
         data = data.cuda()
         output = model(data)
+        if opt.type_decoder == "pyramid":
+            output = output[2] #take only the actual prediction (not the sampling predictions)
         output = output.cuda()
         # calculate the loss
         loss = chamfer_loss(data, output)
@@ -183,7 +186,7 @@ def train_example(opt):
     if opt.type_encoder=="pointnet":
         autoencoder = PointNet_DeeperAutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout) \
                     if opt.architecture == "deep" else \
-                    PointNet_AutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout)
+                    PointNet_AutoEncoder(opt, opt.num_points, opt.size_encoder, dropout=opt.dropout)
     elif opt.type_encoder=='dgcnn':
         autoencoder = DGCNN_AutoEncoder(opt)
     else:
@@ -206,12 +209,23 @@ def train_example(opt):
     gc.collect()
     torch.cuda.empty_cache()
     early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=checkpoint_path)
+    #  instantiate the loss
+    chamfer_loss = PointLoss()
     # flag_stampa = False
     n_epoch = opt.nepoch
     # n_batches = np.floor(training_dataset.__len__() / opt.batchSize)
     for epoch in range(n_epoch):
         if epoch > 0:
             scheduler.step()
+        if epoch < 30:
+            alpha1 = 0.01
+            alpha2 = 0.02
+        elif epoch < 80:
+            alpha1 = 0.05
+            alpha2 = 0.1
+        else:
+            alpha1 = 0.1
+            alpha2 = 0.2
         training_losses = []
         # running_loss = 0.0
         for i, points in enumerate(train_dataloader, 0):
@@ -222,14 +236,34 @@ def train_example(opt):
             autoencoder.train()
             decoded_points = autoencoder(points)
             # print(f"Decoded points size: {decoded_points.size()}")
-            decoded_points = decoded_points.cuda()
-            chamfer_loss = PointLoss()  #  instantiate the loss
             # let's compute the chamfer distance between the two sets: 'points' and 'decoded'
-            loss = chamfer_loss(decoded_points, points)
+            if opt.type_decoder == "pyramid":
+                decoded_coarse = decoded_points[0]
+                decoded_fine = decoded_points[1]
+                decoded_input = decoded_points[2]
+                decoded_coarse = decoded_coarse.cuda()
+                decoded_fine = decoded_fine.cuda()
+                decoded_input = decoded_input.cuda()
+
+                coarse_sampling_idx = farthest_point_sample(decoded_input, 128, RAN=False)
+                coarse_sampling = index_points(decoded_input, coarse_sampling_idx)
+                coarse_sampling = coarse_sampling.cuda()
+                fine_sampling_idx = farthest_point_sample(decoded_input, 256, RAN=True)
+                fine_sampling = index_points(decoded_input, fine_sampling_idx)
+                fine_sampling = fine_sampling.cuda()
+
+                CD_loss = chamfer_loss(points, decoded_input)
+
+                loss = chamfer_loss(points, decoded_input) \
+                          + alpha1 * chamfer_loss(coarse_sampling, decoded_coarse) \
+                          + alpha2 * chamfer_loss(fine_sampling, decoded_fine)
+            else:
+                decoded_points = decoded_points.cuda()
+                CD_loss = loss = chamfer_loss(points, decoded_points)
             # if epoch==0 and i==0:
             # print(f"LOSS: first epoch, first batch: \t {loss}")
-            training_losses.append(loss.item())
-            run["train/batch_loss"].log(loss.item())
+            training_losses.append(CD_loss.item())
+            run["train/batch_loss"].log(CD_loss.item())
             # if opt.feature_transform:
             #     loss += feature_transform_regularizer(trans_feat) * 0.001
             loss.backward()
@@ -251,20 +285,10 @@ def train_example(opt):
                     autoencoder.eval()
                     val_points = val_points.cuda()
                     decoded_val_points = autoencoder(val_points)
-                    # if (flag_stampa is False) and (epoch == n_epoch-1):
-                    #     val_stamp = val_points[0,:,:].cpu().numpy()
-                    #     dec_val_stamp = decoded_points[0,:,:].cpu().numpy()
-                    #     #np.savetxt("validation_point", val_stamp, delimiter=" ")
-                    #     #np.savetxt("decoded_validation_point", dec_val_stamp, delimiter=" ")
-                    #     flag_stampa=True
-                    #     #print("sono qui")
-                    #     ptPC.printCloud(val_stamp, "original_validation_points")
-                    #     ptPC.printCloud(dec_val_stamp,"decoded_validation_points")
-
+                    if opt.type_decoder == "pyramid":
+                        decoded_val_points = decoded_val_points[2] #take only the actual prediction (num_points)
                     decoded_val_points = decoded_val_points.cuda()
-
-                    chamfer_loss = PointLoss()  #  instantiate the loss
-                    val_loss = chamfer_loss(decoded_val_points, val_points)
+                    val_loss = chamfer_loss(val_points, decoded_val_points)
                     # if j==0:
                     # print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
                     val_losses.append(val_loss.item())
