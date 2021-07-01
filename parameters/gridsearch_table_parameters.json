@@ -22,5 +22,5 @@
     "architecture": "original",
     "type_encoder":"dgcnn",
     "type_decoder": "pyramid",
-    "k": [10, 20, 40]
+    "k": [20, 40]
 }
