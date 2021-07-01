@@ -1,5 +1,5 @@
 from utils.dataset import *
-from train_ae import upload_args_from_json
+from train_ae import upload_args_from_json, test_example
 from pointnet.pointnet_model import *
 from pointnet.deeper_pointnet_model import *
 from gcnn.gcnn_model import *
@@ -41,25 +41,8 @@ def evaluate_loss_by_class(model=None):
             batch_size=opt.batchSize,
             shuffle=True,
             num_workers=int(opt.workers))
+        run[f"loss/{classs}"] = test_example(opt, test_dataloader, autoencoder)
 
-        chamfer_loss = PointLoss()
-        test_loss = 0.0
-        autoencoder.eval()  # prep model for evaluation
-        for dat in test_dataloader:
-            # forward pass: compute predicted outputs by passing inputs to the model
-            dat = dat.cuda()
-            output = autoencoder(dat)
-            if opt.type_decoder == "pyramid":
-                output = output[2] #take only the actual prediction (not the sampling predictions)
-            output = output.cuda()
-            # calculate the loss
-            loss = chamfer_loss(dat, output)
-            # update test loss
-            test_loss += loss.item() * dat.size(0)
-
-        # calculate and print avg test loss
-        test_loss = test_loss / len(test_dataloader.dataset)
-        run[f"loss/{classs}"] = test_loss
     run.stop()
 
 
