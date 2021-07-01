@@ -17,8 +17,7 @@
     "dropout": 0,
     "beta_1": 0.9,
     "beta_2": 0.999,
-    "patience
-"patience": 20,
+    "patience": 20,
     "final_training": 0,
     "architecture": "original",
     "type_encoder":"dgcnn",

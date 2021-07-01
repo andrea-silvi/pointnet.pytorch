@@ -231,4 +231,13 @@ class DGCNN_AutoEncoder(nn.Module):
 
         return decoded #either a pointcloud [BS, num_points, 3] or a tuple of 3 pointclouds 3 x [BS, 3, num_points]
 
+        return decoded
 
+if __name__=='__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--k", type=int, default=0.999, help="decay rate for second moment")
+    parser.add_argument("--size_encoder", type=int, default=7, help="How long to wait after last time val loss improved.")
+    parser.add_argument("--dropout", type=int, default=0, help="How long to wait after last time val loss improved.")
+    opt = parser.parse_args()
+    model = DGCNN(opt)
+    model.forward(torch.rand((32, 3, 1024)))
