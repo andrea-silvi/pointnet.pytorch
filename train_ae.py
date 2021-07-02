@@ -325,7 +325,7 @@ def train_example(opt):
             #     epoch, i, num_batch, blue('test'), loss.item(), correct.item() / float(opt.batchSize)))
 
         # Commented: early_stopping already saves the best model
-    if not os.path.exists(checkpoint_path):
+    if opt.nepoch == 50:
         torch.save(autoencoder.state_dict(), checkpoint_path)
     autoencoder.load_state_dict(torch.load(checkpoint_path))
     printPointCloud.print_original_decoded_point_clouds(ShapeNetDataset(

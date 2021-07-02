@@ -1,7 +1,7 @@
 {
-    "lr": 0.0005,
-    "size_encoder": 1024,
-    "weight_decay": [1e-3, 0],
+    "lr": 0.0001,
+    "size_encoder": [64, 256, 512],
+    "weight_decay": 0,
     "scheduler_gamma": 0.5,
     "nepoch": 50,
     "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0",
@@ -11,8 +11,8 @@
     "workers": 2,
     "outf":  "cls",
     "model": "",
-    "train_class_choice": "Table",
-    "test_class_choice": "Table",
+    "train_class_choice": "Car",
+    "test_class_choice": "Car",
     "scheduler_stepSize": 20,
     "dropout": 0,
     "beta_1": 0.9,
@@ -22,5 +22,5 @@
     "architecture": "original",
     "type_encoder":"dgcnn",
     "type_decoder": "pyramid",
-    "k": [20, 40]
+    "k": 10
 }
