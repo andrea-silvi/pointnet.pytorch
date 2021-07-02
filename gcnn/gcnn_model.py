@@ -80,8 +80,6 @@ class DGCNN(nn.Module):
         self.conv5 = nn.Sequential(nn.Conv1d(512, args.size_encoder, kernel_size=1, bias=False),
                                    self.bn5,
                                    nn.LeakyReLU(negative_slope=0.2))
-        # TODO - la rete riportata sopra rappresenta l'ENCODER
-        # TODO - inserire i seguenti layer all'interno di una classe DECODER
 
 
     def forward(self, x):
