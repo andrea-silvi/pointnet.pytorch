@@ -18,7 +18,6 @@ import sys, json
 
 from visualization_tools import printPointCloud
 from visualization_tools.printPointCloud import *
-from test_model import evaluate_loss_by_class
 import neptune.new as neptune
 
 
@@ -86,6 +85,25 @@ import neptune.new as neptune
 #     # plt.title('Loss vs. No. of epochs')
 #     # plt.savefig('loss.png', bbox_inches='tight',)
 #
+
+
+def evaluate_loss_by_class(opt, autoencoder, run):
+    run["params"] = vars(opt)
+    classes = ["Airplane", "Car", "Chair", "Lamp", "Mug", "Motorbike", "Table"] if opt.test_class_choice=="None" \
+        else [opt.test_class_choice]
+    autoencoder.cuda()
+    for classs in classes:
+        test_dataset = ShapeNetDataset(opt.dataset,
+                                       opt.num_points,
+                                       class_choice=classs,
+                                       split='test')
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=opt.batchSize,
+            shuffle=True,
+            num_workers=int(opt.workers))
+        run[f"loss/{classs}"] = test_example(opt, test_dataloader, autoencoder)
+
 
 def upload_args_from_json(file_path=os.path.join("parameters", "fixed_params.json")):
     parser = argparse.ArgumentParser(description=f'Arguments from json')
