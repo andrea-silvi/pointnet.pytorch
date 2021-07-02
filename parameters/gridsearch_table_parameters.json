@@ -1,5 +1,5 @@
 {
-    "lr": 0.0005,
+    "lr": [1e-3, 0.0005, 1e-4],
     "size_encoder": 1024,
     "weight_decay": [1e-3, 0],
     "scheduler_gamma": 0.5,
@@ -21,6 +21,6 @@
     "final_training": 0,
     "architecture": "original",
     "type_encoder":"dgcnn",
-    "type_decoder": "pyramid",
-    "k": [10, 20, 40]
+    "type_decoder": "fc",
+    "k": 20
 }

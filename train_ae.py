@@ -18,7 +18,7 @@ import sys, json
 
 from visualization_tools import printPointCloud
 from visualization_tools.printPointCloud import *
-
+from test_model import evaluate_loss_by_class
 import neptune.new as neptune
 
 
@@ -345,10 +345,11 @@ def train_example(opt):
     else:
         # print_loss_graph(training_history, None, opt)
         run["model_dictionary"].upload(checkpoint_path)
-        test_loss = test_example(opt, test_dataloader, autoencoder)
-        run["test/loss"].log(test_loss)
+        evaluate_loss_by_class(opt, autoencoder, run)
+        # test_loss = test_example(opt, test_dataloader, autoencoder)
+        # run["test/loss"].log(test_loss)
         run.stop()
-        return autoencoder, test_loss
+        return autoencoder, 0
 
 
 def train_model_by_class(opt):

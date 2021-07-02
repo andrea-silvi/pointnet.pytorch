@@ -8,28 +8,10 @@ from utils.loss import *
 import neptune.new as neptune
 
 
-def evaluate_loss_by_class(model=None):
-    opt = upload_args_from_json(os.path.join("parameters", "fixed_params.json"))
-    neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
-    run = neptune.init(project=neptune_info['project'],
-                       tags=["TEST LOSS BY CLASS", opt.type_encoder, opt.architecture, opt.type_decoder],
-                       api_token=neptune_info['api_token'],)
+def evaluate_loss_by_class(opt, autoencoder, run):
     run["params"] = vars(opt)
-
-    classes = ["Airplane", "Car", "Chair", "Lamp", "Mug", "Motorbike", "Table"]
-    if opt.type_encoder == "pointnet":
-        autoencoder = PointNet_DeeperAutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout) \
-            if opt.architecture == "deep" else \
-            PointNet_AutoEncoder(opt, opt.num_points, opt.size_encoder, dropout=opt.dropout)
-    elif opt.type_encoder == 'dgcnn':
-        autoencoder = DGCNN_AutoEncoder(opt)
-    else:
-        raise IOError(f"Invalid type_encoder!! Should be 'pointnet' or 'dgcnn'. Found: {opt.type_encoder}")
-    if opt.model == "" and model==None:
-        raise IOError("The key 'model' must be defined! Model should be the path of the previous trained model")
-    else:
-        model = model if opt.model=="" else opt.model
-    autoencoder.load_state_dict(torch.load(model))
+    classes = ["Airplane", "Car", "Chair", "Lamp", "Mug", "Motorbike", "Table"] if opt.test_class_choice=="None" \
+        else [opt.test_class_choice]
     autoencoder.cuda()
     for classs in classes:
         test_dataset = ShapeNetDataset(opt.dataset,
@@ -42,9 +24,3 @@ def evaluate_loss_by_class(model=None):
             shuffle=True,
             num_workers=int(opt.workers))
         run[f"loss/{classs}"] = test_example(opt, test_dataloader, autoencoder)
-
-    run.stop()
-
-
-if __name__=="__main__":
-    evaluate_loss_by_class()
