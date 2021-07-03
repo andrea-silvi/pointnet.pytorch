@@ -92,7 +92,9 @@ def evaluate_loss_by_class(opt, autoencoder, run):
     classes = ["Airplane", "Car", "Chair", "Lamp", "Mug", "Motorbike", "Table"] if opt.test_class_choice is None\
         else [opt.test_class_choice]
     autoencoder.cuda()
+    print("Start evaluation loss by class")
     for classs in classes:
+        print(f"\t{classs}")
         test_dataset = ShapeNetDataset(opt.dataset,
                                        opt.num_points,
                                        class_choice=classs,
@@ -103,6 +105,7 @@ def evaluate_loss_by_class(opt, autoencoder, run):
             shuffle=True,
             num_workers=int(opt.workers))
         run[f"loss/{classs}"] = test_example(opt, test_dataloader, autoencoder)
+        print()
     if opt.test_class_choice is None:
         evaluate_novel_categories(opt, autoencoder, run)
 
@@ -111,14 +114,17 @@ def evaluate_novel_categories(opt, autoencoder, run):
     setattr(opt, "novel_categories", True)
     classes = ["Basket", "Bicycle", "Bookshelf", "Bottle", "Bowl", "Clock", "Helmet", "Microphone", "Microwave",
                "Pianoforte", "Rifle", "Telephone", "Watercraft"]
+    print("Start evaluation novel categories...")
     for classs in classes:
-        novel_dataset = ShapeNetDataset("novel_categories", opt.num_points, class_choice=classs, split='test')
+        print(f"\t{classs}")
+        novel_dataset = ShapeNetDataset("/content/drive/MyDrive/novel_categories", opt.num_points, class_choice=classs, split='test')
         novel_dataloader = torch.utils.data.DataLoader(
             novel_dataset,
             num_workers=int(opt.workers)
         )
-        run[f"novel_categories/{classs}/loss"] = test_example(opt, novel_dataloader, autoencoder)
+        run[f"loss/novel_categories/{classs}"] = test_example(opt, novel_dataloader, autoencoder)
         print_original_decoded_point_clouds(novel_dataset, classs, autoencoder, opt, run)
+        print()
 
 
 def upload_args_from_json(file_path=os.path.join("parameters", "fixed_params.json")):
