@@ -89,7 +89,7 @@ import neptune.new as neptune
 
 def evaluate_loss_by_class(opt, autoencoder, run):
     run["params"] = vars(opt)
-    classes = ["Airplane", "Car", "Chair", "Lamp", "Mug", "Motorbike", "Table"] if opt.test_class_choice == "None" \
+    classes = ["Airplane", "Car", "Chair", "Lamp", "Mug", "Motorbike", "Table"] if opt.test_class_choice is None\
         else [opt.test_class_choice]
     autoencoder.cuda()
     for classs in classes:
@@ -103,6 +103,21 @@ def evaluate_loss_by_class(opt, autoencoder, run):
             shuffle=True,
             num_workers=int(opt.workers))
         run[f"loss/{classs}"] = test_example(opt, test_dataloader, autoencoder)
+    if opt.test_class_choice is None:
+        evaluate_novel_categories(opt, autoencoder, run)
+
+
+def evaluate_novel_categories(opt, autoencoder, run):
+    classes = ["Basket", "Bicycle", "Bookshelf", "Bottle", "Bowl", "Clock", "Helmet", "Microphone", "Microwave",
+               "Pianoforte", "Rifle", "Telephone", "Watercraft"]
+    for classs in classes:
+        novel_dataset = ShapeNetDataset("novel_categories", opt.num_points, class_choice=classs, split='test')
+        novel_dataloader = torch.utils.data.DataLoader(
+            novel_dataset,
+            num_workers=int(opt.workers)
+        )
+        run[f"novel_categories/{classs}/loss"] = test_example(opt, novel_dataloader, autoencoder)
+        print_original_decoded_point_clouds(novel_dataset, classs, autoencoder, opt, run)
 
 
 def upload_args_from_json(file_path=os.path.join("parameters", "fixed_params.json")):
@@ -351,7 +366,7 @@ def train_example(opt):
         split='test',
         class_choice=opt.test_class_choice,
         npoints=opt.num_points,
-        set_size=opt.set_size), opt.test_class_choice, autoencoder, opt, run, train=True)
+        set_size=opt.set_size), opt.test_class_choice, autoencoder, opt, run)
 
     # TODO PLOT LOSSES
     # print(training_history)
