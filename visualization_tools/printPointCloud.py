@@ -74,7 +74,7 @@ def print_original_decoded_point_clouds(dataset, category, model, opt, run=None)
     if category is None:
         categories = dataset.get_categories()
     for category in categories:
-        n_point_clouds = 30 if opt.final_training == 1 and opt.test_class_choice is None else 10
+        n_point_clouds = 30 if hasattr(opt, 'novel_categories') else 10
         for index in range(n_point_clouds):
             point_cloud = dataset.get_point_cloud_by_category(category, index=index)
             model.eval()

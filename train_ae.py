@@ -108,6 +108,7 @@ def evaluate_loss_by_class(opt, autoencoder, run):
 
 
 def evaluate_novel_categories(opt, autoencoder, run):
+    setattr(opt, "novel_categories", True)
     classes = ["Basket", "Bicycle", "Bookshelf", "Bottle", "Bowl", "Clock", "Helmet", "Microphone", "Microwave",
                "Pianoforte", "Rifle", "Telephone", "Watercraft"]
     for classs in classes:
@@ -358,7 +359,7 @@ def train_example(opt):
             #     epoch, i, num_batch, blue('test'), loss.item(), correct.item() / float(opt.batchSize)))
 
         # Commented: early_stopping already saves the best model
-    if opt.nepoch == 50:
+    if opt.nepoch <= 50:
         torch.save(autoencoder.state_dict(), checkpoint_path)
     autoencoder.load_state_dict(torch.load(checkpoint_path))
     printPointCloud.print_original_decoded_point_clouds(ShapeNetDataset(
