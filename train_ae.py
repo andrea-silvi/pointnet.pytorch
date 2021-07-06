@@ -15,6 +15,7 @@ import json
 from utils.utils import upload_args_from_json
 from visualization_tools import printPointCloud
 from visualization_tools.printPointCloud import *
+
 import neptune.new as neptune
 
 
@@ -136,7 +137,7 @@ def test_example(opt, test_dataloader, model):
         data = data.cuda()
         output = model(data)
         if opt.type_decoder == "pyramid":
-            output = output[2]  # take only the actual prediction (not the sampling predictions)
+            output = output[2] #take only the actual prediction (not the sampling predictions)
         output = output.cuda()
         # calculate the loss
         loss = chamfer_loss(data, output)
@@ -154,7 +155,7 @@ def train_example(opt):
     neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
     run = neptune.init(project=neptune_info['project'],
                        tags=[str(opt.type_encoder), str(opt.train_class_choice), str(opt.size_encoder)],
-                       api_token=neptune_info['api_token'])
+                   api_token=neptune_info['api_token'])
     run['params'] = vars(opt)
     random_seed = 43
     torch.manual_seed(random_seed)
