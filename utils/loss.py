@@ -139,7 +139,8 @@ class RepulsionLoss(nn.Module):
         self.eps = eps
     def forward(self, pred):
         #_, idx = knn_point(self.nn_size, pred, pred, transpose_mode=True)
-        idx = knn(self.nn_size, pred)  #k, pointcloud
+        #pred must be batchsize, 3, n_points
+        idx = knn(self.nn_size, pred.transpose(2, 1))  #k, pointcloud
         idx = idx[:, :, 1:].to(torch.int32)  # remove first one
         idx = idx.contiguous()  # B, N, nn
 
