@@ -84,7 +84,7 @@ def evaluate_loss_by_class(opt, autoencoder, run):
 def train_naive_pc(opt):
     neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
     run = neptune.init(project=neptune_info['project'],
-                       tags=[str(opt.type_encoder), str(opt.train_class_choice), str(opt.size_encoder)],
+                       tags=[str(opt.train_class_choice), str(opt.size_encoder), "Naive Point Completion"],
                        api_token=neptune_info['api_token'])
     run['params'] = vars(opt)
     random_seed = 43
