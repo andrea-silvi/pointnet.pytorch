@@ -80,8 +80,6 @@ class DGCNN(nn.Module):
         self.conv5 = nn.Sequential(nn.Conv1d(512, args.size_encoder, kernel_size=1, bias=False),
                                    self.bn5,
                                    nn.LeakyReLU(negative_slope=0.2))
-        # TODO - la rete riportata sopra rappresenta l'ENCODER
-        # TODO - inserire i seguenti layer all'interno di una classe DECODER
 
 
     def forward(self, x):
@@ -194,6 +192,7 @@ class PyramidDecoder(nn.Module):
 
         return pc1_xyz, pc2_xyz, pc3_xyz  # center1 ,center2 ,complete
 
+
 class DGCNN_AutoEncoder(nn.Module):
     '''
   Complete AutoEncoder Model:
@@ -232,6 +231,8 @@ class DGCNN_AutoEncoder(nn.Module):
         return decoded #either a pointcloud [BS, num_points, 3] or a tuple of 3 pointclouds 3 x [BS, 3, num_points]
 
         return decoded
+
+
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
