@@ -45,8 +45,10 @@ class ShapeNetPart(data.Dataset):
         self.path_file_all = []
 
         if self.split in ['train', 'trainval', 'all']:
+            print("sono qui")
             self.get_path('train')
         if self.split in ['test', 'all']:
+            print("sono qua")
             self.get_path('test')
 
         self.path_h5py_all.sort()
