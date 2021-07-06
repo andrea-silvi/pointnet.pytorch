@@ -135,7 +135,7 @@ def train_naive_pc(opt):
         os.makedirs(opt.outf)
     except OSError:
         pass
-    autoencoder = PointNet_CompletionNetwork(num_points=2048, size_encoder=opt.size_encoder)
+    autoencoder = PointNet_CompletionNetwork(num_points=opt.num_points, size_encoder=opt.size_encoder)
 
     optimizer = optim.Adam(autoencoder.parameters(), lr=opt.lr, betas=(opt.beta_1, opt.beta_2),
                            weight_decay=opt.weight_decay)
