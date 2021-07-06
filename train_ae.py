@@ -18,7 +18,6 @@ import sys, json
 
 from visualization_tools import printPointCloud
 from visualization_tools.printPointCloud import *
-
 import neptune.new as neptune
 
 
@@ -87,6 +86,47 @@ import neptune.new as neptune
 #     # plt.savefig('loss.png', bbox_inches='tight',)
 #
 
+
+def evaluate_loss_by_class(opt, autoencoder, run):
+    run["params"] = vars(opt)
+    classes = ["Airplane", "Car", "Chair", "Lamp", "Mug", "Motorbike", "Table"] if opt.test_class_choice is None\
+        else [opt.test_class_choice]
+    autoencoder.cuda()
+    print("Start evaluation loss by class")
+    for classs in classes:
+        print(f"\t{classs}")
+        test_dataset = ShapeNetDataset(opt.dataset,
+                                       opt.num_points,
+                                       class_choice=classs,
+                                       split='test')
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=opt.batchSize,
+            shuffle=True,
+            num_workers=int(opt.workers))
+        run[f"loss/{classs}"] = test_example(opt, test_dataloader, autoencoder)
+        print()
+    if opt.test_class_choice is None:
+        evaluate_novel_categories(opt, autoencoder, run)
+
+
+def evaluate_novel_categories(opt, autoencoder, run):
+    setattr(opt, "novel_categories", True)
+    classes = ["Basket", "Bicycle", "Bookshelf", "Bottle", "Bowl", "Clock", "Helmet", "Microphone", "Microwave",
+               "Pianoforte", "Rifle", "Telephone", "Watercraft"]
+    print("Start evaluation novel categories...")
+    for classs in classes:
+        print(f"\t{classs}")
+        novel_dataset = ShapeNetDataset("/content/drive/MyDrive/novel_categories", opt.num_points, class_choice=classs, split='test')
+        novel_dataloader = torch.utils.data.DataLoader(
+            novel_dataset,
+            num_workers=int(opt.workers)
+        )
+        run[f"loss/novel_categories/{classs}"] = test_example(opt, novel_dataloader, autoencoder)
+        print_original_decoded_point_clouds(novel_dataset, classs, autoencoder, opt, run)
+        print()
+
+
 def upload_args_from_json(file_path=os.path.join("parameters", "fixed_params.json")):
     parser = argparse.ArgumentParser(description=f'Arguments from json')
     args = parser.parse_args()
@@ -111,7 +151,7 @@ def test_example(opt, test_dataloader, model):
         data = data.cuda()
         output = model(data)
         if opt.type_decoder == "pyramid":
-            output = output[2] #take only the actual prediction (not the sampling predictions)
+            output = output[2]  # take only the actual prediction (not the sampling predictions)
         output = output.cuda()
         # calculate the loss
         loss = chamfer_loss(data, output)
@@ -129,7 +169,7 @@ def train_example(opt):
     neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
     run = neptune.init(project=neptune_info['project'],
                        tags=[str(opt.type_encoder), str(opt.train_class_choice), str(opt.size_encoder)],
-                   api_token=neptune_info['api_token'])
+                       api_token=neptune_info['api_token'])
     run['params'] = vars(opt)
     random_seed = 43
     torch.manual_seed(random_seed)
@@ -183,11 +223,11 @@ def train_example(opt):
         os.makedirs(opt.outf)
     except OSError:
         pass
-    if opt.type_encoder=="pointnet":
+    if opt.type_encoder == "pointnet":
         autoencoder = PointNet_DeeperAutoEncoder(opt.num_points, opt.size_encoder, dropout=opt.dropout) \
-                    if opt.architecture == "deep" else \
-                    PointNet_AutoEncoder(opt, opt.num_points, opt.size_encoder, dropout=opt.dropout)
-    elif opt.type_encoder=='dgcnn':
+            if opt.architecture == "deep" else \
+            PointNet_AutoEncoder(opt, opt.num_points, opt.size_encoder, dropout=opt.dropout)
+    elif opt.type_encoder == 'dgcnn':
         autoencoder = DGCNN_AutoEncoder(opt)
     else:
         raise IOError(f"Invalid type_encoder!! Should be 'pointnet' or 'dgcnn'. Found: {opt.type_encoder}")
@@ -202,8 +242,8 @@ def train_example(opt):
     autoencoder.cuda()
     run["model"] = autoencoder
     # num_batch = len(dataset) / opt.batchSize
-    #checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
-    checkpoint_path = os.path.join(opt.outf, "checkpoint.pt")
+    # checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
+    checkpoint_path = os.path.join(opt.outf, f"checkpoint{opt.runNumber}.pt")
     training_history = []
     val_history = []
     gc.collect()
@@ -255,8 +295,8 @@ def train_example(opt):
                 CD_loss = chamfer_loss(points, decoded_input)
 
                 loss = chamfer_loss(points, decoded_input) \
-                          + alpha1 * chamfer_loss(coarse_sampling, decoded_coarse) \
-                          + alpha2 * chamfer_loss(fine_sampling, decoded_fine)
+                       + alpha1 * chamfer_loss(coarse_sampling, decoded_coarse) \
+                       + alpha2 * chamfer_loss(fine_sampling, decoded_fine)
             else:
                 decoded_points = decoded_points.cuda()
                 CD_loss = loss = chamfer_loss(points, decoded_points)
@@ -286,7 +326,7 @@ def train_example(opt):
                     val_points = val_points.cuda()
                     decoded_val_points = autoencoder(val_points)
                     if opt.type_decoder == "pyramid":
-                        decoded_val_points = decoded_val_points[2] #take only the actual prediction (num_points)
+                        decoded_val_points = decoded_val_points[2]  # take only the actual prediction (num_points)
                     decoded_val_points = decoded_val_points.cuda()
                     val_loss = chamfer_loss(val_points, decoded_val_points)
                     # if j==0:
@@ -325,14 +365,15 @@ def train_example(opt):
             #     epoch, i, num_batch, blue('test'), loss.item(), correct.item() / float(opt.batchSize)))
 
         # Commented: early_stopping already saves the best model
-    torch.save(autoencoder.state_dict(), checkpoint_path)
+    if opt.nepoch <= 50:
+        torch.save(autoencoder.state_dict(), checkpoint_path)
     autoencoder.load_state_dict(torch.load(checkpoint_path))
     printPointCloud.print_original_decoded_point_clouds(ShapeNetDataset(
-            root=opt.dataset,
-            split='test',
-            class_choice=opt.test_class_choice,
-            npoints=opt.num_points,
-            set_size=opt.set_size), opt.test_class_choice, autoencoder, opt, run, train=True)
+        root=opt.dataset,
+        split='test',
+        class_choice=opt.test_class_choice,
+        npoints=opt.num_points,
+        set_size=opt.set_size), opt.test_class_choice, autoencoder, opt, run)
 
     # TODO PLOT LOSSES
     # print(training_history)
@@ -344,10 +385,11 @@ def train_example(opt):
     else:
         # print_loss_graph(training_history, None, opt)
         run["model_dictionary"].upload(checkpoint_path)
-        test_loss = test_example(opt, test_dataloader, autoencoder)
-        run["test/loss"].log(test_loss)
+        evaluate_loss_by_class(opt, autoencoder, run)
+        # test_loss = test_example(opt, test_dataloader, autoencoder)
+        # run["test/loss"].log(test_loss)
         run.stop()
-        return autoencoder, test_loss
+        return autoencoder, 0
 
 
 def train_model_by_class(opt):

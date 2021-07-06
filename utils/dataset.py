@@ -92,7 +92,8 @@ class ShapeNetDataset(data.Dataset):
             print(f"Category {category} not found.")
             print(f"Choose one of these: {self.meta.keys()}")
             return None
-        if index > len(self.meta[category]):
+        if index >= len(self.meta[category]):
+            print(f"Taking index 0 instead of {index}")
             index = 0
         file_path = self.meta[category][index]
         point_set = np.loadtxt(file_path).astype(np.float32)

@@ -15,7 +15,7 @@ def printCloudFile(cloud_original, cloud_decoded, name):
     ax = fig.add_subplot(111, projection='3d')
     ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], 'o', alpha=alpha)
     ax.set_title("original cloud")
-    ax.append(fig.add_subplot(111,projection='3d'))
+    ax.append(fig.add_subplot(111, projection='3d'))
 
     ax[-1].plot(cloud_decoded[:, 0], cloud_decoded[:, 1], cloud_decoded[:, 2], 'o', alpha=alpha)
     ax[-1].set_title("decoded cloud")
@@ -23,7 +23,6 @@ def printCloudFile(cloud_original, cloud_decoded, name):
 
 
 def printCloud(cloud_original, name, alpha=0.5, opt=None):
-
     xyz = cloud_original[0]
     print("sono qui")
     fig = plt.figure(figsize=(15, 15))
@@ -41,11 +40,11 @@ def printCloud(cloud_original, name, alpha=0.5, opt=None):
 def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
     xyz = cloud_original[0]
     fig = plt.figure(figsize=(30, 15))
-    ax = fig.add_subplot(1,2,1, projection='3d')
+    ax = fig.add_subplot(1, 2, 1, projection='3d')
     ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], 'o', alpha=alpha)
     ax.set_title("original cloud")
     xyz = cloud_decoded[0]
-    ax = fig.add_subplot(1,2,2, projection='3d')
+    ax = fig.add_subplot(1, 2, 2, projection='3d')
     ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], 'o', alpha=alpha)
     ax.set_title("decoded cloud")
     folder = "/content/pointnet.pytorch/images/" if opt is None else os.path.join(opt.outf, "images")
@@ -56,10 +55,9 @@ def printCloudM(cloud_original, cloud_decoded, name, alpha=0.5, opt=None):
     plt.savefig(os.path.join(folder, f"{hash(str(opt))}_{name}.png"))
 
 
-def savePtsFile(type, category, opt, array, run=None, train=True):
+def savePtsFile(type, category, opt, array, run=None):
     folder = os.path.join(opt.outf, "visualizations", f"{opt.runNumber}", category)
-    string_neptune_path = f"point_clouds/train/{category}/{type}" if train else \
-        f"point_clouds/test/{category}/{type}"
+    string_neptune_path = f"point_clouds/{category}/{type}"
     try:
         os.makedirs(folder)
     except OSError:
@@ -71,23 +69,24 @@ def savePtsFile(type, category, opt, array, run=None, train=True):
     pc_file.close()
 
 
-def print_original_decoded_point_clouds(dataset, category, model, opt, run=None, train=True):
+def print_original_decoded_point_clouds(dataset, category, model, opt, run=None):
     categories = [category]
     if category is None:
         categories = dataset.get_categories()
     for category in categories:
-        for index in range(10):
+        n_point_clouds = 30 if hasattr(opt, 'novel_categories') else 10
+        for index in range(n_point_clouds):
             point_cloud = dataset.get_point_cloud_by_category(category, index=index)
             model.eval()
             point_cloud_np = point_cloud.cuda()
             point_cloud_np = torch.unsqueeze(point_cloud_np, 0)
             decoded_point_cloud = model(point_cloud_np)
             if opt.type_decoder == "pyramid":
-                decoded_point_cloud = decoded_point_cloud[2] #take only the actual input reconstruction
+                decoded_point_cloud = decoded_point_cloud[2]  # take only the actual input reconstruction
             original_pc_np = point_cloud_np.cpu().numpy()
             decoded_pc_np = decoded_point_cloud.cpu().data.numpy()
-            #printCloudM(point_cloud_np, dec_val_stamp, name=category, opt=opt)
+            # printCloudM(point_cloud_np, dec_val_stamp, name=category, opt=opt)
             original_pc_np = original_pc_np.reshape((1024, 3))
             decoded_pc_np = decoded_pc_np.reshape((1024, 3))
-            savePtsFile(f"original_n{index}", category, opt, original_pc_np, run, train)
-            savePtsFile(f"decoded_n{index}", category, opt, decoded_pc_np, run, train)
+            savePtsFile(f"original_n{index}", category, opt, original_pc_np, run)
+            savePtsFile(f"decoded_n{index}", category, opt, decoded_pc_np, run)

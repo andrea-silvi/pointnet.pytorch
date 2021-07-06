@@ -1,9 +1,9 @@
 {
-    "lr": 0.0005,
-    "size_encoder": 512,
+    "lr": 0.0001,
+    "size_encoder": 1024,
     "weight_decay": 0,
     "scheduler_gamma": 0.5,
-    "nepoch": 50,
+    "nepoch": 100,
     "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0",
     "set_size": 1,
     "batchSize": 32,
@@ -11,16 +11,16 @@
     "workers": 2,
     "outf":  "cls",
     "model": "",
-    "train_class_choice": "Motorbike",
-    "test_class_choice": "Motorbike",
+    "train_class_choice": "None",
+    "test_class_choice": "None",
     "scheduler_stepSize": 20,
     "dropout": 0,
     "beta_1": 0.9,
     "beta_2": 0.999,
-    "patience
-"patience": 20,
-    "final_training": 0,
+    "patience": 30,
+    "final_training": 1,
     "architecture": "original",
     "type_encoder":"dgcnn",
-    "k": 20
+    "type_decoder": "pyramid",
+    "k": 10
 }
