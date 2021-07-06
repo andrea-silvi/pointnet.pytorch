@@ -1,6 +1,6 @@
 {
     "lr": 0.0005,
-    "size_encoder": 1024,
+    "size_encoder": 1280,
     "weight_decay": 0,
     "scheduler_gamma": 0.5,
     "nepoch": 100,
