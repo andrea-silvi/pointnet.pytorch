@@ -20,6 +20,8 @@ Where 'cd_weight' is a loss weight term that you should cross-validate. Hint: tr
 
 import torch
 import torch.nn as nn
+from gcnn.gcnn_model import knn
+#from knn_cuda import KNN
 
 
 # Simple Chamfer Distance / Loss implementation
@@ -120,3 +122,37 @@ class PointLoss(nn.Module):
 
     def forward(self, array1, array2):
         return chamfer_distance_numpy(array1, array2, self.cd_weight)
+
+
+# def knn_point(group_size, point_cloud, query_cloud, transpose_mode=False):
+#     knn_obj = KNN(k=group_size, transpose_mode=transpose_mode)
+#     dist, idx = knn_obj(point_cloud, query_cloud)
+#     return dist, idx
+
+class RepulsionLoss(nn.Module):
+    def __init__(self, alpha=1.0, nn_size=5, radius=0.07, h=0.03, eps=1e-12):
+        super(RepulsionLoss, self).__init__()
+        self.alpha = alpha
+        self.nn_size = nn_size
+        self.radius = radius
+        self.h = h
+        self.eps = eps
+    def forward(self, pred):
+        #_, idx = knn_point(self.nn_size, pred, pred, transpose_mode=True)
+        #pred must be batchsize, 3, n_points
+        idx = knn(self.nn_size, pred.transpose(2, 1))  #k, pointcloud
+        idx = idx[:, :, 1:].to(torch.int32)  # remove first one
+        idx = idx.contiguous()  # B, N, nn
+
+        pred = pred.transpose(1, 2).contiguous()  # B, 3, N
+        grouped_points = pn2_utils.grouping_operation(pred, idx)  # (B, 3, N), (B, N, nn) => (B, 3, N, nn)
+
+        grouped_points = grouped_points - pred.unsqueeze(-1)
+        dist2 = torch.sum(grouped_points ** 2, dim=1)
+        dist2 = torch.max(dist2, torch.tensor(self.eps).cuda())
+        dist = torch.sqrt(dist2)
+        weight = torch.exp(- dist2 / self.h ** 2)
+
+        uniform_loss = torch.mean((self.radius - dist) * weight)
+        # uniform_loss = torch.mean(self.radius - dist * weight) # punet
+        return uniform_loss
