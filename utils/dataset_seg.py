@@ -32,7 +32,7 @@ class ShapeNetPart(data.Dataset):
 
         assert split.lower() in ['train', 'test', 'val', 'trainval', 'all']
 
-        self.root = os.path.join(root,'_' + '*hdf5_2048')
+        self.root = root
         self.class_choice = class_choice
         self.num_points = num_points
         self.split = split
@@ -53,14 +53,16 @@ class ShapeNetPart(data.Dataset):
 
         self.path_h5py_all.sort()
         data, label, seg = self.load_h5py(self.path_h5py_all)
-
+        data = np.array(data)
+        label = np.array(label)
+        seg = np.array(seg)
         if self.load_name or self.class_choice != None:
             self.path_name_all.sort()
             self.name = self.load_json(self.path_name_all)  # load label name
 
         if self.load_file:
             self.path_file_all.sort()
-            self.file = self.load_json(self.path_file_all)  # load file name
+            self.file = np.array(self.load_json(self.path_file_all))  # load file name
 
         self.data = np.concatenate(data, axis=0)
         self.label = np.concatenate(label, axis=0)
@@ -68,7 +70,7 @@ class ShapeNetPart(data.Dataset):
             self.seg = np.concatenate(seg, axis=0)
 
         if self.class_choice != None:
-            indices = (self.name == class_choice).squeeze()
+            indices = np.array(np.array(self.name) == class_choice).squeeze()
             self.data = self.data[indices]
             self.label = self.label[indices]
             if self.segmentation:
@@ -144,12 +146,12 @@ class ShapeNetPart(data.Dataset):
 
 if __name__ == '__main__':
     root = os.getcwd()
-
+    path = "D:\\UNIVERSITA\\PRIMO ANNO\\SECONDO SEMESTRE\\Machine learning and Deep learning\\PROJECTS\\P1\\shapenetpart_hdf5_2048"
     # choose split type from 'train', 'test', 'all', 'trainval' and 'val'
     # only shapenetcorev2 and shapenetpart dataset support 'trainval' and 'val'
     split = 'train'
 
-    d = ShapeNetPart(root=root, num_points=2048, split=split)
+    d = ShapeNetPart(root=path, num_points=2048, split=split)
     print("datasize:", d.__len__())
 
     item = 0
