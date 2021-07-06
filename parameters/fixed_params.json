@@ -4,7 +4,7 @@
     "weight_decay": 0,
     "scheduler_gamma": 0.5,
     "nepoch": 100,
-    "dataset": "/content/drive/MyDrive/shapenetpart_hdf5_2048", ,
+    "dataset": "/content/drive/MyDrive/shapenetpart_hdf5_2048",
     "batchSize": 32,
     "num_points": 2048,
     "workers": 2,
