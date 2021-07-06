@@ -46,6 +46,8 @@ class ShapeNetPart(data.Dataset):
 
         if self.split in ['train', 'trainval', 'all']:
             self.get_path('train')
+        if self.split in ['val', 'trainval', 'all']:
+            self.get_path('val')
         if self.split in ['test', 'all']:
             self.get_path('test')
 

@@ -95,7 +95,7 @@ def print_original_decoded_point_clouds(dataset, category, model, opt, run=None)
 
 
 def print_original_incomplete_decoded_point_clouds(category, model, opt, run):
-    categories = ["Airplane", "Car", "Chair", "Lamp", "Mug", "Motorbike", "Table"]\
+    categories = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table"]\
         if category is None else [category]
     model.eval()
     for category in categories:
