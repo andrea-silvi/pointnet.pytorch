@@ -4,6 +4,8 @@ import os
 from matplotlib import gridspec
 import utils.dataset as ds
 import torch
+from utils.dataset_seg import ShapeNetPart
+from train_pc import cropping
 
 
 # Insert the cloud path in order to print it
@@ -90,3 +92,30 @@ def print_original_decoded_point_clouds(dataset, category, model, opt, run=None)
             decoded_pc_np = decoded_pc_np.reshape((1024, 3))
             savePtsFile(f"original_n{index}", category, opt, original_pc_np, run)
             savePtsFile(f"decoded_n{index}", category, opt, decoded_pc_np, run)
+
+
+def print_original_incomplete_decoded_point_clouds(category, model, opt, run):
+    categories = ["Airplane", "Car", "Chair", "Lamp", "Mug", "Motorbike", "Table"]\
+        if category is None else [category]
+    model.eval()
+    for category in categories:
+        dataset = ShapeNetPart(root=opt.dataset, class_choice=category, split="test")
+        for index in range(10):
+            if index > dataset.__len__():
+                break
+            point_cloud = dataset.__getitem__(index)
+            point_cloud = point_cloud.cuda()
+            point_cloud = torch.unsqueeze(point_cloud, 0)
+            original_pc_np = point_cloud.cpu().numpy()
+            original_pc_np = original_pc_np.reshape((-1, 3))
+            savePtsFile(f"{index}_original", category, opt, original_pc_np, run)
+            for num_crop in range(5):
+                incomplete_cloud = cropping(point_cloud)
+                incomplete_cloud = incomplete_cloud.cuda()
+                decoded_point_cloud = model(incomplete_cloud)
+                decoded_pc_np = decoded_point_cloud.cpu().data.numpy()
+                incomplete_pc_np = incomplete_cloud.cpu().data.numpy()
+                incomplete_pc_np = incomplete_cloud.reshape((-1, 3))
+                decoded_pc_np = decoded_pc_np.reshape((-1, 3))
+                savePtsFile(f"{index}_{num_crop}_incomplete", category, opt, incomplete_pc_np, run)
+                savePtsFile(f"{index}_{num_crop}_decoded", category, opt, decoded_pc_np, run)

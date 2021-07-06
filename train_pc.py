@@ -202,13 +202,7 @@ def train_naive_pc(opt):
     if opt.nepoch <= 50:
         torch.save(autoencoder.state_dict(), checkpoint_path)
     autoencoder.load_state_dict(torch.load(checkpoint_path))
-    # TODO- implementa 'printPointClous' per ShapeNetPart dataset
-    # printPointCloud.print_original_decoded_point_clouds(ShapeNetPart(
-    #     root=opt.dataset,
-    #     class_choice=opt.train_class_choice,
-    #     segmentation=False,
-    #     split="test"
-    # ), opt.test_class_choice, autoencoder, opt, run)
+    printPointCloud.print_original_incomplete_decoded_point_clouds(opt.test_class_choice, autoencoder, opt, run)
     if not final_training:
         run.stop()
         return autoencoder, val_history
