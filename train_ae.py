@@ -1,21 +1,18 @@
 from __future__ import print_function
-import numpy as np
-import torch
 from pointnet.pointnet_model import PointNet_AutoEncoder
 from pointnet.deeper_pointnet_model import PointNet_DeeperAutoEncoder
 from gcnn.gcnn_model import DGCNN_AutoEncoder
 from utils.loss import PointLoss
 import argparse
-import os
 import torch.optim as optim
 import torch.utils.data
 from utils.dataset import ShapeNetDataset
 import gc
-import csv
 from utils.early_stopping import EarlyStopping
 from utils.FPS import farthest_point_sample, index_points
-import sys, json
+import json
 
+from utils.utils import upload_args_from_json
 from visualization_tools import printPointCloud
 from visualization_tools.printPointCloud import *
 
@@ -126,18 +123,6 @@ def evaluate_novel_categories(opt, autoencoder, run):
         run[f"loss/novel_categories/{classs}"] = test_example(opt, novel_dataloader, autoencoder)
         print_original_decoded_point_clouds(novel_dataset, classs, autoencoder, opt, run)
         print()
-
-
-def upload_args_from_json(file_path=os.path.join("parameters", "fixed_params.json")):
-    parser = argparse.ArgumentParser(description=f'Arguments from json')
-    args = parser.parse_args()
-    json_params = json.loads(open(file_path).read())
-    for option, option_value in json_params.items():
-        if option_value == 'None':
-            option_value = None
-        setattr(args, option, option_value)
-    setattr(args, "runNumber", 0)
-    return args
 
 
 def test_example(opt, test_dataloader, model):
