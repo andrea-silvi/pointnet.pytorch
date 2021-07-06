@@ -32,7 +32,7 @@ class ShapeNetPart(data.Dataset):
 
         assert split.lower() in ['train', 'test', 'val', 'trainval', 'all']
 
-        self.root = os.path.join(root,'_' + '*hdf5_2048')
+        self.root = root
         self.class_choice = class_choice
         self.num_points = num_points
         self.split = split
