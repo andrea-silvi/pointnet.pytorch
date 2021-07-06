@@ -115,7 +115,7 @@ def print_original_incomplete_decoded_point_clouds(category, model, opt, run):
                 decoded_point_cloud = model(incomplete_cloud)
                 decoded_pc_np = decoded_point_cloud.cpu().data.numpy()
                 incomplete_pc_np = incomplete_cloud.cpu().data.numpy()
-                incomplete_pc_np = incomplete_cloud.reshape((-1, 3))
+                incomplete_pc_np = incomplete_pc_np.reshape((-1, 3))
                 decoded_pc_np = decoded_pc_np.reshape((-1, 3))
                 savePtsFile(f"{index}_{num_crop}_incomplete", category, opt, incomplete_pc_np, run)
                 savePtsFile(f"{index}_{num_crop}_decoded", category, opt, decoded_pc_np, run)
