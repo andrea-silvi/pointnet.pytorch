@@ -50,10 +50,7 @@ class ShapeNetPart(data.Dataset):
             self.get_path('test')
 
         self.path_h5py_all.sort()
-        data, label, seg = self.load_h5py(self.path_h5py_all)
-        data = np.array(data)
-        label = np.array(label)
-        seg = np.array(seg)
+        self.data, self.label, self.seg = self.load_h5py(self.path_h5py_all)
         if self.load_name or self.class_choice != None:
             self.path_name_all.sort()
             self.name = self.load_json(self.path_name_all)  # load label name
@@ -61,11 +58,6 @@ class ShapeNetPart(data.Dataset):
         if self.load_file:
             self.path_file_all.sort()
             self.file = np.array(self.load_json(self.path_file_all))  # load file name
-
-        self.data = np.concatenate(data, axis=0)
-        self.label = np.concatenate(label, axis=0)
-        if self.segmentation:
-            self.seg = np.concatenate(seg, axis=0)
 
         if self.class_choice != None:
             indices = np.array(np.array(self.name) == class_choice).squeeze()
@@ -94,20 +86,20 @@ class ShapeNetPart(data.Dataset):
         return
 
     def load_h5py(self, path):
-        all_data = []
-        all_label = []
-        all_seg = []
+        all_data = None
+        all_label = None
+        all_seg = None
         for h5_name in path:
             f = h5py.File(h5_name, 'r+')
-            data = f['data'][:].astype('float32')
-            label = f['label'][:].astype('int64')
+            data = np.array(f['data'][:].astype('float32'))
+            label = np.array(f['label'][:].astype('int64'))
             if self.segmentation:
-                seg = f['seg'][:].astype('int64')
+                seg = np.array(f['seg'][:].astype('int64'))
             f.close()
-            all_data.append(data)
-            all_label.append(label)
+            all_data = data if all_data is None else np.concatenate([all_data, data])
+            all_label = label if all_label is None else np.concatenate([all_label, label])
             if self.segmentation:
-                all_seg.append(seg)
+                all_seg = seg if all_seg is None else np.concatenate([all_seg, seg])
         return all_data, all_label, all_seg
 
     def load_json(self, path):
@@ -149,9 +141,9 @@ if __name__ == '__main__':
     # only shapenetcorev2 and shapenetpart dataset support 'trainval' and 'val'
     split = 'train'
 
-    d = ShapeNetPart(root=path, num_points=2048, split=split)
+    d = ShapeNetPart(root=path, num_points=2048, split=split, class_choice="mug")
     print("datasize:", d.__len__())
 
     item = 0
-    ps, lb, n, f = d[item]
-    print(ps.size(), ps.type(), lb.size(), lb.type(), n, f)
+    ps = d[item]
+    print(ps.size(), ps.type())
