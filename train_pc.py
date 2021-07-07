@@ -39,7 +39,7 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
     return incomplete_input
 
 
-def test_example(opt, test_dataloader, model, n_crop_points=512):
+def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
     # initialize lists to monitor test loss and accuracy
     chamfer_loss = PointLoss()
     test_loss = 0.0
@@ -62,7 +62,7 @@ def test_example(opt, test_dataloader, model, n_crop_points=512):
         if opt.segmentation:
             output_clouds, pred = model(incomplete_input_test)
             output, pred = output_clouds[2].cuda(), pred.cuda()
-            pred = pred.view(-1, 50)
+            pred = pred.view(-1, n_classes)
             target = target.view(-1, 1)[:, 0]
             seg_loss = F.nll_loss(pred, target)
             pred_choice = pred.data.max(1)[1].cuda()
@@ -86,7 +86,7 @@ def test_example(opt, test_dataloader, model, n_crop_points=512):
     return test_loss, seg_test_loss, accuracy_test_loss if opt.segmentation else test_loss
 
 
-def evaluate_loss_by_class(opt, autoencoder, run):
+def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
     run["params"] = vars(opt)
     classes = ["Airplane", "Car", "Chair", "Lamp", "Mug", "Motorbike", "Table"] if opt.test_class_choice is None\
         else [opt.test_class_choice]
@@ -103,7 +103,7 @@ def evaluate_loss_by_class(opt, autoencoder, run):
             batch_size=opt.batchSize,
             shuffle=True,
             num_workers=int(opt.workers))
-        losss = test_example(opt, test_dataloader, autoencoder)
+        losss = test_example(opt, test_dataloader, autoencoder, n_classes)
         if opt.segmentation:
             run[f"loss/chamfer_{classs}"] = losss[0]
             run[f"loss/nll_seg_{classs}"] = losss[1]
@@ -173,7 +173,8 @@ def train_pc(opt):
         os.makedirs(opt.outf)
     except OSError:
         pass
-    pc_architecture = PFNet_MultiTaskCompletionNet(crop_point_num=n_crop_points) \
+    num_classes = training_dataset.seg_num_all
+    pc_architecture = PFNet_MultiTaskCompletionNet(num_classes=num_classes, crop_point_num=n_crop_points) \
         if opt.segmentation else PointNet_NaiveCompletionNetwork(num_points=opt.num_points, size_encoder=opt.size_encoder)
 
     optimizer = optim.Adam(pc_architecture.parameters(), lr=opt.lr, betas=(opt.beta_1, opt.beta_2), eps=1e-5,
@@ -190,7 +191,6 @@ def train_pc(opt):
     #  instantiate the loss
     chamfer_loss = PointLoss()
     n_epoch = opt.nepoch
-    num_classes = training_dataset.seg_num_all
     num_batch = len(training_dataset) / opt.batchSize
     for epoch in range(n_epoch):
         # TODO - change weight segmentation loss
@@ -334,7 +334,7 @@ def train_pc(opt):
         return pc_architecture, val_history
     else:
         run["model_dictionary"].upload(checkpoint_path)
-        evaluate_loss_by_class(opt, pc_architecture, run)
+        evaluate_loss_by_class(opt, pc_architecture, run, num_classes)
         # test_loss = test_example(opt, test_dataloader, pc_architecture)
         # run["test/loss"].log(test_loss)
         run.stop()
