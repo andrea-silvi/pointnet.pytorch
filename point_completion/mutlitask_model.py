@@ -101,7 +101,7 @@ class PointPyramidDecoder(nn.Module):
     def __init__(self, input_dimnesion=1920, crop_point_num=512):
         super(PointPyramidDecoder, self).__init__()
         self.crop_point_num = crop_point_num
-        self.fc1 = nn.Linear(1920, 1024)
+        self.fc1 = nn.Linear(input_dimnesion, 1024)
         self.fc2 = nn.Linear(1024, 512)
         self.fc3 = nn.Linear(512, 256)
 
@@ -159,7 +159,7 @@ class PFNet_MultiTaskCompletionNet(nn.Module):
         self.seg_decoder = PointNetDenseCls(k=num_classes)
 
         # Decoder for point completion
-        self.pc_decoder = PointPyramidDecoder(input_dimnesion=1088, crop_point_num=crop_point_num)
+        self.pc_decoder = PointPyramidDecoder(input_dimnesion=1024, crop_point_num=crop_point_num)
 
     def forward(self, x):
         x = x.permute(0, 2, 1)  # [BS, N, 3] => [BS, 3, N]

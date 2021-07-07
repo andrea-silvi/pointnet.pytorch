@@ -22,16 +22,19 @@ from visualization_tools.printPointCloud import *
 import neptune.new as neptune
 
 
-def cropping(batch_point_cloud, num_cropped_points=512):
+def cropping(batch_point_cloud, batch_target, num_cropped_points=512):
     # batch_point_cloud: (batch_size, num_points, 3)
     batch_size = batch_point_cloud.size(0)
     num_points = batch_point_cloud.size(1)
+    k = num_points-num_cropped_points
     idx = torch.randint(0, num_points, (batch_size,), device="cuda")
     idx_base = torch.arange(0, batch_size, device="cuda").view(-1) * num_points
     idx = (idx + idx_base).view(-1)
     batch_points = batch_point_cloud.view(-1, 3)[idx, :].view(-1, 1, 3)
-    incomplete_input = farthest_points(batch_point_cloud, batch_points, num_points-num_cropped_points)
-    return incomplete_input
+    incomplete_input, idx = farthest_points(batch_point_cloud, batch_points, k)
+    batch_target = batch_target.view(-1, 50)
+    batch_target = batch_target[idx, :]
+    return incomplete_input,  batch_target.view(-1, k, 50)
 
 
 def test_example(opt, test_dataloader, model, n_crop_points=512):
