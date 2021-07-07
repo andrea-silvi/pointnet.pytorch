@@ -123,7 +123,7 @@ def train_pc(opt):
                        api_token=neptune_info['api_token'])
     run['params'] = vars(opt)
     random_seed = 43
-    num_classes = 50
+    num_classes = None
     n_crop_points = 512
     torch.manual_seed(random_seed)
 
@@ -190,6 +190,7 @@ def train_pc(opt):
     #  instantiate the loss
     chamfer_loss = PointLoss()
     n_epoch = opt.nepoch
+    num_classes = training_dataset.seg_num_all
     num_batch = len(training_dataset) / opt.batchSize
     for epoch in range(n_epoch):
         # TODO - change weight segmentation loss
