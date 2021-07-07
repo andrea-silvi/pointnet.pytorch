@@ -63,10 +63,10 @@ def test_example(opt, test_dataloader, model, n_crop_points=512):
             output_clouds, pred = model(incomplete_input_test)
             output, pred = output_clouds[2].cuda(), pred.cuda()
             pred = pred.view(-1, 50)
-            target = target.view(-1, 1)[:, 0] - 1
+            target = target.view(-1, 1)[:, 0]
             seg_loss = F.nll_loss(pred, target)
             pred_choice = pred.data.max(1)[1].cuda()
-            correct = pred_choice.eq(target.data).cpu().sum()
+            correct = pred_choice.eq(target.data).sum()
             seg_test_loss += seg_loss * points.size(0)
             accuracy_test_loss += (correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))) * points.size(0)
         else:
@@ -226,10 +226,10 @@ def train_pc(opt):
                 decoded_points, pred = pc_architecture(incomplete_input)
                 pred = pred.cuda()
                 pred = pred.view(-1, num_classes)
-                target = target.view(-1, 1)[:, 0] - 1
+                target = target.view(-1, 1)[:, 0]
                 seg_loss = F.nll_loss(pred, target)
                 pred_choice = pred.data.max(1)[1].cuda()
-                correct = pred_choice.eq(target.data).cpu().sum()
+                correct = pred_choice.eq(target.data).sum()
                 print('[%d: %d/%d] train loss: %f accuracy: %f' % (
                 epoch, i, num_batch, seg_loss.item(), correct.item() / float(opt.batchSize * (opt.num_points - n_crop_points))))
                 decoded_coarse = decoded_points[0].cuda()
@@ -249,7 +249,7 @@ def train_pc(opt):
                        + alpha2 * chamfer_loss(fine_sampling, decoded_fine) \
                        + weight_sl*seg_loss
                 run["train/batch_seg_loss"].log(seg_loss)
-                segmentation_losses.append(seg_loss)
+                segmentation_losses.append(seg_loss.item())
             else:
                 decoded_points = pc_architecture(incomplete_input)
                 decoded_points = decoded_points.cuda()
@@ -286,16 +286,15 @@ def train_pc(opt):
                         decoded_point_clouds, seg_predictions = pc_architecture(incomplete_input_val)
                         pred = pred.cuda()
                         pred = pred.view(-1, num_classes)
-                        target = target.view(-1, 1)[:, 0] - 1
+                        target = target.view(-1, 1)[:, 0]
                         val_seg_loss = F.nll_loss(pred, target)
                         pred_choice = pred.data.max(1)[1].cuda()
-                        correct = pred_choice.eq(target.data).cpu().sum()
+                        correct = pred_choice.eq(target.data).sum()
                         print('[%d: %d/%d] train loss: %f accuracy: %f' % (
                             epoch, j, num_batch, val_seg_loss.item(), correct.item() / float(opt.batchSize * (opt.num_points - n_crop_points))))
                         decoded_val_points = decoded_point_clouds[2].cuda()
-                        val_seg_losses.append(val_seg_loss)
+                        val_seg_losses.append(val_seg_loss.item())
                         run["validation/batch_seg_loss"].log(val_seg_loss)
-                        val_seg_losses.append(val_seg_loss)
                     else:
                         decoded_val_points = pc_architecture(incomplete_input_val)
                         decoded_val_points = decoded_val_points.cuda()
