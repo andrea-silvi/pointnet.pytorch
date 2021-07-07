@@ -65,7 +65,7 @@ def test_example(opt, test_dataloader, model, n_crop_points=512):
             pred = pred.view(-1, 50)
             target = target.view(-1, 1)[:, 0] - 1
             seg_loss = F.nll_loss(pred, target)
-            pred_choice = pred.data.max(1)[1]
+            pred_choice = pred.data.max(1)[1].cuda()
             correct = pred_choice.eq(target.data).cpu().sum()
             seg_test_loss += seg_loss * points.size(0)
             accuracy_test_loss += (correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))) * points.size(0)
@@ -228,7 +228,7 @@ def train_pc(opt):
                 pred = pred.view(-1, num_classes)
                 target = target.view(-1, 1)[:, 0] - 1
                 seg_loss = F.nll_loss(pred, target)
-                pred_choice = pred.data.max(1)[1]
+                pred_choice = pred.data.max(1)[1].cuda()
                 correct = pred_choice.eq(target.data).cpu().sum()
                 print('[%d: %d/%d] train loss: %f accuracy: %f' % (
                 epoch, i, num_batch, seg_loss.item(), correct.item() / float(opt.batchSize * (opt.num_points - n_crop_points))))
@@ -288,7 +288,7 @@ def train_pc(opt):
                         pred = pred.view(-1, num_classes)
                         target = target.view(-1, 1)[:, 0] - 1
                         val_seg_loss = F.nll_loss(pred, target)
-                        pred_choice = pred.data.max(1)[1]
+                        pred_choice = pred.data.max(1)[1].cuda()
                         correct = pred_choice.eq(target.data).cpu().sum()
                         print('[%d: %d/%d] train loss: %f accuracy: %f' % (
                             epoch, j, num_batch, val_seg_loss.item(), correct.item() / float(opt.batchSize * (opt.num_points - n_crop_points))))
