@@ -22,7 +22,6 @@ shapenetpart_seg_num = [4, 2, 2, 4, 4, 3, 3, 2, 4, 2, 6, 2, 3, 3, 3, 3]
 shapenetpart_seg_start_index = [0, 4, 6, 8, 12, 16, 19, 22, 24, 28, 30, 36, 38, 41, 44, 47]
 
 
-
 class ShapeNetPart(data.Dataset):
     def __init__(self, root, class_choice=None,
                  num_points=2048, split='train', load_name=True, load_file=True,
@@ -33,7 +32,8 @@ class ShapeNetPart(data.Dataset):
         assert split.lower() in ['train', 'test', 'val', 'trainval', 'all']
 
         self.root = root
-        self.class_choice = class_choice
+        self.class_choice = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table"] \
+            if class_choice is None else [class_choice]
         self.num_points = num_points
         self.split = split
         self.load_name = load_name
@@ -62,7 +62,10 @@ class ShapeNetPart(data.Dataset):
             self.file = np.array(self.load_json(self.path_file_all))  # load file name
 
         if self.class_choice != None:
-            indices = np.array(np.array(self.name) == class_choice).squeeze()
+            if len(self.class_choice) == 1:
+                indices = np.array(np.array(self.name) == self.class_choice).squeeze()
+            else:
+                indices = np.array(np.sum(np.array(self.name).reshape(-1,1) == self.class_choice, axis=-1, dtype=np.bool8)).squeeze()
             self.data = self.data[indices]
             self.label = self.label[indices]
             if self.segmentation:
@@ -120,7 +123,7 @@ class ShapeNetPart(data.Dataset):
         if self.load_file:
             file = self.file[item]  # get file name
 
-       # convert numpy array to pytorch Tensor
+        # convert numpy array to pytorch Tensor
         point_set = torch.from_numpy(point_set)
         label = torch.from_numpy(np.array([label]).astype(np.int64))
         label = label.squeeze(0)

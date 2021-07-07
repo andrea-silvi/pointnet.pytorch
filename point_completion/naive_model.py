@@ -118,7 +118,7 @@ class Decoder(nn.Module):
         x = x.view(batchsize, self.num_points, 3)
         return x
 
-class PointNet_CompletionNetwork(nn.Module):
+class PointNet_NaiveCompletionNetwork(nn.Module):
     '''
   Complete AutoEncoder Model:
   Given an input point cloud X:
@@ -132,7 +132,7 @@ class PointNet_CompletionNetwork(nn.Module):
   '''
 
     def __init__(self, num_points=2048, size_encoder=1024, feature_transform=False):
-        super(PointNet_CompletionNetwork, self).__init__()
+        super(PointNet_NaiveCompletionNetwork, self).__init__()
         #print("PointNet AE Init - num_points (# generated): %d" % num_points)
 
         #  Encoder Definition
