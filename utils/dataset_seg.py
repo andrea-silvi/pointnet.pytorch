@@ -72,6 +72,9 @@ class ShapeNetPart(data.Dataset):
                 self.seg = self.seg[indices]
                 id_choice = [shapenetpart_cat2id[classs] for classs in self.class_choice]
                 self.seg_num_all = np.sum(np.array(shapenetpart_seg_num)[id_choice])
+                self.seg_start_index = np.array(shapenetpart_seg_start_index)[id_choice]
+                self.seg_num_class = np.array(shapenetpart_seg_num)[id_choice]
+                self.class_idx = np.array(id_choice)
             if self.load_file:
                 self.file = self.file[indices]
         elif self.segmentation:
@@ -129,7 +132,23 @@ class ShapeNetPart(data.Dataset):
 
         if self.segmentation:
             seg = self.seg[item]
-            seg = torch.from_numpy(seg)
+
+            # self.seg_num_all
+            # self.seg_start_index
+            # self.seg_num_class
+            # shapenetpart_cat2id = {'airplane': 0, 'bag': 1, 'cap': 2, 'car': 3, 'chair': 4,
+            #                        'earphone': 5, 'guitar': 6, 'knife': 7, 'lamp': 8, 'laptop': 9,
+            #                        'motorbike': 10, 'mug': 11, 'pistol': 12, 'rocket': 13, 'skateboard': 14,
+            #                        'table': 15}
+            # shapenetpart_seg_num = [4, 2, 2, 4, 4, 3, 3, 2, 4, 2, 6, 2, 3, 3, 3, 3]
+            # shapenetpart_seg_start_index = [0, 4, 6, 8, 12, 16, 19, 22, 24, 28, 30, 36, 38, 41, 44, 47]
+            offset = 0
+            for idx in range(label.item()):
+                if idx in self.class_idx:
+                    offset += shapenetpart_seg_num[idx]
+            start_index = shapenetpart_seg_start_index[label.item()]
+            func_map = np.vectorize(lambda x: x-start_index+offset)
+            seg = torch.from_numpy(func_map(seg))
             return point_set, seg
         else:
             return point_set
@@ -145,9 +164,9 @@ if __name__ == '__main__':
     # only shapenetcorev2 and shapenetpart dataset support 'trainval' and 'val'
     split = 'train'
 
-    d = ShapeNetPart(root=path, num_points=2048, split=split, class_choice=None, segmentation=True)
+    d = ShapeNetPart(root=path, num_points=2048, split=split, class_choice="mug", segmentation=True)
     print("datasize:", d.__len__())
 
     item = 0
-    ps = d[item]
+    ps = d[2]
     print(ps.size(), ps.type())
