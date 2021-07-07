@@ -230,8 +230,8 @@ def train_pc(opt):
                 seg_loss = F.nll_loss(pred, target)
                 pred_choice = pred.data.max(1)[1].cuda()
                 correct = pred_choice.eq(target.data).sum()
-                print('[%d: %d/%d] train loss: %f accuracy: %f' % (
-                epoch, i, num_batch, seg_loss.item(), correct.item() / float(opt.batchSize * (opt.num_points - n_crop_points))))
+                print('>>>>>[%d: %d/%d] train negative likelihood loss: %f accuracy: %f' % (
+                epoch, i, num_batch, seg_loss.item(), correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))))
                 decoded_coarse = decoded_points[0].cuda()
                 decoded_fine = decoded_points[1].cuda()
                 decoded_input = decoded_points[2].cuda()
@@ -283,15 +283,15 @@ def train_pc(opt):
                         incomplete_input_val = incomplete_input_val.cuda()
                     pc_architecture.eval()
                     if opt.segmentation:
-                        decoded_point_clouds, seg_predictions = pc_architecture(incomplete_input_val)
+                        decoded_point_clouds, pred = pc_architecture(incomplete_input_val)
                         pred = pred.cuda()
                         pred = pred.view(-1, num_classes)
                         target = target.view(-1, 1)[:, 0]
                         val_seg_loss = F.nll_loss(pred, target)
                         pred_choice = pred.data.max(1)[1].cuda()
                         correct = pred_choice.eq(target.data).sum()
-                        print('[%d: %d/%d] train loss: %f accuracy: %f' % (
-                            epoch, j, num_batch, val_seg_loss.item(), correct.item() / float(opt.batchSize * (opt.num_points - n_crop_points))))
+                        print('>>>>>>[%d: %d/%d] validation negative likelihood loss: %f accuracy: %f' % (
+                            epoch, j, num_batch, val_seg_loss.item(), correct.item() / float(val_points.size(0) * (opt.num_points - n_crop_points))))
                         decoded_val_points = decoded_point_clouds[2].cuda()
                         val_seg_losses.append(val_seg_loss.item())
                         run["validation/batch_seg_loss"].log(val_seg_loss)
