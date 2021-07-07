@@ -98,7 +98,7 @@ class PointNetDenseCls(nn.Module):
 
 
 class PointPyramidDecoder(nn.Module):
-    def __init__(self, crop_point_num=512):
+    def __init__(self, input_dimnesion=1920, crop_point_num=512):
         super(PointPyramidDecoder, self).__init__()
         self.crop_point_num = crop_point_num
         self.fc1 = nn.Linear(1920, 1024)
@@ -116,7 +116,6 @@ class PointPyramidDecoder(nn.Module):
 
 
     def forward(self, x):
-        x = self.latentfeature(x)
         x_1 = F.relu(self.fc1(x))  # 1024
         x_2 = F.relu(self.fc2(x_1))  # 512
         x_3 = F.relu(self.fc3(x_2))  # 256
@@ -160,7 +159,7 @@ class PFNet_MultiTaskCompletionNet(nn.Module):
         self.seg_decoder = PointNetDenseCls(k=num_classes)
 
         # Decoder for point completion
-        self.pc_decoder = PointPyramidDecoder(crop_point_num)
+        self.pc_decoder = PointPyramidDecoder(input_dimnesion=1088, crop_point_num=crop_point_num)
 
     def forward(self, x):
         x = x.permute(0, 2, 1)  # [BS, N, 3] => [BS, 3, N]
