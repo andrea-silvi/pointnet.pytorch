@@ -112,7 +112,11 @@ def print_original_incomplete_decoded_point_clouds(category, model, opt, run):
             for num_crop in range(5):
                 incomplete_cloud = cropping(point_cloud)
                 incomplete_cloud = incomplete_cloud.cuda()
-                decoded_point_cloud = model(incomplete_cloud)
+                if opt.segmentation:
+                    decoded_point_cloud, _ = model(incomplete_cloud)
+                    decoded_point_cloud = decoded_point_cloud[2]
+                else:
+                    decoded_point_cloud = model(incomplete_cloud)
                 decoded_pc_np = decoded_point_cloud.cpu().data.numpy()
                 incomplete_pc_np = incomplete_cloud.cpu().data.numpy()
                 incomplete_pc_np = incomplete_pc_np.reshape((-1, 3))
