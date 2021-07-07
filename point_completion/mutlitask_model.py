@@ -153,7 +153,7 @@ class PointPyramidDecoder(nn.Module):
 
 
 class PFNet_MultiTaskCompletionNet(nn.Module):
-    def __init__(self, num_scales, each_scales_size, point_scales_list, crop_point_num, num_points=2048, num_classes=50):
+    def __init__(self, num_scales=3, each_scales_size=1, point_scales_list=[2048-512, 512, 256], crop_point_num=512, num_points=2048, num_classes=50):
         super(PFNet_MultiTaskCompletionNet, self).__init__()
 
         #  Encoder Definition
