@@ -76,8 +76,6 @@ class PointNetDenseCls(nn.Module):
     def __init__(self, k = 2, feature_transform=False):
         super(PointNetDenseCls, self).__init__()
         self.k = k
-        self.feature_transform=feature_transform
-        self.feat = PointNetfeat(global_feat=False, feature_transform=feature_transform)
         self.conv1 = torch.nn.Conv1d(1088, 512, 1)
         self.conv2 = torch.nn.Conv1d(512, 256, 1)
         self.conv3 = torch.nn.Conv1d(256, 128, 1)
@@ -89,7 +87,6 @@ class PointNetDenseCls(nn.Module):
     def forward(self, x):
         batchsize = x.size()[0]
         n_pts = x.size()[2]
-        x, trans, trans_feat = self.feat(x)
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
@@ -97,7 +94,7 @@ class PointNetDenseCls(nn.Module):
         x = x.transpose(2,1).contiguous()
         x = F.log_softmax(x.view(-1,self.k), dim=-1)
         x = x.view(batchsize, n_pts, self.k)
-        return x, trans, trans_feat
+        return x
 
 
 class PointPyramidDecoder(nn.Module):
@@ -153,7 +150,7 @@ class PointPyramidDecoder(nn.Module):
 
 
 class PFNet_MultiTaskCompletionNet(nn.Module):
-    def __init__(self, num_scales, each_scales_size, point_scales_list, crop_point_num, num_points=2048, num_classes=50):
+    def __init__(self, num_scales=3, each_scales_size=1, point_scales_list=[2048-512, 512, 256], crop_point_num=512, num_points=2048, num_classes=50):
         super(PFNet_MultiTaskCompletionNet, self).__init__()
 
         #  Encoder Definition
