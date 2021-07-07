@@ -31,11 +31,10 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
     idx_base = torch.arange(0, batch_size, device="cuda").view(-1) * num_points
     idx = (idx + idx_base).view(-1)
     batch_points = batch_point_cloud.view(-1, 3)[idx, :].view(-1, 1, 3)
-    incomplete_input, idx, cropped_input, idx_cropped = farthest_and_nearest_points(batch_point_cloud, batch_points, k)
+    incomplete_input, idx, cropped_input = farthest_and_nearest_points(batch_point_cloud, batch_points, k)
     if batch_target is not None:
         batch_target = batch_target.view(-1, 1)
-        # TODO change idx_cropped with idx
-        batch_target = batch_target[idx_cropped, :]
+        batch_target = batch_target[idx, :]
         return incomplete_input,  batch_target.view(-1, k, 1), cropped_input
     return incomplete_input, cropped_input
 
@@ -241,9 +240,7 @@ def train_pc(opt):
                 seg_loss = F.nll_loss(pred, target)
                 pred_choice = pred.data.max(1)[1].cuda()
                 correct = pred_choice.eq(target.data).sum()
-                # n_pts = (opt.num_points - n_crop_points)
-                n_pts = 512
-                accuracy = correct.item() / float(points.size(0) * n_pts)
+                accuracy = correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))
                 training_accuracies.append(accuracy)
                 decoded_coarse = decoded_points[0].cuda()
                 decoded_fine = decoded_points[1].cuda()
@@ -307,7 +304,7 @@ def train_pc(opt):
                         val_seg_loss = F.nll_loss(pred, target)
                         pred_choice = pred.data.max(1)[1].cuda()
                         correct = pred_choice.eq(target.data).sum()
-                        accuracy = correct.item() / float(val_points.size(0) * n_pts)
+                        accuracy = correct.item() / float(val_points.size(0) * (opt.num_points - n_crop_points))
                         val_accuracies.append(accuracy)
                         decoded_val_points = decoded_point_clouds[2].cuda()
                         val_seg_losses.append(val_seg_loss.item())

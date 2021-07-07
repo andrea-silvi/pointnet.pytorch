@@ -73,10 +73,9 @@ class Latentfeature(nn.Module):
 # DECODER FOR PART SEGMENTATION
 # from https://github.com/fxia22/pointnet.pytorch/blob/f0c2430b0b1529e3f76fb5d6cd6ca14be763d975/pointnet/model.py
 class PointNetDenseCls(nn.Module):
-    def __init__(self, k = 2, feature_transform=False, n_pts=None):
+    def __init__(self, k = 2, feature_transform=False):
         super(PointNetDenseCls, self).__init__()
         self.k = k
-        self.n_pts = n_pts
         self.conv1 = torch.nn.Conv1d(1088, 512, 1)
         self.conv2 = torch.nn.Conv1d(512, 256, 1)
         self.conv3 = torch.nn.Conv1d(256, 128, 1)
@@ -87,7 +86,7 @@ class PointNetDenseCls(nn.Module):
 
     def forward(self, x):
         batchsize = x.size()[0]
-        n_pts = x.size()[2] if self.n_pts is None else self.n_pts
+        n_pts = x.size()[2]
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
