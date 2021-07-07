@@ -116,7 +116,6 @@ class PointPyramidDecoder(nn.Module):
 
 
     def forward(self, x):
-        x = self.latentfeature(x)
         x_1 = F.relu(self.fc1(x))  # 1024
         x_2 = F.relu(self.fc2(x_1))  # 512
         x_3 = F.relu(self.fc3(x_2))  # 256
