@@ -73,9 +73,10 @@ class Latentfeature(nn.Module):
 # DECODER FOR PART SEGMENTATION
 # from https://github.com/fxia22/pointnet.pytorch/blob/f0c2430b0b1529e3f76fb5d6cd6ca14be763d975/pointnet/model.py
 class PointNetDenseCls(nn.Module):
-    def __init__(self, k = 2, feature_transform=False):
+    def __init__(self, k = 2, feature_transform=False, n_pts=None):
         super(PointNetDenseCls, self).__init__()
         self.k = k
+        self.n_pts = n_pts
         self.conv1 = torch.nn.Conv1d(1088, 512, 1)
         self.conv2 = torch.nn.Conv1d(512, 256, 1)
         self.conv3 = torch.nn.Conv1d(256, 128, 1)
@@ -86,7 +87,7 @@ class PointNetDenseCls(nn.Module):
 
     def forward(self, x):
         batchsize = x.size()[0]
-        n_pts = x.size()[2]
+        n_pts = x.size()[2] if self.n_pts is None else self.n_pts
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
@@ -156,7 +157,7 @@ class PFNet_MultiTaskCompletionNet(nn.Module):
         # self.encoder = Latentfeature(num_scales, each_scales_size, point_scales_list)
         self.encoder = PointNetfeat(global_feat=False)
         # Decoder for segmentation
-        self.seg_decoder = PointNetDenseCls(k=num_classes)
+        self.seg_decoder = PointNetDenseCls(k=num_classes, n_pts=crop_point_num)
 
         # Decoder for point completion
         self.pc_decoder = PointPyramidDecoder(input_dimnesion=1024, crop_point_num=crop_point_num)
