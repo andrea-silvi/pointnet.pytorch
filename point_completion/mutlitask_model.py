@@ -157,13 +157,20 @@ class PFNet_MultiTaskCompletionNet(nn.Module):
         super(PFNet_MultiTaskCompletionNet, self).__init__()
 
         #  Encoder Definition
-        self.encoder = Latentfeature(num_scales, each_scales_size, point_scales_list)
-
+        # self.encoder = Latentfeature(num_scales, each_scales_size, point_scales_list)
+        self.encoder = PointNetfeat(global_feat=False)
         # Decoder for segmentation
         self.seg_decoder = PointNetDenseCls(k=num_classes)
 
         # Decoder for point completion
         self.pc_decoder = PointPyramidDecoder(crop_point_num)
+
+    def forward(self, x):
+        x = x.permute(0, 2, 1)  # [BS, N, 3] => [BS, 3, N]
+        x, x_seg = self.encoder(x)
+        decoded_x = self.pc_decoder(x)
+        prediction_seg = self.seg_decoder(x_seg)
+        return decoded_x, prediction_seg
 
 
 if __name__=="__main__":
