@@ -1,7 +1,7 @@
 from __future__ import print_function
 import numpy as np
 import torch
-from point_completion.naive_model import PointNet_CompletionNetwork
+from point_completion.naive_model import PointNet_NaiveCompletionNetwork
 from utils.loss import PointLoss
 import argparse
 import os
@@ -69,7 +69,8 @@ def evaluate_loss_by_class(opt, autoencoder, run):
         print(f"\t{classs}")
         test_dataset = ShapeNetPart(opt.dataset,
                                     class_choice=classs,
-                                    split='test')
+                                    split='test',
+                                    segmentation=opt.segmentation)
         test_dataloader = torch.utils.data.DataLoader(
             test_dataset,
             batch_size=opt.batchSize,
@@ -81,7 +82,7 @@ def evaluate_loss_by_class(opt, autoencoder, run):
     #     evaluate_novel_categories(opt, autoencoder, run)
 
 
-def train_naive_pc(opt):
+def train_pc(opt):
     neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
     run = neptune.init(project=neptune_info['project'],
                        tags=[str(opt.train_class_choice), str(opt.size_encoder), "Naive point completion"],
@@ -89,16 +90,17 @@ def train_naive_pc(opt):
     run['params'] = vars(opt)
     random_seed = 43
     torch.manual_seed(random_seed)
+
     training_dataset = ShapeNetPart(
         root=opt.dataset,
         class_choice=opt.train_class_choice,
-        segmentation=False
+        segmentation=opt.segmentation
     )
 
     validation_dataset = ShapeNetPart(
         root=opt.dataset,
         class_choice=opt.train_class_choice,
-        segmentation=False,
+        segmentation=opt.segmentation,
         split="val"
     )
 
@@ -109,7 +111,7 @@ def train_naive_pc(opt):
         test_dataset = ShapeNetPart(
             root=opt.dataset,
             class_choice=opt.train_class_choice,
-            segmentation=False,
+            segmentation=opt.segmentation,
             split="test"
         )
         test_dataloader = torch.utils.data.DataLoader(
@@ -135,13 +137,14 @@ def train_naive_pc(opt):
         os.makedirs(opt.outf)
     except OSError:
         pass
-    autoencoder = PointNet_CompletionNetwork(num_points=opt.num_points, size_encoder=opt.size_encoder)
+    pc_architecture = PFNet_MultiTaskCompletionNet() \
+        if opt.segmentation else PointNet_NaiveCompletionNetwork(num_points=opt.num_points, size_encoder=opt.size_encoder)
 
-    optimizer = optim.Adam(autoencoder.parameters(), lr=opt.lr, betas=(opt.beta_1, opt.beta_2),
+    optimizer = optim.Adam(pc_architecture.parameters(), lr=opt.lr, betas=(opt.beta_1, opt.beta_2),
                            weight_decay=opt.weight_decay)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=opt.scheduler_stepSize, gamma=opt.scheduler_gamma)
-    autoencoder.cuda()
-    run["model"] = autoencoder
+    pc_architecture.cuda()
+    run["model"] = pc_architecture
     checkpoint_path = os.path.join(opt.outf, f"checkpoint{opt.runNumber}.pt")
     training_history = []
     val_history = []
@@ -158,10 +161,10 @@ def train_naive_pc(opt):
         for i, points in enumerate(train_dataloader, 0):
             points = points.cuda()
             optimizer.zero_grad()
-            autoencoder.train()
+            pc_architecture.train()
             incomplete_input = cropping(points)
             incomplete_input = incomplete_input.cuda()
-            decoded_points = autoencoder(incomplete_input)
+            decoded_points = pc_architecture(incomplete_input)
             decoded_points = decoded_points.cuda()
             CD_loss = loss = chamfer_loss(points, decoded_points)
             training_losses.append(CD_loss.item())
@@ -177,11 +180,11 @@ def train_naive_pc(opt):
             with torch.no_grad():
                 val_losses = []
                 for j, val_points in enumerate(val_dataloader, 0):
-                    autoencoder.eval()
+                    pc_architecture.eval()
                     val_points = val_points.cuda()
                     incomplete_input_val = cropping(val_points)
                     incomplete_input_val = incomplete_input_val.cuda()
-                    decoded_val_points = autoencoder(incomplete_input_val)
+                    decoded_val_points = pc_architecture(incomplete_input_val)
                     decoded_val_points = decoded_val_points.cuda()
                     val_loss = chamfer_loss(val_points, decoded_val_points)
                     val_losses.append(val_loss.item())
@@ -192,7 +195,7 @@ def train_naive_pc(opt):
         else:
             print(f'\tepoch: {epoch}, training loss: {train_mean}')
         if epoch >= 50:
-            early_stopping(val_mean if not final_training else train_mean, autoencoder)
+            early_stopping(val_mean if not final_training else train_mean, pc_architecture)
             if early_stopping.early_stop:
                 print("Early stopping")
                 break
@@ -200,22 +203,22 @@ def train_naive_pc(opt):
         if not final_training:
             val_history.append(val_mean)
     if opt.nepoch <= 50:
-        torch.save(autoencoder.state_dict(), checkpoint_path)
-    autoencoder.load_state_dict(torch.load(checkpoint_path))
-    printPointCloud.print_original_incomplete_decoded_point_clouds(opt.test_class_choice, autoencoder, opt, run)
+        torch.save(pc_architecture.state_dict(), checkpoint_path)
+    pc_architecture.load_state_dict(torch.load(checkpoint_path))
+    printPointCloud.print_original_incomplete_decoded_point_clouds(opt.test_class_choice, pc_architecture, opt, run)
     if not final_training:
         run.stop()
-        return autoencoder, val_history
+        return pc_architecture, val_history
     else:
         run["model_dictionary"].upload(checkpoint_path)
-        evaluate_loss_by_class(opt, autoencoder, run)
-        test_loss = test_example(opt, test_dataloader, autoencoder)
+        evaluate_loss_by_class(opt, pc_architecture, run)
+        test_loss = test_example(opt, test_dataloader, pc_architecture)
         run["test/loss"].log(test_loss)
         run.stop()
-        return autoencoder, 0
+        return pc_architecture, 0
 
 
 if __name__ == '__main__':
     opt = upload_args_from_json()
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
-    train_naive_pc(opt)
+    train_pc(opt)
