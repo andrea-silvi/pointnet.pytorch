@@ -118,8 +118,9 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
 
 def train_pc(opt):
     neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
+    tag = "Multitask net" if opt.segmentation else "Naive net"
     run = neptune.init(project=neptune_info['project'],
-                       tags=[str(opt.train_class_choice), str(opt.size_encoder), "Naive point completion"],
+                       tags=[str(opt.train_class_choice), str(opt.size_encoder), tag],
                        api_token=neptune_info['api_token'])
     run['params'] = vars(opt)
     random_seed = 43
@@ -308,13 +309,16 @@ def train_pc(opt):
                     run["validation/batch_loss"].log(val_loss.item())
                 val_mean = np.average(val_losses)
                 run["validation/epoch_loss"].log(val_mean)
+                print(f"epoch: {epoch}")
+                print(f'\tPOINT COMPLETION:\t training loss: {train_mean}, validation loss: {val_mean}')
                 if opt.segmentation:
                     val_seg_mean = np.average(val_seg_losses)
                     run["validation/epoch_seg_loss"].log(val_seg_mean)
                     val_mean_accuracy = np.average(val_accuracies)
                     run["validation/epoch_accuracy"].log(val_mean_accuracy)
-                    print(f'SEGMENTATION:\tepoch: {epoch}, training accuracy/nnl: {train_mean_accuracy}/{seg_train_mean}, validation accuracy/nnl: {val_mean_accuracy}/{seg_train_mean}')
-                print(f'POINT COMPLETION:\tepoch: {epoch}, training loss: {train_mean}, validation loss: {val_mean}')
+                    print(
+                        f'\tSEGMENTATION:\t training accuracy/nnl: {train_mean_accuracy:.2f}/{seg_train_mean:.2f}, validation accuracy/nnl: {val_mean_accuracy:.2f}/{val_seg_mean:.2f}')
+
         else:
             print(f'\tepoch: {epoch}, training loss: {train_mean}')
         if epoch >= 50:
