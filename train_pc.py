@@ -72,7 +72,7 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
             accuracy_test_loss += (correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))) * points.size(0)
             loss_cropped_pc = chamfer_loss(cropped_input_test, output)
             test_loss_cropped += loss_cropped_pc.item() * points.size(0)
-            output = torch.cat((output, incomplete_input_test), dim=2)
+            output = torch.cat((output, incomplete_input_test), dim=1)
         else:
             output = model(incomplete_input_test)
         loss = chamfer_loss(points, output)
@@ -217,7 +217,6 @@ def train_pc(opt):
             alpha1 = 0.1
             alpha2 = 0.2
         training_losses = []
-        training_losses_cropped_pc = []
         segmentation_losses = []
         training_accuracies = []
         for i, data in enumerate(train_dataloader, 0):
@@ -254,31 +253,26 @@ def train_pc(opt):
                 fine_sampling = index_points(cropped_input, fine_sampling_idx)
                 fine_sampling = fine_sampling.cuda()
 
-                CD_loss = chamfer_loss(points, torch.cat((decoded_input, incomplete_input), dim=2))
-                CD_loss_cropped_pc = chamfer_loss(cropped_input, decoded_input)
-                loss = CD_loss_cropped_pc \
+                CD_loss = chamfer_loss(cropped_input, decoded_input)
+                loss = CD_loss \
                        + alpha1 * chamfer_loss(coarse_sampling, decoded_coarse) \
                        + alpha2 * chamfer_loss(fine_sampling, decoded_fine) \
                        + weight_sl*seg_loss
                 run["train/batch_seg_loss"].log(seg_loss)
                 segmentation_losses.append(seg_loss.item())
-                training_losses_cropped_pc.append(CD_loss_cropped_pc.item())
-                run["train/batch_loss_cropped_pc"].log(CD_loss_cropped_pc.item())
             else:
                 decoded_points = pc_architecture(incomplete_input)
                 decoded_points = decoded_points.cuda()
                 CD_loss = loss = chamfer_loss(points, decoded_points)
             training_losses.append(CD_loss.item())
-            run["train/batch_loss_overall_pc"].log(CD_loss.item())
+            run["train/batch_loss"].log(CD_loss.item())
             loss.backward()
             optimizer.step()
         gc.collect()
         torch.cuda.empty_cache()
         train_mean = np.average(training_losses)
-        run["train/epoch_loss_overall_pc"].log(train_mean)
+        run["train/epoch_loss"].log(train_mean)
         if opt.segmentation:
-            train_mean_cropped_pc = np.average(training_losses_cropped_pc)
-            run["train/epoch_loss_cropped_pc"].log(train_mean_cropped_pc)
             seg_train_mean = np.average(segmentation_losses)
             train_mean_accuracy = np.average(training_accuracies)
             run["train/epoch_seg_loss"].log(seg_train_mean)
@@ -315,24 +309,21 @@ def train_pc(opt):
                         decoded_val_points = decoded_point_clouds[2].cuda()
                         val_seg_losses.append(val_seg_loss.item())
                         run["validation/batch_seg_loss"].log(val_seg_loss)
-                        val_loss_cropped_pc = chamfer_loss(cropped_input_val, decoded_val_points)
-                        val_losses_cropped_pc.append(val_loss_cropped_pc.item())
-                        run["validation/batch_loss_cropped_pc"].log(val_loss_cropped_pc.item())
-                        decoded_val_points = torch.cat((decoded_val_points, incomplete_input_val), dim=2)
+                        val_loss = chamfer_loss(cropped_input_val, decoded_val_points)
+                        val_losses_cropped_pc.append(val_loss.item())
+                        run["validation/batch_loss_cropped_pc"].log(val_loss.item())
                     else:
                         decoded_val_points = pc_architecture(incomplete_input_val)
                         decoded_val_points = decoded_val_points.cuda()
-                    val_loss = chamfer_loss(val_points, decoded_val_points)
+                        val_loss = chamfer_loss(val_points, decoded_val_points)
                     val_losses.append(val_loss.item())
-                    run["validation/batch_loss_overall_pc"].log(val_loss.item())
+                    run["validation/batch_loss"].log(val_loss.item())
 
                 val_mean = np.average(val_losses)
-                run["validation/epoch_loss_overall_pc"].log(val_mean)
+                run["validation/epoch_loss"].log(val_mean)
                 print(f"epoch: {epoch}")
                 print(f'\tPOINT COMPLETION:\t training loss: {train_mean}, validation loss: {val_mean}')
                 if opt.segmentation:
-                    val_mean_cropped_pc = np.average(val_losses_cropped_pc)
-                    run["validation/epoch_loss_cropped_pc"].log(val_mean_cropped_pc)
                     val_seg_mean = np.average(val_seg_losses)
                     run["validation/epoch_seg_loss"].log(val_seg_mean)
                     val_mean_accuracy = np.average(val_accuracies)
