@@ -110,10 +110,10 @@ def print_original_incomplete_decoded_point_clouds(category, model, opt, run):
             original_pc_np = original_pc_np.reshape((-1, 3))
             savePtsFile(f"{index}_original", category, opt, original_pc_np, run)
             for num_crop in range(5):
-                incomplete_cloud = cropping(point_cloud)
+                incomplete_cloud, _ = cropping(point_cloud)
                 incomplete_cloud = incomplete_cloud.cuda()
                 if opt.segmentation:
-                    decoded_point_cloud, _ = model(incomplete_cloud)
+                    decoded_point_cloud, pred = model(incomplete_cloud)
                     decoded_point_cloud = decoded_point_cloud[2]
                 else:
                     decoded_point_cloud = model(incomplete_cloud)
