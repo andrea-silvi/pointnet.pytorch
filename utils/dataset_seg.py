@@ -70,7 +70,7 @@ class ShapeNetPart(data.Dataset):
             self.label = self.label[indices]
             if self.segmentation:
                 self.seg = self.seg[indices]
-                id_choice = shapenetpart_cat2id[class_choice]
+                id_choice = shapenetpart_cat2id[self.class_choice]
                 self.seg_num_all = shapenetpart_seg_num[id_choice]
                 self.seg_start_index = shapenetpart_seg_start_index[id_choice]
             if self.load_file:
