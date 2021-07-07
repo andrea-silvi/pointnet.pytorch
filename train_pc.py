@@ -22,7 +22,7 @@ from visualization_tools.printPointCloud import *
 import neptune.new as neptune
 
 
-def cropping(batch_point_cloud, batch_target, num_cropped_points=512):
+def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
     # batch_point_cloud: (batch_size, num_points, 3)
     batch_size = batch_point_cloud.size(0)
     num_points = batch_point_cloud.size(1)
@@ -32,9 +32,11 @@ def cropping(batch_point_cloud, batch_target, num_cropped_points=512):
     idx = (idx + idx_base).view(-1)
     batch_points = batch_point_cloud.view(-1, 3)[idx, :].view(-1, 1, 3)
     incomplete_input, idx = farthest_points(batch_point_cloud, batch_points, k)
-    batch_target = batch_target.view(-1, 50)
-    batch_target = batch_target[idx, :]
-    return incomplete_input,  batch_target.view(-1, k, 50)
+    if batch_target is not None:
+        batch_target = batch_target.view(-1, 1)
+        batch_target = batch_target[idx, :]
+        return incomplete_input,  batch_target.view(-1, k, 1)
+    return incomplete_input
 
 
 def test_example(opt, test_dataloader, model, n_crop_points=512):
@@ -49,11 +51,14 @@ def test_example(opt, test_dataloader, model, n_crop_points=512):
         if opt.segmentation:
             points, target = data
             points, target = points.cuda(), target.cuda()
+            incomplete_input_test, target = cropping(points, target)
+            incomplete_input_test, target = incomplete_input_test.cuda(), target.cuda()
         else:
             points = data.cuda()
+            incomplete_input_test = cropping(points, None)
+            incomplete_input_test = incomplete_input_test.cuda()
         # forward pass: compute predicted outputs by passing inputs to the model
-        incomplete_input_test = cropping(points)
-        incomplete_input_test = incomplete_input_test.cuda()
+
         if opt.segmentation:
             output_clouds, pred = model(incomplete_input_test)
             output, pred = output_clouds[2].cuda(), pred.cuda()
@@ -208,13 +213,15 @@ def train_pc(opt):
             if opt.segmentation:
                 points, target = data
                 points, target = points.cuda(), target.cuda()
+                incomplete_input, target = cropping(points, target)
+                incomplete_input, target = incomplete_input.cuda(), target.cuda()
             else:
                 points = data
                 points = points.cuda()
+                incomplete_input = cropping(points, None)
+                incomplete_input = incomplete_input.cuda()
             optimizer.zero_grad()
             pc_architecture.train()
-            incomplete_input = cropping(points)
-            incomplete_input = incomplete_input.cuda()
             if opt.segmentation:
                 decoded_points, pred = pc_architecture(incomplete_input)
                 pred = pred.cuda()
@@ -267,12 +274,14 @@ def train_pc(opt):
                     if opt.segmentation:
                         val_points, target = data
                         val_points, target = val_points.cuda(), target.cuda()
+                        incomplete_input_val, target = cropping(val_points, target)
+                        incomplete_input_val, target = incomplete_input_val.cuda(), target.cuda()
                     else:
                         val_points = data
                         val_points = val_points.cuda()
+                        incomplete_input_val = cropping(val_points, None)
+                        incomplete_input_val = incomplete_input_val.cuda()
                     pc_architecture.eval()
-                    incomplete_input_val = cropping(val_points)
-                    incomplete_input_val = incomplete_input_val.cuda()
                     if opt.segmentation:
                         decoded_point_clouds, seg_predictions = pc_architecture(incomplete_input_val)
                         pred = pred.cuda()
