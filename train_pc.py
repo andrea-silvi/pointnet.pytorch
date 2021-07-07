@@ -209,6 +209,7 @@ def train_pc(opt):
             alpha2 = 0.2
         training_losses = []
         segmentation_losses = []
+        training_accuracies = []
         for i, data in enumerate(train_dataloader, 0):
             if opt.segmentation:
                 points, target = data
@@ -230,8 +231,8 @@ def train_pc(opt):
                 seg_loss = F.nll_loss(pred, target)
                 pred_choice = pred.data.max(1)[1].cuda()
                 correct = pred_choice.eq(target.data).sum()
-                print('>>>>>[%d: %d/%d] train negative likelihood loss: %f accuracy: %f' % (
-                epoch, i, num_batch, seg_loss.item(), correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))))
+                accuracy = correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))
+                training_accuracies.append(accuracy)
                 decoded_coarse = decoded_points[0].cuda()
                 decoded_fine = decoded_points[1].cuda()
                 decoded_input = decoded_points[2].cuda()
@@ -264,12 +265,15 @@ def train_pc(opt):
         run["train/epoch_loss"].log(train_mean)
         if opt.segmentation:
             seg_train_mean = np.average(segmentation_losses)
+            train_mean_accuracy = np.average(training_accuracies)
             run["train/epoch_seg_loss"].log(seg_train_mean)
+            run["train/epoch_accuracy"].log(train_mean_accuracy)
         # VALIDATION PHASE
         if not final_training:
             with torch.no_grad():
                 val_losses = []
                 val_seg_losses = []
+                val_accuracies = []
                 for j, data in enumerate(val_dataloader, 0):
                     if opt.segmentation:
                         val_points, target = data
@@ -290,8 +294,8 @@ def train_pc(opt):
                         val_seg_loss = F.nll_loss(pred, target)
                         pred_choice = pred.data.max(1)[1].cuda()
                         correct = pred_choice.eq(target.data).sum()
-                        print('>>>>>>[%d: %d/%d] validation negative likelihood loss: %f accuracy: %f' % (
-                            epoch, j, num_batch, val_seg_loss.item(), correct.item() / float(val_points.size(0) * (opt.num_points - n_crop_points))))
+                        accuracy = correct.item() / float(val_points.size(0) * (opt.num_points - n_crop_points))
+                        val_accuracies.append(accuracy)
                         decoded_val_points = decoded_point_clouds[2].cuda()
                         val_seg_losses.append(val_seg_loss.item())
                         run["validation/batch_seg_loss"].log(val_seg_loss)
@@ -306,8 +310,10 @@ def train_pc(opt):
                 if opt.segmentation:
                     val_seg_mean = np.average(val_seg_losses)
                     run["validation/epoch_seg_loss"].log(val_seg_mean)
-                    print(f'Segmentation loss:\tepoch: {epoch}, training loss: {seg_train_mean}, validation loss: {seg_train_mean}')
-                print(f'\tepoch: {epoch}, training loss: {train_mean}, validation loss: {val_mean}')
+                    val_mean_accuracy = np.average(val_accuracies)
+                    run["validation/epoch_accuracy"].log(val_mean_accuracy)
+                    print(f'SEGMENTATION:\tepoch: {epoch}, training accuracy/nnl: {train_mean_accuracy}/{seg_train_mean}, validation accuracy/nnl: {val_mean_accuracy}/{seg_train_mean}')
+                print(f'POINT COMPLETION:\tepoch: {epoch}, training loss: {train_mean}, validation loss: {val_mean}')
         else:
             print(f'\tepoch: {epoch}, training loss: {train_mean}')
         if epoch >= 50:
