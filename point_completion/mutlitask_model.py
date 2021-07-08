@@ -93,7 +93,7 @@ class PointNetDenseCls(nn.Module):
         super(PointNetDenseCls, self).__init__()
         self.k = k
         self.input_dim = input_dim
-        self.conv0 = torch.nn.Conv1d(2048, 1088)
+        self.conv0 = torch.nn.Conv1d(2048, 1088, 1)
         self.conv1 = torch.nn.Conv1d(1088, 512, 1)
         self.conv2 = torch.nn.Conv1d(512, 256, 1)
         self.conv3 = torch.nn.Conv1d(256, 128, 1)
