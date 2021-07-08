@@ -134,7 +134,7 @@ def chamfer_distance_numpy_test(array1, array2):
         dist_all = dist_all + (0.5*av_dist1+0.5*av_dist2)/batch_size
         dist1 = dist1+av_dist1/batch_size
         dist2 = dist2+av_dist2/batch_size
-    return 100*dist_all, 100*dist1, 100*dist2
+    return (100*dist_all).item(), (100*dist1).item(), (100*dist2).item()
 
 
 class PointLoss_test(nn.Module):
