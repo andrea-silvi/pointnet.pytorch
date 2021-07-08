@@ -123,6 +123,27 @@ class PointLoss(nn.Module):
     def forward(self, array1, array2):
         return chamfer_distance_numpy(array1, array2, self.cd_weight)
 
+def chamfer_distance_numpy_test(array1, array2):
+    batch_size, num_point, num_features = array1.shape
+    dist_all = 0
+    dist1 = 0
+    dist2 = 0
+    for i in range(batch_size):
+        av_dist1 = array2samples_distance(array1[i], array2[i])
+        av_dist2 = array2samples_distance(array2[i], array1[i])
+        dist_all = dist_all + (0.5*av_dist1+0.5*av_dist2)/batch_size
+        dist1 = dist1+av_dist1/batch_size
+        dist2 = dist2+av_dist2/batch_size
+    return 100*dist_all, 100*dist1, 100*dist2
+
+
+class PointLoss_test(nn.Module):
+    def __init__(self):
+        super(PointLoss_test, self).__init__()
+
+    def forward(self, array1, array2):
+        return chamfer_distance_numpy_test(array1, array2)
+
 
 # def knn_point(group_size, point_cloud, query_cloud, transpose_mode=False):
 #     knn_obj = KNN(k=group_size, transpose_mode=transpose_mode)
