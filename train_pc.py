@@ -13,7 +13,7 @@ import gc
 import csv
 from utils.early_stopping import EarlyStopping
 from utils.FPS import farthest_point_sample, index_points
-from utils.utils import  farthest_points
+from utils.utils import  farthest_and_nearest_points
 import sys, json
 from utils.utils import upload_args_from_json
 from point_completion.mutlitask_model import PFNet_MultiTaskCompletionNet
@@ -31,18 +31,19 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
     idx_base = torch.arange(0, batch_size, device="cuda").view(-1) * num_points
     idx = (idx + idx_base).view(-1)
     batch_points = batch_point_cloud.view(-1, 3)[idx, :].view(-1, 1, 3)
-    incomplete_input, idx = farthest_points(batch_point_cloud, batch_points, k)
+    incomplete_input, idx, cropped_input = farthest_and_nearest_points(batch_point_cloud, batch_points, k)
     if batch_target is not None:
         batch_target = batch_target.view(-1, 1)
         batch_target = batch_target[idx, :]
-        return incomplete_input,  batch_target.view(-1, k, 1)
-    return incomplete_input
+        return incomplete_input,  batch_target.view(-1, k, 1), cropped_input
+    return incomplete_input, cropped_input
 
 
 def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
     # initialize lists to monitor test loss and accuracy
     chamfer_loss = PointLoss()
     test_loss = 0.0
+    test_loss_cropped = 0.0
     seg_test_loss = 0.0
     accuracy_test_loss = 0.0
     model.eval()  # prep model for evaluation
@@ -51,12 +52,12 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
         if opt.segmentation:
             points, target = data
             points, target = points.cuda(), target.cuda()
-            incomplete_input_test, target = cropping(points, target)
-            incomplete_input_test, target = incomplete_input_test.cuda(), target.cuda()
+            incomplete_input_test, target, cropped_input_test = cropping(points, target)
+            incomplete_input_test, target, cropped_input_test = incomplete_input_test.cuda(), target.cuda(), cropped_input_test.cuda()
         else:
             points = data.cuda()
-            incomplete_input_test = cropping(points, None)
-            incomplete_input_test = incomplete_input_test.cuda()
+            incomplete_input_test, cropped_input_test = cropping(points, None)
+            incomplete_input_test, cropped_input_test = incomplete_input_test.cuda(), cropped_input_test.cuda()
         # forward pass: compute predicted outputs by passing inputs to the model
 
         if opt.segmentation:
@@ -69,21 +70,26 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
             correct = pred_choice.eq(target.data).sum()
             seg_test_loss += seg_loss * points.size(0)
             accuracy_test_loss += (correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))) * points.size(0)
+            loss_cropped_pc = chamfer_loss(cropped_input_test, output)
+            test_loss_cropped += loss_cropped_pc.item() * points.size(0)
+            output = torch.cat((output, incomplete_input_test), dim=1)
         else:
             output = model(incomplete_input_test)
-        # calculate the loss
         loss = chamfer_loss(points, output)
         # update test loss
         test_loss += loss.item() * points.size(0)
+        # calculate the loss between the ORIGINAL CROPPED POINT CLOUD and the OUTPUT OF THE MODEL (the 512 points of the missing part)
+
     # calculate and print avg test loss
     test_loss = test_loss / len(test_dataloader.dataset)
     if opt.segmentation:
+        test_loss_cropped = test_loss_cropped / len(test_dataloader.dataset)
         accuracy_test_loss = accuracy_test_loss /  len(test_dataloader.dataset)
         seg_test_loss = seg_test_loss / len(test_dataloader.dataset)
         print(f"Test Accuracy: {accuracy_test_loss}\t Test neg log likelihood: {seg_test_loss}")
-    print('Test Loss: {:.6f}\n'.format(test_loss))
+    print('Test Loss (overall pc): {:.6f}\n'.format(test_loss))
 
-    return test_loss, seg_test_loss, accuracy_test_loss if opt.segmentation else test_loss
+    return test_loss, seg_test_loss, accuracy_test_loss, test_loss_cropped if opt.segmentation else test_loss
 
 
 def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
@@ -105,11 +111,12 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
             num_workers=int(opt.workers))
         losss = test_example(opt, test_dataloader, autoencoder, n_classes)
         if opt.segmentation:
-            run[f"loss/chamfer_{classs}"] = losss[0]
+            run[f"loss/chamfer_overall_pc_{classs}"] = losss[0]
             run[f"loss/nll_seg_{classs}"] = losss[1]
             run[f"loss/accuracy_seg_{classs}"] = losss[2]
+            run[f"loss/chamfer_cropped_{classs}"] = losss[3]
         else:
-            run[f"loss/chamfer_{classs}"] = losss
+            run[f"loss/chamfer_overall_pc_{classs}"] = losss
 
         print()
     # if opt.test_class_choice is None:
@@ -118,8 +125,9 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
 
 def train_pc(opt):
     neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
+    tag = "Multitask net" if opt.segmentation else "Naive net"
     run = neptune.init(project=neptune_info['project'],
-                       tags=[str(opt.train_class_choice), str(opt.size_encoder), "Naive point completion"],
+                       tags=[str(opt.train_class_choice), str(opt.size_encoder), tag],
                        api_token=neptune_info['api_token'])
     run['params'] = vars(opt)
     random_seed = 43
@@ -215,13 +223,13 @@ def train_pc(opt):
             if opt.segmentation:
                 points, target = data
                 points, target = points.cuda(), target.cuda()
-                incomplete_input, target = cropping(points, target)
-                incomplete_input, target = incomplete_input.cuda(), target.cuda()
+                incomplete_input, target, cropped_input = cropping(points, target)
+                incomplete_input, target, cropped_input = incomplete_input.cuda(), target.cuda(), cropped_input.cuda()
             else:
                 points = data
                 points = points.cuda()
-                incomplete_input = cropping(points, None)
-                incomplete_input = incomplete_input.cuda()
+                incomplete_input, cropped_input = cropping(points, None)
+                incomplete_input, cropped_input = incomplete_input.cuda(), cropped_input.cuda()
             optimizer.zero_grad()
             pc_architecture.train()
             if opt.segmentation:
@@ -238,15 +246,15 @@ def train_pc(opt):
                 decoded_fine = decoded_points[1].cuda()
                 decoded_input = decoded_points[2].cuda()
 
-                coarse_sampling_idx = farthest_point_sample(points, 64, RAN=False)
-                coarse_sampling = index_points(points, coarse_sampling_idx)
+                coarse_sampling_idx = farthest_point_sample(cropped_input, 64, RAN=False)
+                coarse_sampling = index_points(cropped_input, coarse_sampling_idx)
                 coarse_sampling = coarse_sampling.cuda()
-                fine_sampling_idx = farthest_point_sample(points, 128, RAN=True)
-                fine_sampling = index_points(points, fine_sampling_idx)
+                fine_sampling_idx = farthest_point_sample(cropped_input, 128, RAN=True)
+                fine_sampling = index_points(cropped_input, fine_sampling_idx)
                 fine_sampling = fine_sampling.cuda()
 
-                CD_loss = chamfer_loss(points, decoded_input)
-                loss = chamfer_loss(points, decoded_input) \
+                CD_loss = chamfer_loss(cropped_input, decoded_input)
+                loss = CD_loss \
                        + alpha1 * chamfer_loss(coarse_sampling, decoded_coarse) \
                        + alpha2 * chamfer_loss(fine_sampling, decoded_fine) \
                        + weight_sl*seg_loss
@@ -273,19 +281,20 @@ def train_pc(opt):
         if not final_training:
             with torch.no_grad():
                 val_losses = []
+                val_losses_cropped_pc = []
                 val_seg_losses = []
                 val_accuracies = []
                 for j, data in enumerate(val_dataloader, 0):
                     if opt.segmentation:
                         val_points, target = data
                         val_points, target = val_points.cuda(), target.cuda()
-                        incomplete_input_val, target = cropping(val_points, target)
-                        incomplete_input_val, target = incomplete_input_val.cuda(), target.cuda()
+                        incomplete_input_val, target, cropped_input_val = cropping(val_points, target)
+                        incomplete_input_val, target, cropped_input_val = incomplete_input_val.cuda(), target.cuda(), cropped_input_val.cuda()
                     else:
                         val_points = data
                         val_points = val_points.cuda()
-                        incomplete_input_val = cropping(val_points, None)
-                        incomplete_input_val = incomplete_input_val.cuda()
+                        incomplete_input_val, cropped_input_val = cropping(val_points, None)
+                        incomplete_input_val, cropped_input_val = incomplete_input_val.cuda(), cropped_input_val.cuda()
                     pc_architecture.eval()
                     if opt.segmentation:
                         decoded_point_clouds, pred = pc_architecture(incomplete_input_val)
@@ -300,21 +309,28 @@ def train_pc(opt):
                         decoded_val_points = decoded_point_clouds[2].cuda()
                         val_seg_losses.append(val_seg_loss.item())
                         run["validation/batch_seg_loss"].log(val_seg_loss)
+                        val_loss = chamfer_loss(cropped_input_val, decoded_val_points)
+                        val_losses_cropped_pc.append(val_loss.item())
+                        run["validation/batch_loss_cropped_pc"].log(val_loss.item())
                     else:
                         decoded_val_points = pc_architecture(incomplete_input_val)
                         decoded_val_points = decoded_val_points.cuda()
-                    val_loss = chamfer_loss(val_points, decoded_val_points)
+                        val_loss = chamfer_loss(val_points, decoded_val_points)
                     val_losses.append(val_loss.item())
                     run["validation/batch_loss"].log(val_loss.item())
+
                 val_mean = np.average(val_losses)
                 run["validation/epoch_loss"].log(val_mean)
+                print(f"epoch: {epoch}")
+                print(f'\tPOINT COMPLETION:\t training loss: {train_mean}, validation loss: {val_mean}')
                 if opt.segmentation:
                     val_seg_mean = np.average(val_seg_losses)
                     run["validation/epoch_seg_loss"].log(val_seg_mean)
                     val_mean_accuracy = np.average(val_accuracies)
                     run["validation/epoch_accuracy"].log(val_mean_accuracy)
-                    print(f'SEGMENTATION:\tepoch: {epoch}, training accuracy/nnl: {train_mean_accuracy}/{seg_train_mean}, validation accuracy/nnl: {val_mean_accuracy}/{seg_train_mean}')
-                print(f'POINT COMPLETION:\tepoch: {epoch}, training loss: {train_mean}, validation loss: {val_mean}')
+                    print(
+                        f'\tSEGMENTATION:\t training accuracy/nnl: {train_mean_accuracy:.2f}/{seg_train_mean:.2f}, validation accuracy/nnl: {val_mean_accuracy:.2f}/{val_seg_mean:.2f}')
+
         else:
             print(f'\tepoch: {epoch}, training loss: {train_mean}')
         if epoch >= 50:

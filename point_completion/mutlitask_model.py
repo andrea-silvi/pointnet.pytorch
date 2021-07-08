@@ -156,7 +156,7 @@ class PFNet_MultiTaskCompletionNet(nn.Module):
         # self.encoder = Latentfeature(num_scales, each_scales_size, point_scales_list)
         self.encoder = PointNetfeat(global_feat=False)
         # Decoder for segmentation
-        self.seg_decoder = PointNetDenseCls(k=num_classes)
+        self.seg_decoder = PointNetDenseCls(k=num_classes, n_pts=crop_point_num)
 
         # Decoder for point completion
         self.pc_decoder = PointPyramidDecoder(input_dimnesion=1024, crop_point_num=crop_point_num)
