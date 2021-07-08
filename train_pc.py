@@ -41,7 +41,6 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
 
 def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
     # initialize lists to monitor test loss and accuracy
-    chamfer_loss = PointLoss()
     test_loss_2048 = 0.0
     test_loss_512 = 0.0
     chamfer_loss = PointLoss_test()
@@ -72,13 +71,13 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
             seg_test_loss += seg_loss * points.size(0)
             accuracy_test_loss += (correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))) * points.size(0)
             loss_cropped_pc = chamfer_loss(cropped_input_test, output)
-            test_loss_512 += np.array(loss_cropped_pc.item()) * points.size(0)
+            test_loss_512 += np.array(loss_cropped_pc) * points.size(0)
             output = torch.cat((output, incomplete_input_test), dim=1)
         else:
             output = model(incomplete_input_test)
         loss_2048 = chamfer_loss(points, output)
         # update test loss
-        test_loss_2048 += np.array(loss_2048.item()) * points.size(0)
+        test_loss_2048 += np.array(loss_2048) * points.size(0)
         # calculate the loss between the ORIGINAL CROPPED POINT CLOUD and the OUTPUT OF THE MODEL (the 512 points of the missing part)
 
     # calculate and print avg test loss
@@ -89,15 +88,19 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
         seg_test_loss = seg_test_loss / len(test_dataloader.dataset)
         print(f"Test Accuracy: {accuracy_test_loss}\t Test neg log likelihood: {seg_test_loss}")
     print(f'Test Loss (overall pc: mean, gt->pred, pred->gt): {test_loss_2048}\n')
-
-    return test_loss_2048, seg_test_loss, accuracy_test_loss, test_loss_512 if opt.segmentation else test_loss_2048
+    if opt.segmentation:
+        return test_loss_2048, seg_test_loss, accuracy_test_loss, test_loss_512
+    else:
+        return test_loss_2048
 
 
 def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
     run["params"] = vars(opt)
-    classes = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table", "bag", "cap", "earphone", "guitar",\
-               "knife", "laptop", "pistol", "rocket", "skateboard"] if opt.test_class_choice is None\
+    classes = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table"] if opt.test_class_choice is None\
         else [opt.test_class_choice]
+    novel_classes = []
+    if opt.test_class_choice is None:
+        novel_classes = ["bag", "cap", "earphone", "guitar", "knife", "laptop", "pistol", "rocket", "skateboard"]
     autoencoder.cuda()
     print("Start evaluation loss by class")
     for classs in classes:
@@ -125,8 +128,10 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
             run[f"loss/chamfer_(mean)_overall_pc_{classs}"] = losss[0]
             run[f"loss/chamfer_(gt->prediction)_overall_pc_{classs}"] = losss[1]
             run[f"loss/chamfer_(prediction->gt)_overall_pc_{classs}"] = losss[2]
+        if classs in novel_classes:
+            print_original_incomplete_decoded_point_clouds(classs, autoencoder, opt, run)
 
-        print()
+
     # if opt.test_class_choice is None:
     #     evaluate_novel_categories(opt, autoencoder, run)
 
