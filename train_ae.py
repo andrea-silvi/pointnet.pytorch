@@ -447,7 +447,7 @@ if __name__ == '__main__':
     # parser.add_argument("--patience", type=int, default=7, help="How long to wait after last time val loss improved.")
     # opt = parser.parse_args()
     # TODO - remove the following instruction (it overrides all the previous args)
-    opt = upload_args_from_json()
+    opt = upload_args_from_json(os.path.join("parameters", "ae_fixed_params.json"))
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
     train_example(opt)
     # train_model_by_class(opt)

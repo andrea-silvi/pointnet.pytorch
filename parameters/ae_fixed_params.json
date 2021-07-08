@@ -3,7 +3,7 @@
     "weight_decay": 1e-3,
     "scheduler_gamma": 0.2,
     "nepoch": 3,
-    "dataset": "/content/drive/MyDrive/shapenetpart_hdf5_2048",
+    "dataset": "/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0",
     "batchSize": 32,
     "num_points": 2048,
     "workers": 2,
@@ -15,8 +15,6 @@
     "beta_1": 0.9,
     "beta_2": 0.999,
     "patience": 50,
-    "final_training": 0,
-    "segmentation": true,
-    "size_encoder": 1536,
-    "pfnet_encoder": true
+    "final_training": 0
+
 }
