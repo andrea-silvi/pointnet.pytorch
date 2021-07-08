@@ -42,7 +42,7 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
 def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
     # initialize lists to monitor test loss and accuracy
     chamfer_loss = PointLoss()
-    test_loss = 0.0
+    test_loss_2048 = 0.0
     test_loss_512 = 0.0
     seg_test_loss = 0.0
     accuracy_test_loss = 0.0
@@ -75,21 +75,21 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
             output = torch.cat((output, incomplete_input_test), dim=1)
         else:
             output = model(incomplete_input_test)
-        loss = chamfer_loss(points, output)
+        loss_2048 = chamfer_loss(points, output)
         # update test loss
-        test_loss += loss.item() * points.size(0)
+        test_loss_2048 += loss_2048.item() * points.size(0)
         # calculate the loss between the ORIGINAL CROPPED POINT CLOUD and the OUTPUT OF THE MODEL (the 512 points of the missing part)
 
     # calculate and print avg test loss
-    test_loss = test_loss / len(test_dataloader.dataset)
+    test_loss_2048 = test_loss_2048 / len(test_dataloader.dataset)
     if opt.segmentation:
         test_loss_512 = test_loss_512 / len(test_dataloader.dataset)
         accuracy_test_loss = accuracy_test_loss /  len(test_dataloader.dataset)
         seg_test_loss = seg_test_loss / len(test_dataloader.dataset)
         print(f"Test Accuracy: {accuracy_test_loss}\t Test neg log likelihood: {seg_test_loss}")
-    print('Test Loss (overall pc): {:.6f}\n'.format(test_loss))
+    print('Test Loss (overall pc): {:.6f}\n'.format(test_loss_2048))
 
-    return test_loss, seg_test_loss, accuracy_test_loss, test_loss_512 if opt.segmentation else test_loss
+    return test_loss_2048, seg_test_loss, accuracy_test_loss, test_loss_512 if opt.segmentation else test_loss_2048
 
 
 def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
