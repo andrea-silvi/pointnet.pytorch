@@ -49,6 +49,8 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
     model.eval()  # prep model for evaluation
 
     for data in test_dataloader:
+        gc.collect()
+        torch.cuda.empty_cache()
         if opt.segmentation:
             points, target = data
             points, target = points.cuda(), target.cuda()
@@ -78,6 +80,12 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
         loss_2048 = chamfer_loss(points, output)
         # update test loss
         test_loss_2048 += np.array(loss_2048) * points.size(0)
+
+        t = torch.cuda.get_device_properties(0).total_memory
+        r = torch.cuda.memory_reserved(0)
+        a = torch.cuda.memory_allocated(0)
+        f = r - a  # free inside reserved
+        print(f"CUDA memory: total memory: {t}, reserved: {r}, allocated: {a}, free: {f}")
         # calculate the loss between the ORIGINAL CROPPED POINT CLOUD and the OUTPUT OF THE MODEL (the 512 points of the missing part)
 
     # calculate and print avg test loss
@@ -140,7 +148,7 @@ def train_pc(opt):
     neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
     tag = "Multitask net" if opt.segmentation else "Naive net"
     run = neptune.init(project=neptune_info['project'],
-                       tags=[str(opt.train_class_choice), str(opt.size_encoder), tag],
+                       tags=[str(opt.train_class_choice), tag],
                        api_token=neptune_info['api_token'])
     run['params'] = vars(opt)
     random_seed = 43
