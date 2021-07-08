@@ -95,7 +95,8 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
 
 def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
     run["params"] = vars(opt)
-    classes = ["Airplane", "Car", "Chair", "Lamp", "Mug", "Motorbike", "Table"] if opt.test_class_choice is None\
+    classes = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table", "bag", "cap", "earphone", "guitar",\
+               "knife", "laptop", "pistol", "rocket", "skateboard"] if opt.test_class_choice is None\
         else [opt.test_class_choice]
     autoencoder.cuda()
     print("Start evaluation loss by class")
