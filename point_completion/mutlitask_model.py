@@ -35,7 +35,7 @@ class Convlayer(nn.Module):
         x_256 = F.relu(self.bn4(self.conv4(x_128)))
         x_512 = F.relu(self.bn5(self.conv5(x_256)))
         x_1024 = F.relu(self.bn6(self.conv6(x_512)))
-        x_128_squeezed = x_128.squeeze(2)
+        x_128_squeezed = torch.squeeze(x_128, 2)
         x_128 = torch.squeeze(self.maxpool(x_128), 2)
         x_256 = torch.squeeze(self.maxpool(x_256), 2)
         x_512 = torch.squeeze(self.maxpool(x_512), 2)
@@ -185,7 +185,7 @@ class PFNet_MultiTaskCompletionNet(nn.Module):
         self.seg_decoder = PointNetDenseCls(k=num_classes, input_dim = self.seg_decoder_input_size)
 
         # Decoder for point completion
-        self.pc_decoder = PointPyramidDecoder(input_dimesion=self.pc_decoder_input_size, crop_point_num=crop_point_num)
+        self.pc_decoder = PointPyramidDecoder(input_dimension=self.pc_decoder_input_size, crop_point_num=crop_point_num)
 
     def forward(self, x):
         if self.pfnet_encoder:
