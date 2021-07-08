@@ -357,5 +357,6 @@ def train_pc(opt):
 
 if __name__ == '__main__':
     opt = upload_args_from_json(os.path.join("parameters", "pc_fixed_params.json"))
+
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
     train_pc(opt)
