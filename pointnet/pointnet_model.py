@@ -90,7 +90,7 @@ class PointNetfeat(nn.Module):
             # without maxpooling reduction
             # Shape is: [batch_size, num_points, emb_size]
             x_seg = x.view(-1, 1024, 1).repeat(1, 1, n_pts)
-            return x, torch.cat([x_seg, pointfeat], 1)  # , trans, trans_feat
+            return x, torch.cat([x_seg, pointfeat], 1)
 
 
 class Decoder(nn.Module):
