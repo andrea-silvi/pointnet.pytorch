@@ -35,7 +35,7 @@ class Convlayer(nn.Module):
         x_256 = F.relu(self.bn4(self.conv4(x_128)))
         x_512 = F.relu(self.bn5(self.conv5(x_256)))
         x_1024 = F.relu(self.bn6(self.conv6(x_512)))
-        x_128_squeezed = torch.squeeze(x_128, 2)
+        x_128_squeezed = torch.squeeze(x_128, dim=-1)
         x_128 = torch.squeeze(self.maxpool(x_128), 2)
         x_256 = torch.squeeze(self.maxpool(x_256), 2)
         x_512 = torch.squeeze(self.maxpool(x_512), 2)
@@ -67,8 +67,8 @@ class Latentfeature(nn.Module):
     def forward(self, x):
         outs = []
         for i in range(self.each_scales_size):
-            x, points_features = self.Convlayers1[i](x[0])
-            outs.append(x)
+            app, points_features = self.Convlayers1[i](x[0])
+            outs.append(app)
         for j in range(self.each_scales_size):
             outs.append(self.Convlayers2[j](x[1]))
         for k in range(self.each_scales_size):
@@ -195,9 +195,9 @@ class PFNet_MultiTaskCompletionNet(nn.Module):
             x2_index = farthest_point_sample(x, self.point_scales_list[2], RAN=False)
             x2 = index_points(x, x2_index)
             x2 = x2.cuda()
-            x = x.permute(0, 2, 1)
-            x1 = x1.permute(0, 2, 1)
-            x2 = x2.permute(0, 2, 1)
+            # x = x.permute(0, 2, 1)
+            # x1 = x1.permute(0, 2, 1)
+            # x2 = x2.permute(0, 2, 1)
             x = [x, x1, x2]
         else:
             x = x.permute(0, 2, 1)  # [BS, N, 3] => [BS, 3, N]

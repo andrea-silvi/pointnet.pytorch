@@ -103,7 +103,7 @@ def print_original_incomplete_decoded_point_clouds(category, model, opt, run):
         for index in range(10):
             if index > dataset.__len__():
                 break
-            point_cloud = dataset.__getitem__(index)
+            point_cloud = dataset[index]
             point_cloud = point_cloud.cuda()
             point_cloud = torch.unsqueeze(point_cloud, 0)
             original_pc_np = point_cloud.cpu().numpy()
