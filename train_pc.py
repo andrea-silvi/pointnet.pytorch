@@ -43,7 +43,7 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
     # initialize lists to monitor test loss and accuracy
     chamfer_loss = PointLoss()
     test_loss = 0.0
-    test_loss_cropped = 0.0
+    test_loss_512 = 0.0
     seg_test_loss = 0.0
     accuracy_test_loss = 0.0
     model.eval()  # prep model for evaluation
@@ -71,7 +71,7 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
             seg_test_loss += seg_loss * points.size(0)
             accuracy_test_loss += (correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))) * points.size(0)
             loss_cropped_pc = chamfer_loss(cropped_input_test, output)
-            test_loss_cropped += loss_cropped_pc.item() * points.size(0)
+            test_loss_512 += loss_cropped_pc.item() * points.size(0)
             output = torch.cat((output, incomplete_input_test), dim=1)
         else:
             output = model(incomplete_input_test)
@@ -83,13 +83,13 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
     # calculate and print avg test loss
     test_loss = test_loss / len(test_dataloader.dataset)
     if opt.segmentation:
-        test_loss_cropped = test_loss_cropped / len(test_dataloader.dataset)
+        test_loss_512 = test_loss_512 / len(test_dataloader.dataset)
         accuracy_test_loss = accuracy_test_loss /  len(test_dataloader.dataset)
         seg_test_loss = seg_test_loss / len(test_dataloader.dataset)
         print(f"Test Accuracy: {accuracy_test_loss}\t Test neg log likelihood: {seg_test_loss}")
     print('Test Loss (overall pc): {:.6f}\n'.format(test_loss))
 
-    return test_loss, seg_test_loss, accuracy_test_loss, test_loss_cropped if opt.segmentation else test_loss
+    return test_loss, seg_test_loss, accuracy_test_loss, test_loss_512 if opt.segmentation else test_loss
 
 
 def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
@@ -201,20 +201,17 @@ def train_pc(opt):
     chamfer_loss = PointLoss()
     n_epoch = opt.nepoch
     num_batch = len(training_dataset) / opt.batchSize
+    weight_sl = 0.8
     for epoch in range(n_epoch):
-        # TODO - change weight segmentation loss
         if epoch > 0:
             scheduler.step()
         if epoch < 30:
-            weight_sl = 0.1
             alpha1 = 0.01
             alpha2 = 0.02
         elif epoch < 80:
-            weight_sl = 0.4
             alpha1 = 0.05
             alpha2 = 0.1
         else:
-            weight_sl = 0.8
             alpha1 = 0.1
             alpha2 = 0.2
         training_losses = []
