@@ -201,7 +201,7 @@ def train_pc(opt):
     chamfer_loss = PointLoss()
     n_epoch = opt.nepoch
     num_batch = len(training_dataset) / opt.batchSize
-    weight_sl = 0.8
+    weight_sl = 0.6
     for epoch in range(n_epoch):
         if epoch > 0:
             scheduler.step()
