@@ -36,6 +36,6 @@ def farthest_points(x, batch_points, n):
     idx = (idx + idx_base).view(-1)
     x = x.view(-1, 3)
     x = x[idx, :]
-    return x.view(-1, n, 3)
+    return x.view(-1, n, 3), idx
 
 

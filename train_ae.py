@@ -264,18 +264,15 @@ def train_example(opt):
             # print(f"Decoded points size: {decoded_points.size()}")
             # let's compute the chamfer distance between the two sets: 'points' and 'decoded'
             if opt.type_decoder == "pyramid":
-                decoded_coarse = decoded_points[0]
-                decoded_fine = decoded_points[1]
-                decoded_input = decoded_points[2]
-                decoded_coarse = decoded_coarse.cuda()
-                decoded_fine = decoded_fine.cuda()
-                decoded_input = decoded_input.cuda()
+                decoded_coarse = decoded_points[0].cuda()
+                decoded_fine = decoded_points[1].cuda()
+                decoded_input = decoded_points[2].cuda()
 
-                coarse_sampling_idx = farthest_point_sample(decoded_input, 128, RAN=False)
-                coarse_sampling = index_points(decoded_input, coarse_sampling_idx)
+                coarse_sampling_idx = farthest_point_sample(points, 128, RAN=False)
+                coarse_sampling = index_points(points, coarse_sampling_idx)
                 coarse_sampling = coarse_sampling.cuda()
-                fine_sampling_idx = farthest_point_sample(decoded_input, 256, RAN=True)
-                fine_sampling = index_points(decoded_input, fine_sampling_idx)
+                fine_sampling_idx = farthest_point_sample(points, 256, RAN=True)
+                fine_sampling = index_points(points, fine_sampling_idx)
                 fine_sampling = fine_sampling.cuda()
 
                 CD_loss = chamfer_loss(points, decoded_input)
