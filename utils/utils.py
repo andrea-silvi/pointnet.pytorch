@@ -40,6 +40,6 @@ def farthest_and_nearest_points(x, batch_points, n):
     x = x.view(-1, 3)
     x_far = x[idx_farthest, :]
     x_near = x[idx_nearest, :]
-    return x_far.view(batch_size, n, 3), idx_farthest, x_near.view(batch_size, -1, 3), idx_nearest
+    return x_far.view(batch_size, n, 3), idx_farthest, x_near.view(batch_size, -1, 3)
 
 
