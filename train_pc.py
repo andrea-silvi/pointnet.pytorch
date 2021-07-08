@@ -47,59 +47,59 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
     seg_test_loss = 0.0
     accuracy_test_loss = 0.0
     model.eval()  # prep model for evaluation
+    with torch.no_grad():
+        for data in test_dataloader:
+            gc.collect()
+            torch.cuda.empty_cache()
+            if opt.segmentation:
+                points, target = data
+                points, target = points.cuda(), target.cuda()
+                incomplete_input_test, target, cropped_input_test = cropping(points, target)
+                incomplete_input_test, target, cropped_input_test = incomplete_input_test.cuda(), target.cuda(), cropped_input_test.cuda()
+            else:
+                points = data.cuda()
+                incomplete_input_test, cropped_input_test = cropping(points, None)
+                incomplete_input_test, cropped_input_test = incomplete_input_test.cuda(), cropped_input_test.cuda()
+            # forward pass: compute predicted outputs by passing inputs to the model
 
-    for data in test_dataloader:
-        gc.collect()
-        torch.cuda.empty_cache()
+            if opt.segmentation:
+                output_clouds, pred = model(incomplete_input_test)
+                output, pred = output_clouds[2].cuda(), pred.cuda()
+                pred = pred.view(-1, n_classes)
+                target = target.view(-1, 1)[:, 0]
+                seg_loss = F.nll_loss(pred, target)
+                pred_choice = pred.data.max(1)[1].cuda()
+                correct = pred_choice.eq(target.data).sum()
+                seg_test_loss += seg_loss * points.size(0)
+                accuracy_test_loss += (correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))) * points.size(0)
+                loss_cropped_pc = chamfer_loss(cropped_input_test, output)
+                test_loss_512 += np.array(loss_cropped_pc) * points.size(0)
+                output = torch.cat((output, incomplete_input_test), dim=1)
+            else:
+                output = model(incomplete_input_test)
+            loss_2048 = chamfer_loss(points, output)
+            # update test loss
+            test_loss_2048 += np.array(loss_2048) * points.size(0)
+
+            t = torch.cuda.get_device_properties(0).total_memory
+            r = torch.cuda.memory_reserved(0)
+            a = torch.cuda.memory_allocated(0)
+            f = r - a  # free inside reserved
+            print(f"CUDA memory: total memory: {t}, reserved: {r}, allocated: {a}, free: {f}")
+            # calculate the loss between the ORIGINAL CROPPED POINT CLOUD and the OUTPUT OF THE MODEL (the 512 points of the missing part)
+
+        # calculate and print avg test loss
+        test_loss_2048 = test_loss_2048 / len(test_dataloader.dataset)
         if opt.segmentation:
-            points, target = data
-            points, target = points.cuda(), target.cuda()
-            incomplete_input_test, target, cropped_input_test = cropping(points, target)
-            incomplete_input_test, target, cropped_input_test = incomplete_input_test.cuda(), target.cuda(), cropped_input_test.cuda()
-        else:
-            points = data.cuda()
-            incomplete_input_test, cropped_input_test = cropping(points, None)
-            incomplete_input_test, cropped_input_test = incomplete_input_test.cuda(), cropped_input_test.cuda()
-        # forward pass: compute predicted outputs by passing inputs to the model
-
+            test_loss_512 = test_loss_512 / len(test_dataloader.dataset)
+            accuracy_test_loss = accuracy_test_loss /  len(test_dataloader.dataset)
+            seg_test_loss = seg_test_loss / len(test_dataloader.dataset)
+            print(f"Test Accuracy: {accuracy_test_loss}\t Test neg log likelihood: {seg_test_loss}")
+        print(f'Test Loss (overall pc: mean, gt->pred, pred->gt): {test_loss_2048}\n')
         if opt.segmentation:
-            output_clouds, pred = model(incomplete_input_test)
-            output, pred = output_clouds[2].cuda(), pred.cuda()
-            pred = pred.view(-1, n_classes)
-            target = target.view(-1, 1)[:, 0]
-            seg_loss = F.nll_loss(pred, target)
-            pred_choice = pred.data.max(1)[1].cuda()
-            correct = pred_choice.eq(target.data).sum()
-            seg_test_loss += seg_loss * points.size(0)
-            accuracy_test_loss += (correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))) * points.size(0)
-            loss_cropped_pc = chamfer_loss(cropped_input_test, output)
-            test_loss_512 += np.array(loss_cropped_pc) * points.size(0)
-            output = torch.cat((output, incomplete_input_test), dim=1)
+            return test_loss_2048, seg_test_loss, accuracy_test_loss, test_loss_512
         else:
-            output = model(incomplete_input_test)
-        loss_2048 = chamfer_loss(points, output)
-        # update test loss
-        test_loss_2048 += np.array(loss_2048) * points.size(0)
-
-        t = torch.cuda.get_device_properties(0).total_memory
-        r = torch.cuda.memory_reserved(0)
-        a = torch.cuda.memory_allocated(0)
-        f = r - a  # free inside reserved
-        print(f"CUDA memory: total memory: {t}, reserved: {r}, allocated: {a}, free: {f}")
-        # calculate the loss between the ORIGINAL CROPPED POINT CLOUD and the OUTPUT OF THE MODEL (the 512 points of the missing part)
-
-    # calculate and print avg test loss
-    test_loss_2048 = test_loss_2048 / len(test_dataloader.dataset)
-    if opt.segmentation:
-        test_loss_512 = test_loss_512 / len(test_dataloader.dataset)
-        accuracy_test_loss = accuracy_test_loss /  len(test_dataloader.dataset)
-        seg_test_loss = seg_test_loss / len(test_dataloader.dataset)
-        print(f"Test Accuracy: {accuracy_test_loss}\t Test neg log likelihood: {seg_test_loss}")
-    print(f'Test Loss (overall pc: mean, gt->pred, pred->gt): {test_loss_2048}\n')
-    if opt.segmentation:
-        return test_loss_2048, seg_test_loss, accuracy_test_loss, test_loss_512
-    else:
-        return test_loss_2048
+            return test_loss_2048
 
 
 def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
