@@ -131,10 +131,10 @@ def chamfer_distance_numpy_test(array1, array2):
     for i in range(batch_size):
         av_dist1 = array2samples_distance(array1[i], array2[i])
         av_dist2 = array2samples_distance(array2[i], array1[i])
-        dist_all = dist_all + (0.5*av_dist1+0.5*av_dist2)/batch_size
+        dist_all = dist_all + (av_dist1+av_dist2)/batch_size
         dist1 = dist1+av_dist1/batch_size
         dist2 = dist2+av_dist2/batch_size
-    return (100*dist_all).item(), (100*dist1).item(), (100*dist2).item()
+    return (1000*dist_all).item(), (1000*dist1).item(), (1000*dist2).item()
 
 
 class PointLoss_test(nn.Module):
