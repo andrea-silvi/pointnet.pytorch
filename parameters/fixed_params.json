@@ -17,5 +17,6 @@
     "patience": 50,
     "final_training": 0,
     "segmentation": true,
-    "size_encoder": 1536
+    "size_encoder": 1536,
+    "pfnet_encoder": true
 }

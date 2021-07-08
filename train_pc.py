@@ -182,7 +182,8 @@ def train_pc(opt):
     except OSError:
         pass
     num_classes = training_dataset.seg_num_all
-    pc_architecture = PFNet_MultiTaskCompletionNet(num_classes=num_classes, crop_point_num=n_crop_points) \
+    pc_architecture = PFNet_MultiTaskCompletionNet(num_classes=num_classes, crop_point_num=n_crop_points,\
+                                                   pfnet_encoder=opt.pfnet_encoder)\
         if opt.segmentation else PointNet_NaiveCompletionNetwork(num_points=opt.num_points, size_encoder=opt.size_encoder)
 
     optimizer = optim.Adam(pc_architecture.parameters(), lr=opt.lr, betas=(opt.beta_1, opt.beta_2), eps=1e-5,

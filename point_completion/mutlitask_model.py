@@ -4,11 +4,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
 
+from utils.FPS import farthest_point_sample, index_points
+
 
 class Convlayer(nn.Module):
-    def __init__(self, point_scales):
+    def __init__(self, point_scales, globalfeat=True):
         super(Convlayer, self).__init__()
         self.point_scales = point_scales
+        self.global_input = globalfeat
         self.conv1 = torch.nn.Conv2d(1, 64, (1, 3))
         self.conv2 = torch.nn.Conv2d(64, 64, 1)
         self.conv3 = torch.nn.Conv2d(64, 128, 1)
@@ -22,6 +25,7 @@ class Convlayer(nn.Module):
         self.bn4 = nn.BatchNorm2d(256)
         self.bn5 = nn.BatchNorm2d(512)
         self.bn6 = nn.BatchNorm2d(1024)
+        self.counter = 0
 
     def forward(self, x):
         x = torch.unsqueeze(x, 1)
@@ -31,14 +35,19 @@ class Convlayer(nn.Module):
         x_256 = F.relu(self.bn4(self.conv4(x_128)))
         x_512 = F.relu(self.bn5(self.conv5(x_256)))
         x_1024 = F.relu(self.bn6(self.conv6(x_512)))
+        x_128_squeezed = x_128.squeeze(2)
         x_128 = torch.squeeze(self.maxpool(x_128), 2)
         x_256 = torch.squeeze(self.maxpool(x_256), 2)
         x_512 = torch.squeeze(self.maxpool(x_512), 2)
         x_1024 = torch.squeeze(self.maxpool(x_1024), 2)
         L = [x_1024, x_512, x_256, x_128]
         x = torch.cat(L, 1)
-        return x
-
+        if self.global_input:
+            return x
+        if self.counter == 0:
+            print(x_128_squeezed.shape)
+            self.counter = 1
+        return x, x_128_squeezed
 
 class Latentfeature(nn.Module):
     def __init__(self, num_scales, each_scales_size, point_scales_list):
@@ -47,18 +56,19 @@ class Latentfeature(nn.Module):
         self.each_scales_size = each_scales_size
         self.point_scales_list = point_scales_list
         self.Convlayers1 = nn.ModuleList(
-            [Convlayer(point_scales=self.point_scales_list[0]) for i in range(self.each_scales_size)])
+            [Convlayer(point_scales=self.point_scales_list[0], globalfeat=False) for i in range(self.each_scales_size)])
         self.Convlayers2 = nn.ModuleList(
             [Convlayer(point_scales=self.point_scales_list[1]) for i in range(self.each_scales_size)])
         self.Convlayers3 = nn.ModuleList(
             [Convlayer(point_scales=self.point_scales_list[2]) for i in range(self.each_scales_size)])
         self.conv1 = torch.nn.Conv1d(3, 1, 1)
         self.bn1 = nn.BatchNorm1d(1)
-
+        self.count = 0
     def forward(self, x):
         outs = []
         for i in range(self.each_scales_size):
-            outs.append(self.Convlayers1[i](x[0]))
+            x, points_features = self.Convlayers1[i](x[0])
+            outs.append(x)
         for j in range(self.each_scales_size):
             outs.append(self.Convlayers2[j](x[1]))
         for k in range(self.each_scales_size):
@@ -67,19 +77,28 @@ class Latentfeature(nn.Module):
         latentfeature = latentfeature.transpose(1, 2)
         latentfeature = F.relu(self.bn1(self.conv1(latentfeature)))
         latentfeature = torch.squeeze(latentfeature, 1)
-        return latentfeature
+        segfeatures = latentfeature.view(-1, 1920, 1).repeat(1, 1, self.point_scales_list[0])
+        if self.count == 0:
+            print(segfeatures.shape, points_features.shape)
+            self.count = 1
+        segfeatures = torch.cat([points_features, segfeatures], 1) # BS, 2048, 2048-512
+
+        return latentfeature, segfeatures
 
 
 # DECODER FOR PART SEGMENTATION
 # from https://github.com/fxia22/pointnet.pytorch/blob/f0c2430b0b1529e3f76fb5d6cd6ca14be763d975/pointnet/model.py
 class PointNetDenseCls(nn.Module):
-    def __init__(self, k = 2, feature_transform=False):
+    def __init__(self, k = 2, input_dim=1088):
         super(PointNetDenseCls, self).__init__()
         self.k = k
+        self.input_dim = input_dim
+        self.conv0 = torch.nn.Conv1d(2048, 1088)
         self.conv1 = torch.nn.Conv1d(1088, 512, 1)
         self.conv2 = torch.nn.Conv1d(512, 256, 1)
         self.conv3 = torch.nn.Conv1d(256, 128, 1)
         self.conv4 = torch.nn.Conv1d(128, self.k, 1)
+        self.bn0 = nn.BatchNorm1d(1088)
         self.bn1 = nn.BatchNorm1d(512)
         self.bn2 = nn.BatchNorm1d(256)
         self.bn3 = nn.BatchNorm1d(128)
@@ -87,6 +106,8 @@ class PointNetDenseCls(nn.Module):
     def forward(self, x):
         batchsize = x.size()[0]
         n_pts = x.size()[2]
+        if self.input_dim == 2048:
+            x = F.relu(self.bn0(self.conv0(x)))
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
@@ -149,23 +170,40 @@ class PointPyramidDecoder(nn.Module):
 
 
 class PFNet_MultiTaskCompletionNet(nn.Module):
-    def __init__(self, num_scales=3, each_scales_size=1, point_scales_list=[2048-512, 512, 256], crop_point_num=512, num_points=2048, num_classes=50):
+    def __init__(self, num_scales=3, each_scales_size=1, point_scales_list=[2048-512, 512, 256]\
+                 , crop_point_num=512, num_points=2048, num_classes=50, pfnet_encoder = True):
         super(PFNet_MultiTaskCompletionNet, self).__init__()
 
+        self.point_scales_list = point_scales_list
         #  Encoder Definition
-        # self.encoder = Latentfeature(num_scales, each_scales_size, point_scales_list)
-        self.encoder = PointNetfeat(global_feat=False)
+        self.encoder = Latentfeature(num_scales, each_scales_size, self.point_scales_list)\
+            if pfnet_encoder else PointNetfeat(global_feat=False)
+        self.seg_decoder_input_size = 2048 if pfnet_encoder else 1088
+        self.pc_decoder_input_size = 1920 if pfnet_encoder else 1024
+        self.pfnet_encoder = pfnet_encoder
         # Decoder for segmentation
-        self.seg_decoder = PointNetDenseCls(k=num_classes, n_pts=crop_point_num)
+        self.seg_decoder = PointNetDenseCls(k=num_classes, input_dim = self.seg_decoder_input_size)
 
         # Decoder for point completion
-        self.pc_decoder = PointPyramidDecoder(input_dimnesion=1024, crop_point_num=crop_point_num)
+        self.pc_decoder = PointPyramidDecoder(input_dimnesion=self.pc_decoder_input_size, crop_point_num=crop_point_num)
 
     def forward(self, x):
-        x = x.permute(0, 2, 1)  # [BS, N, 3] => [BS, 3, N]
+        if self.pfnet_encoder:
+            x1_index = farthest_point_sample(x, self.point_scales_list[1], RAN=True)
+            x1 = index_points(x, x1_index)
+            x1 = x1.cuda()
+            x2_index = farthest_point_sample(x, self.point_scales_list[2], RAN=False)
+            x2 = index_points(x, x2_index)
+            x2 = x2.cuda()
+            x = x.permute(0, 2, 1)
+            x1 = x1.permute(0, 2, 1)
+            x2 = x2.permute(0, 2, 1)
+            x = [x, x1, x2]
+        else:
+            x = x.permute(0, 2, 1)  # [BS, N, 3] => [BS, 3, N]
         x, x_seg = self.encoder(x)
+        prediction_seg = self.seg_decoder(x_seg)   #BS, 2048-512, 27 -> BS, 2048-512, 1 ->
         decoded_x = self.pc_decoder(x)
-        prediction_seg = self.seg_decoder(x_seg)
         return decoded_x, prediction_seg
 
 
