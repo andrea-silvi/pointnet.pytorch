@@ -142,45 +142,37 @@ def train_pc(opt):
     num_classes = None
     n_crop_points = 512
     torch.manual_seed(random_seed)
-
-    training_dataset = ShapeNetPart(
-        root=opt.dataset,
-        class_choice=opt.train_class_choice,
-        segmentation=opt.segmentation
-    )
-
-    validation_dataset = ShapeNetPart(
-        root=opt.dataset,
-        class_choice=opt.train_class_choice,
-        segmentation=opt.segmentation,
-        split="val"
-    )
-
     final_training = opt.final_training
     if final_training:
         if opt.runNumber == 0:
             print("!!!!!!Final training starts!!!!!!")
-        test_dataset = ShapeNetPart(
+        training_dataset = ShapeNetPart(
             root=opt.dataset,
             class_choice=opt.train_class_choice,
             segmentation=opt.segmentation,
-            split="test"
+            split="trainval"
         )
-        test_dataloader = torch.utils.data.DataLoader(
-            test_dataset,
+    else:
+        training_dataset = ShapeNetPart(
+            root=opt.dataset,
+            class_choice=opt.train_class_choice,
+            segmentation=opt.segmentation
+        )
+
+        validation_dataset = ShapeNetPart(
+            root=opt.dataset,
+            class_choice=opt.train_class_choice,
+            segmentation=opt.segmentation,
+            split="val"
+        )
+        val_dataloader = torch.utils.data.DataLoader(
+            validation_dataset,
             batch_size=opt.batchSize,
             shuffle=True,
             num_workers=int(opt.workers))
-        training_dataset = torch.utils.data.ConcatDataset([training_dataset, validation_dataset])
 
     train_dataloader = torch.utils.data.DataLoader(
         training_dataset,
-        batch_size=opt.batchSize,
-        shuffle=True,
-        num_workers=int(opt.workers))
-
-    val_dataloader = torch.utils.data.DataLoader(
-        validation_dataset,
         batch_size=opt.batchSize,
         shuffle=True,
         num_workers=int(opt.workers))
@@ -358,8 +350,6 @@ def train_pc(opt):
     else:
         run["model_dictionary"].upload(checkpoint_path)
         evaluate_loss_by_class(opt, pc_architecture, run, num_classes)
-        # test_loss = test_example(opt, test_dataloader, pc_architecture)
-        # run["test/loss"].log(test_loss)
         run.stop()
         return pc_architecture, 0
 
