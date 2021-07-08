@@ -42,9 +42,9 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
 def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
     # initialize lists to monitor test loss and accuracy
     chamfer_loss = PointLoss()
+    test_loss_2048 = 0.0
+    test_loss_512 = 0.0
     chamfer_loss = PointLoss_test()
-    test_loss = 0.0
-    test_loss_cropped = 0.0
     seg_test_loss = 0.0
     accuracy_test_loss = 0.0
     model.eval()  # prep model for evaluation
@@ -72,25 +72,25 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
             seg_test_loss += seg_loss * points.size(0)
             accuracy_test_loss += (correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))) * points.size(0)
             loss_cropped_pc = chamfer_loss(cropped_input_test, output)
-            test_loss_cropped += loss_cropped_pc.item() * points.size(0)
+            test_loss_512 += loss_cropped_pc.item() * points.size(0)
             output = torch.cat((output, incomplete_input_test), dim=1)
         else:
             output = model(incomplete_input_test)
-        loss = chamfer_loss(points, output)
+        loss_2048 = chamfer_loss(points, output)
         # update test loss
-        test_loss += loss.item() * points.size(0)
+        test_loss_2048 += loss_2048.item() * points.size(0)
         # calculate the loss between the ORIGINAL CROPPED POINT CLOUD and the OUTPUT OF THE MODEL (the 512 points of the missing part)
 
     # calculate and print avg test loss
-    test_loss = test_loss / len(test_dataloader.dataset)
+    test_loss_2048 = test_loss_2048 / len(test_dataloader.dataset)
     if opt.segmentation:
-        test_loss_cropped = test_loss_cropped / len(test_dataloader.dataset)
+        test_loss_512 = test_loss_512 / len(test_dataloader.dataset)
         accuracy_test_loss = accuracy_test_loss /  len(test_dataloader.dataset)
         seg_test_loss = seg_test_loss / len(test_dataloader.dataset)
         print(f"Test Accuracy: {accuracy_test_loss}\t Test neg log likelihood: {seg_test_loss}")
-    print('Test Loss (overall pc): {:.6f}\n'.format(test_loss))
+    print('Test Loss (overall pc): {:.6f}\n'.format(test_loss_2048))
 
-    return test_loss, seg_test_loss, accuracy_test_loss, test_loss_cropped if opt.segmentation else test_loss
+    return test_loss_2048, seg_test_loss, accuracy_test_loss, test_loss_512 if opt.segmentation else test_loss_2048
 
 
 def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
@@ -182,7 +182,7 @@ def train_pc(opt):
         os.makedirs(opt.outf)
     except OSError:
         pass
-    num_classes = training_dataset.seg_num_all
+    num_classes = training_dataset.seg_num_all if opt.segmentation else 0
     pc_architecture = PFNet_MultiTaskCompletionNet(num_classes=num_classes, crop_point_num=n_crop_points,\
                                                    pfnet_encoder=opt.pfnet_encoder)\
         if opt.segmentation else PointNet_NaiveCompletionNetwork(num_points=opt.num_points, size_encoder=opt.size_encoder)
@@ -202,6 +202,7 @@ def train_pc(opt):
     chamfer_loss = PointLoss()
     n_epoch = opt.nepoch
     num_batch = len(training_dataset) / opt.batchSize
+    weight_sl = 0.6
     for epoch in range(n_epoch):
         # TODO - change weight segmentation loss
         if epoch > 0:
