@@ -2,7 +2,7 @@ from __future__ import print_function
 import numpy as np
 import torch
 from point_completion.naive_model import PointNet_NaiveCompletionNetwork
-from utils.loss import PointLoss
+from utils.loss import PointLoss, PointLoss_test
 import argparse
 import os
 import torch.optim as optim
@@ -42,6 +42,7 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
 def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
     # initialize lists to monitor test loss and accuracy
     chamfer_loss = PointLoss()
+    chamfer_loss = PointLoss_test()
     test_loss = 0.0
     test_loss_cropped = 0.0
     seg_test_loss = 0.0
