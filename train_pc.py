@@ -396,7 +396,8 @@ def train_pc(opt):
         return pc_architecture, val_history
     else:
         run["model_dictionary"].upload(checkpoint_path)
-        setattr(opt, "dict_category_offset", training_dataset.map_class_offset)
+        if opt.segmentation:
+            setattr(opt, "dict_category_offset", training_dataset.map_class_offset)
         evaluate_loss_by_class(opt, pc_architecture, run, num_classes)
         run.stop()
         return pc_architecture, 0
