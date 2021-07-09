@@ -140,10 +140,6 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
             print_original_incomplete_decoded_point_clouds(classs, autoencoder, opt, run)
 
 
-    # if opt.test_class_choice is None:
-    #     evaluate_novel_categories(opt, autoencoder, run)
-
-
 def train_pc(opt):
     neptune_info = json.loads(open(os.path.join("parameters", "neptune_params.json")).read())
     tag = "Multitask net" if opt.segmentation else "Naive net"
