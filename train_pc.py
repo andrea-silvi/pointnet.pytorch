@@ -126,7 +126,7 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
         test_loss_2048 = test_loss_2048 / len(test_dataloader.dataset)
         if opt.segmentation:
             test_loss_512 = test_loss_512 / len(test_dataloader.dataset)
-            accuracy_test_loss = accuracy_test_loss /  len(test_dataloader.dataset)
+            accuracy_test_loss = accuracy_test_loss / len(test_dataloader.dataset)
             seg_test_loss = seg_test_loss / len(test_dataloader.dataset)
             print(f"Test Accuracy: {accuracy_test_loss}\t Test neg log likelihood: {seg_test_loss}")
         print(f'Test Loss (overall pc: mean, gt->pred, pred->gt): {test_loss_2048}\n')
@@ -141,6 +141,8 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
     classes = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table"] if opt.test_class_choice is None\
         else [opt.test_class_choice]
     novel_classes = []
+    # n.b.: training_classes should be equal to classes.
+    training_classes = opt.dict_category_offset if hasattr(opt, "dict_category_offset") else None
     if opt.test_class_choice is None:
         novel_classes = ["bag", "cap", "earphone", "guitar", "knife", "laptop", "pistol", "rocket", "skateboard"]
     autoencoder.cuda()
@@ -158,8 +160,8 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
             num_workers=int(opt.workers))
         losss = test_example(opt, test_dataloader, autoencoder, n_classes)
         if opt.segmentation:
-            if classs not in novel_classes:
-                setattr(opt, "seg_class_offset", test_dataset.map_class_offset[classs])
+            if classs in training_classes:
+                setattr(opt, "seg_class_offset", opt.dict_category_offset)
             else:
                 setattr(opt, "seg_class_offset", None)
             run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0][0]
@@ -400,6 +402,7 @@ def train_pc(opt):
         return pc_architecture, val_history
     else:
         run["model_dictionary"].upload(checkpoint_path)
+        setattr(opt, "dict_category_offset", training_dataset.map_class_offset)
         evaluate_loss_by_class(opt, pc_architecture, run, num_classes)
         run.stop()
         return pc_architecture, 0
