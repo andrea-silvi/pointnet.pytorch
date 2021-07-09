@@ -11,78 +11,10 @@ import gc
 from utils.early_stopping import EarlyStopping
 from utils.FPS import farthest_point_sample, index_points
 import json
-
 from utils.utils import upload_args_from_json
 from visualization_tools import printPointCloud
 from visualization_tools.printPointCloud import *
-
 import neptune.new as neptune
-
-
-# the following function doesn't make the training of the network!!
-# It shows the interfaces with the classes necessary for the point cloud completion task
-# N.B.: only with PointNetAE and PointLoss (the one used for evaluating the Chamfer distance)
-# the gcnn interface is not implemented yet
-# def example_AE_and_chamfer_loss():
-#     """
-#     Instantiate a PointNetAutoEncoder
-#     Feed it with a synthetic point cloud
-#     Compute the encoded point cloud (output of encoder)
-#     Compute the decoded point cloud (output of decoder)
-#     Compute chamfer loss
-#     :return:
-#     """
-#     batch_size = 32
-#     input_points = 1024
-#
-#     # Instantiate a fake batch of point clouds
-#     points = torch.rand(batch_size, input_points, 3)
-#     print("Input points: ", points.size())
-#
-#     # Instantiate the AE
-#     pointnet_AE = PointNet_DeeperAutoEncoder(num_points=input_points)
-#
-#     # Move everything (data + model) to GPU
-#     assert torch.cuda.device_count() > 0, "Fail: No GPU device detected"
-#     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-#     points = points.to(device)
-#     pointnet_AE = pointnet_AE.to(device)
-#
-#     # try AE forward
-#     decoded = pointnet_AE(points)
-#     print("Decoded output: ", decoded.size())
-#
-#     # chamfer loss
-#     chamfer_loss = PointLoss()  #  instantiate the loss
-#     print("Input shape: ", points.size())
-#     print("Decoded shape: ", decoded.size())
-#
-#     # let's compute the chamfer distance between the two sets: 'points' and 'decoded'
-#     loss = chamfer_loss(decoded, points)
-#     print(loss)
-#
-
-# def print_loss_graph(training_history, val_history, opt):
-#     folder = os.path.join(opt.outf, "grid_search_results")
-#     try:
-#         os.makedirs(folder)
-#     except OSError:
-#         pass
-#     #with open(os.path.join(folder, f'{hash(str(opt))}_losses.csv'), 'w') as f:
-#     with open(os.path.join(folder, f'{opt.runNumber}_losses.csv'), 'w') as f:
-#         writer = csv.writer(f)
-#         if val_history == None:
-#             writer.writerow(training_history)
-#         else:
-#             writer.writerows([training_history, val_history])
-#     # plt.plot(training_history, '-bx')
-#     # plt.plot(val_history, '-rx')
-#     # plt.xlabel('epoch')
-#     # plt.ylabel('loss')
-#     # plt.legend(['Training', 'Validation'])
-#     # plt.title('Loss vs. No. of epochs')
-#     # plt.savefig('loss.png', bbox_inches='tight',)
-#
 
 
 def evaluate_loss_by_class(opt, autoencoder, run):
