@@ -124,18 +124,18 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
             num_workers=int(opt.workers))
         losss = test_example(opt, test_dataloader, autoencoder, n_classes)
         if opt.segmentation:
-            run[f"loss/chamfer_(mean)_overall_pc_{classs}"] = losss[0][0]
-            run[f"loss/chamfer_(gt->prediction)_overall_pc_{classs}"] = losss[0][1]
-            run[f"loss/chamfer_(prediction->gt)_overall_pc_{classs}"] = losss[0][2]
-            run[f"loss/nll_seg_{classs}"] = losss[1]
-            run[f"loss/accuracy_seg_{classs}"] = losss[2]
-            run[f"loss/chamfer_(mean)_cropped_{classs}"] = losss[3][0]
-            run[f"loss/chamfer_(gt->prediction)_cropped_{classs}"] = losss[3][1]
-            run[f"loss/chamfer_(prediction->gt)_cropped_{classs}"] = losss[3][2]
+            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0][0]
+            run[f"loss/overall_pc/{classs}_cd_(gt->pred)"] = losss[0][1]
+            run[f"loss/overall_pc/{classs}_cd_(pred->gt)"] = losss[0][2]
+            run[f"loss/{classs}_nll_seg"] = losss[1]
+            run[f"loss/{classs}_accuracy_seg"] = losss[2]
+            run[f"loss/cropped_pc/{classs}_cd_mean"] = losss[3][0]
+            run[f"loss/cropped_pc/{classs}_cd_(gt->pred)"] = losss[3][1]
+            run[f"loss/cropped_pc/{classs}_cd_(pred->gt)"] = losss[3][2]
         else:
-            run[f"loss/chamfer_(mean)_overall_pc_{classs}"] = losss[0]
-            run[f"loss/chamfer_(gt->prediction)_overall_pc_{classs}"] = losss[1]
-            run[f"loss/chamfer_(prediction->gt)_overall_pc_{classs}"] = losss[2]
+            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0]
+            run[f"loss/overall_pc/{classs}_cd_(gt->pred)"] = losss[1]
+            run[f"loss/overall_pc/{classs}_cd_(pred->gt)"] = losss[2]
         if classs in novel_classes:
             print_original_incomplete_decoded_point_clouds(classs, autoencoder, opt, run)
 
