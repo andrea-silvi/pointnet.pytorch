@@ -38,12 +38,10 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
     batch_centers = torch.cat(p_center, dim=0).cuda()
     batch_centers = batch_centers.view(-1, 1, 3)
     incomplete_input, idx, cropped_input = farthest_and_nearest_points(batch_point_cloud, batch_centers, k)
-    zeros = torch.zeros((batch_size, num_cropped_points, 3), dtype=torch.float, device="cuda")
-    incomplete_input = torch.cat((incomplete_input, zeros), dim=1)
     if batch_target is not None:
         batch_target = batch_target.view(-1, 1)
         batch_target = batch_target[idx, :]
-        return incomplete_input,  batch_target.view(-1, k, 1), cropped_input, idx
+        return incomplete_input,  batch_target.view(-1, k, 1), cropped_input
     # cropped_input is our incomplete_input
     return incomplete_input, cropped_input
         #
@@ -85,7 +83,7 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
             if opt.segmentation:
                 points, target = data
                 points, target = points.cuda(), target.cuda()
-                incomplete_input_test, target, cropped_input_test, idx = cropping(points, target)
+                incomplete_input_test, target, cropped_input_test = cropping(points, target)
                 incomplete_input_test, target, cropped_input_test = incomplete_input_test.cuda(), target.cuda(), cropped_input_test.cuda()
             else:
                 points = data.cuda()
@@ -97,7 +95,6 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
                 output_clouds, pred = model(incomplete_input_test)
                 output, pred = output_clouds[2].cuda(), pred.cuda()
                 pred = pred.view(-1, n_classes)
-                pred = pred[idx, :]
                 target = target.view(-1, 1)[:, 0]
                 if opt.seg_class_offset is not None:
                     target += opt.seg_class_offset
@@ -158,12 +155,13 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
             batch_size=opt.batchSize,
             shuffle=True,
             num_workers=int(opt.workers))
-        losss = test_example(opt, test_dataloader, autoencoder, n_classes)
         if opt.segmentation:
             if classs in training_classes:
                 setattr(opt, "seg_class_offset", opt.dict_category_offset)
             else:
                 setattr(opt, "seg_class_offset", None)
+        losss = test_example(opt, test_dataloader, autoencoder, n_classes)
+        if opt.segmentation:
             run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0][0]
             run[f"loss/overall_pc/{classs}_cd_(gt->pred)"] = losss[0][1]
             run[f"loss/overall_pc/{classs}_cd_(pred->gt)"] = losss[0][2]
@@ -271,7 +269,7 @@ def train_pc(opt):
             if opt.segmentation:
                 points, target = data
                 points, target = points.cuda(), target.cuda()
-                incomplete_input, target, cropped_input, idx = cropping(points, target)
+                incomplete_input, target, cropped_input = cropping(points, target)
                 incomplete_input, target, cropped_input = incomplete_input.cuda(), target.cuda(), cropped_input.cuda()
             else:
                 points = data
@@ -284,9 +282,6 @@ def train_pc(opt):
                 decoded_points, pred = pc_architecture(incomplete_input)
                 pred = pred.cuda()
                 pred = pred.view(-1, num_classes)
-                # select only the points related to the incomplete point cloud. The other points (the cropped ones)
-                # are mapped to [0, 0, 0]: it would be meaningless to compute the nll for those points
-                pred = pred[idx, :]
                 target = target.view(-1, 1)[:, 0]
                 seg_loss = F.nll_loss(pred, target)
                 pred_choice = pred.data.max(1)[1].cuda()
@@ -339,7 +334,7 @@ def train_pc(opt):
                     if opt.segmentation:
                         val_points, target = data
                         val_points, target = val_points.cuda(), target.cuda()
-                        incomplete_input_val, target, cropped_input_val, idx = cropping(val_points, target)
+                        incomplete_input_val, target, cropped_input_val = cropping(val_points, target)
                         incomplete_input_val, target, cropped_input_val = incomplete_input_val.cuda(), target.cuda(), cropped_input_val.cuda()
                     else:
                         val_points = data
@@ -351,7 +346,6 @@ def train_pc(opt):
                         decoded_point_clouds, pred = pc_architecture(incomplete_input_val)
                         pred = pred.cuda()
                         pred = pred.view(-1, num_classes)
-                        pred = pred[idx, :]
                         target = target.view(-1, 1)[:, 0]
                         val_seg_loss = F.nll_loss(pred, target)
                         pred_choice = pred.data.max(1)[1].cuda()
