@@ -142,6 +142,7 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
     training_classes = opt.dict_category_offset if hasattr(opt, "dict_category_offset") else None
     if opt.test_class_choice is None:
         novel_classes = ["bag", "cap", "earphone", "guitar", "knife", "laptop", "pistol", "rocket", "skateboard"]
+    classes.extend(novel_classes)
     autoencoder.cuda()
     print("Start evaluation loss by class")
     for classs in classes:
