@@ -2,7 +2,7 @@
    "lr": 0.0001,
    "weight_decay": 0,
    "scheduler_gamma": 0.2,
-   "nepoch": 150,
+   "nepoch": 130,
    "dataset": "/content/drive/MyDrive/shapenetpart_hdf5_2048",
    "batchSize": 32,
    "num_points": 2048,
@@ -17,7 +17,10 @@
    "patience": 30,
    "final_training": 1,
    "segmentation": true,
-   "pfnet_encoder": true
+   "pfnet_encoder": true,
+   "point_scales_list": [1536, 768, 384]
+
 }
+
 
 
