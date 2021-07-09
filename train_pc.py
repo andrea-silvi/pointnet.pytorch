@@ -23,13 +23,13 @@ from visualization_tools.printPointCloud import *
 import neptune.new as neptune
 
 
-def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
+def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512, fixed_choice=None):
     # batch_point_cloud: (batch_size, num_points, 3)
     batch_size = batch_point_cloud.size(0)
     num_points = batch_point_cloud.size(1)
     k = num_points - num_cropped_points
     choice = [torch.Tensor([1, 0, 0]), torch.Tensor([0, 0, 1]), torch.Tensor([1, 0, 1]), torch.Tensor([-1, 0, 0]),
-              torch.Tensor([-1, 1, 0])]
+              torch.Tensor([-1, 1, 0])] if fixed_choice is None else [fixed_choice]
     p_center = []
     for m in range(batch_size):
         index = random.sample(choice, 1)

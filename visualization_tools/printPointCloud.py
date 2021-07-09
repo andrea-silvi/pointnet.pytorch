@@ -98,9 +98,11 @@ def print_original_incomplete_decoded_point_clouds(category, model, opt, run):
     categories = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table"]\
         if category is None else [category]
     model.eval()
+    centers = [torch.Tensor([1, 0, 0]), torch.Tensor([0, 0, 1]), torch.Tensor([1, 0, 1]), torch.Tensor([-1, 0, 0]),
+              torch.Tensor([-1, 1, 0])]
     for category in categories:
         dataset = ShapeNetPart(root=opt.dataset, class_choice=category, split="test")
-        for index in range(10):
+        for index in range(6):
             if index > dataset.__len__():
                 break
             point_cloud = dataset[index]
@@ -109,8 +111,8 @@ def print_original_incomplete_decoded_point_clouds(category, model, opt, run):
             original_pc_np = point_cloud.cpu().numpy()
             original_pc_np = original_pc_np.reshape((-1, 3))
             savePtsFile(f"{index}_original", category, opt, original_pc_np, run)
-            for num_crop in range(5):
-                incomplete_cloud, _ = cropping(point_cloud)
+            for num_crop, center in enumerate(centers):
+                incomplete_cloud, _ = cropping(point_cloud, fixed_choice=center)
                 incomplete_cloud = incomplete_cloud.cuda()
                 if opt.segmentation:
                     decoded_point_cloud, pred = model(incomplete_cloud)
