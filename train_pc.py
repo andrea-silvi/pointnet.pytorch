@@ -81,11 +81,11 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
             # update test loss
             test_loss_2048 += np.array(loss_2048) * points.size(0)
 
-            t = torch.cuda.get_device_properties(0).total_memory
-            r = torch.cuda.memory_reserved(0)
-            a = torch.cuda.memory_allocated(0)
-            f = r - a  # free inside reserved
-            print(f"CUDA memory: total memory: {t}, reserved: {r}, allocated: {a}, free: {f}")
+            # t = torch.cuda.get_device_properties(0).total_memory
+            # r = torch.cuda.memory_reserved(0)
+            # a = torch.cuda.memory_allocated(0)
+            # f = r - a  # free inside reserved
+            # print(f"CUDA memory: total memory: {t}, reserved: {r}, allocated: {a}, free: {f}")
             # calculate the loss between the ORIGINAL CROPPED POINT CLOUD and the OUTPUT OF THE MODEL (the 512 points of the missing part)
 
         # calculate and print avg test loss
