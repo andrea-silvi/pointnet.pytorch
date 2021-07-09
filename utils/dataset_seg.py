@@ -80,6 +80,11 @@ class ShapeNetPart(data.Dataset):
         elif self.segmentation:
             self.seg_num_all = 50
             self.seg_start_index = 0
+        offset = 0
+        self.map_class_offset = dict()
+        for idx, classs in zip(self.class_idx, self.class_choice):
+            self.map_class_offset[classs] = offset
+            offset += shapenetpart_seg_num[idx]
 
     def get_path(self, type):
         path_h5py = os.path.join(self.root, '*%s*.h5' % type)

@@ -99,6 +99,8 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
                 pred = pred.view(-1, n_classes)
                 pred = pred[idx, :]
                 target = target.view(-1, 1)[:, 0]
+                if opt.seg_class_offset is not None:
+                    target += opt.seg_class_offset
                 seg_loss = F.nll_loss(pred, target)
                 pred_choice = pred.data.max(1)[1].cuda()
                 correct = pred_choice.eq(target.data).sum()
@@ -156,6 +158,10 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
             num_workers=int(opt.workers))
         losss = test_example(opt, test_dataloader, autoencoder, n_classes)
         if opt.segmentation:
+            if classs not in novel_classes:
+                setattr(opt, "seg_class_offset", test_dataset.map_class_offset[classs])
+            else:
+                setattr(opt, "seg_class_offset", None)
             run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0][0]
             run[f"loss/overall_pc/{classs}_cd_(gt->pred)"] = losss[0][1]
             run[f"loss/overall_pc/{classs}_cd_(pred->gt)"] = losss[0][2]
