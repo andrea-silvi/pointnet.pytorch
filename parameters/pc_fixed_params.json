@@ -18,5 +18,6 @@
     "patience": 30,
     "final_training": 0,
     "segmentation": false,
-    "pfnet_encoder": false
+    "pfnet_encoder": false,
+    "point_scales_list": [2048, 1024, 512]
 }
