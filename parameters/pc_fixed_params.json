@@ -17,7 +17,8 @@
    "patience": 30,
    "final_training": 1,
    "segmentation": true,
-   "pfnet_encoder": false,
+   "extended_code": true,
+   "num_spheres": 15,
    "point_scales_list": [1536, 768, 384]
 
 }

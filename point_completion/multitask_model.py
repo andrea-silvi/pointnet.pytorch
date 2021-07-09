@@ -169,10 +169,10 @@ class PointPyramidDecoder(nn.Module):
         return pc1_xyz, pc2_xyz, pc3_xyz  # center1 ,center2 ,fine
 
 
-class PFNet_MultiTaskCompletionNet(nn.Module):
+class MultiTaskCompletionNet(nn.Module):
     def __init__(self, num_scales=3, each_scales_size=1, point_scales_list=[1536, 768, 384]\
                  , crop_point_num=512, num_points=2048, num_classes=50, pfnet_encoder = True):
-        super(PFNet_MultiTaskCompletionNet, self).__init__()
+        super(MultiTaskCompletionNet, self).__init__()
 
         self.point_scales_list = point_scales_list
         #  Encoder Definition
@@ -212,6 +212,6 @@ if __name__=="__main__":
     input2 = torch.randn(64, 512, 3)
     input3 = torch.randn(64, 256, 3)
     input_ = [input1, input2, input3]
-    netG = PFNet_MultiTaskCompletionNet(3, 1, [2048, 512, 256], 1024)
+    netG = MultiTaskCompletionNet(3, 1, [2048, 512, 256], 1024)
     output = netG(input_)
     print(output)

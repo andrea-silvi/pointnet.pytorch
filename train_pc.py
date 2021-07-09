@@ -1,6 +1,8 @@
 from __future__ import print_function
 import numpy as np
 import torch
+
+from point_completion.multitask_ext_code_model import OnionNet
 from point_completion.naive_model import PointNet_NaiveCompletionNetwork
 from utils.loss import PointLoss, PointLoss_test
 import argparse
@@ -14,10 +16,10 @@ import gc
 import csv
 from utils.early_stopping import EarlyStopping
 from utils.FPS import farthest_point_sample, index_points
-from utils.utils import  farthest_and_nearest_points
+from utils.utils import farthest_and_nearest_points
 import sys, json
 from utils.utils import upload_args_from_json
-from point_completion.mutlitask_model import PFNet_MultiTaskCompletionNet
+from point_completion.multitask_model import MultiTaskCompletionNet
 from visualization_tools import printPointCloud
 from visualization_tools.printPointCloud import *
 import neptune.new as neptune
@@ -41,17 +43,17 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512, fixed
     if batch_target is not None:
         batch_target = batch_target.view(-1, 1)
         batch_target = batch_target[idx, :]
-        return incomplete_input,  batch_target.view(-1, k, 1), cropped_input
+        return incomplete_input, batch_target.view(-1, k, 1), cropped_input
     # cropped_input is our incomplete_input
     return incomplete_input, cropped_input
-        #
-        # for n in range(opt.pnum):
-        #     distance_list.append(distance_squre(real_point[m, 0, n], p_center))
-        # distance_order = sorted(enumerate(distance_list), key=lambda x: x[1])
-        #
-        # for sp in range(opt.crop_point_num):
-        #     input_cropped1.data[m, 0, distance_order[sp][0]] = torch.FloatTensor([0, 0, 0])
-        #     real_center.data[m, 0, sp] = real_point[m, 0, distance_order[sp][0]]
+    #
+    # for n in range(opt.pnum):
+    #     distance_list.append(distance_squre(real_point[m, 0, n], p_center))
+    # distance_order = sorted(enumerate(distance_list), key=lambda x: x[1])
+    #
+    # for sp in range(opt.crop_point_num):
+    #     input_cropped1.data[m, 0, distance_order[sp][0]] = torch.FloatTensor([0, 0, 0])
+    #     real_center.data[m, 0, sp] = real_point[m, 0, distance_order[sp][0]]
 
     # k = num_points-num_cropped_points
     # idx = torch.randint(0, num_points, (batch_size,), device="cuda")
@@ -102,7 +104,8 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
                 pred_choice = pred.data.max(1)[1].cuda()
                 correct = pred_choice.eq(target.data).sum()
                 seg_test_loss += seg_loss * points.size(0)
-                accuracy_test_loss += (correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))) * points.size(0)
+                accuracy_test_loss += (correct.item() / float(
+                    points.size(0) * (opt.num_points - n_crop_points))) * points.size(0)
                 loss_cropped_pc = chamfer_loss(cropped_input_test, output)
                 test_loss_512 += np.array(loss_cropped_pc) * points.size(0)
                 output = torch.cat((output, incomplete_input_test), dim=1)
@@ -135,7 +138,7 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
 
 def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
     run["params"] = vars(opt)
-    classes = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table"] if opt.test_class_choice is None\
+    classes = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table"] if opt.test_class_choice is None \
         else [opt.test_class_choice]
     novel_classes = []
     # n.b.: training_classes should be equal to classes.
@@ -163,16 +166,16 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
                 setattr(opt, "seg_class_offset", None)
         losss = test_example(opt, test_dataloader, autoencoder, n_classes)
         if opt.segmentation:
-            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0][0]/2
+            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0][0] / 2
             run[f"loss/overall_pc/{classs}_cd_(gt->pred)"] = losss[0][1]
             run[f"loss/overall_pc/{classs}_cd_(pred->gt)"] = losss[0][2]
             run[f"loss/{classs}_nll_seg"] = losss[1]
             run[f"loss/{classs}_accuracy_seg"] = losss[2]
-            run[f"loss/cropped_pc/{classs}_cd_mean"] = losss[3][0]/2
+            run[f"loss/cropped_pc/{classs}_cd_mean"] = losss[3][0] / 2
             run[f"loss/cropped_pc/{classs}_cd_(gt->pred)"] = losss[3][1]
             run[f"loss/cropped_pc/{classs}_cd_(pred->gt)"] = losss[3][2]
         else:
-            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0]/2
+            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0] / 2
             run[f"loss/overall_pc/{classs}_cd_(gt->pred)"] = losss[1]
             run[f"loss/overall_pc/{classs}_cd_(pred->gt)"] = losss[2]
         if classs in novel_classes:
@@ -230,9 +233,15 @@ def train_pc(opt):
     except OSError:
         pass
     num_classes = training_dataset.seg_num_all if opt.segmentation else 0
-    pc_architecture = PFNet_MultiTaskCompletionNet(num_classes=num_classes, crop_point_num=n_crop_points,
-                                                   pfnet_encoder=opt.pfnet_encoder, point_scales_list=opt.point_scales_list)\
-        if opt.segmentation else PointNet_NaiveCompletionNetwork(num_points=opt.num_points, size_encoder=opt.size_encoder)
+    if opt.segmentation and hasattr(opt, "extended_code") and opt.extended_code:
+        pc_architecture = OnionNet(point_scales_list=opt.point_scales_list, crop_point_num=n_crop_points,
+                                   num_classes=num_classes, num_spheres=opt.num_spheres)
+    else:
+        pc_architecture = MultiTaskCompletionNet(num_classes=num_classes, crop_point_num=n_crop_points,
+                                                 pfnet_encoder=opt.pfnet_encoder,
+                                                 point_scales_list=opt.point_scales_list) \
+            if opt.segmentation else PointNet_NaiveCompletionNetwork(num_points=opt.num_points,
+                                                                     size_encoder=opt.size_encoder)
 
     optimizer = optim.Adam(pc_architecture.parameters(), lr=opt.lr, betas=(opt.beta_1, opt.beta_2), eps=1e-5,
                            weight_decay=opt.weight_decay)
@@ -304,7 +313,7 @@ def train_pc(opt):
                 loss = CD_loss \
                        + alpha1 * chamfer_loss(decoded_coarse, coarse_sampling) \
                        + alpha2 * chamfer_loss(decoded_fine, fine_sampling) \
-                       + weight_sl*seg_loss
+                       + weight_sl * seg_loss
                 run["train/batch_seg_loss"].log(seg_loss)
                 segmentation_losses.append(seg_loss.item())
             else:
