@@ -5,6 +5,7 @@ from point_completion.naive_model import PointNet_NaiveCompletionNetwork
 from utils.loss import PointLoss, PointLoss_test
 import argparse
 import os
+import random
 import torch.optim as optim
 import torch.utils.data
 import torch.nn.functional as F
@@ -26,17 +27,45 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
     # batch_point_cloud: (batch_size, num_points, 3)
     batch_size = batch_point_cloud.size(0)
     num_points = batch_point_cloud.size(1)
-    k = num_points-num_cropped_points
-    idx = torch.randint(0, num_points, (batch_size,), device="cuda")
-    idx_base = torch.arange(0, batch_size, device="cuda").view(-1) * num_points
-    idx = (idx + idx_base).view(-1)
-    batch_points = batch_point_cloud.view(-1, 3)[idx, :].view(-1, 1, 3)
-    incomplete_input, idx, cropped_input = farthest_and_nearest_points(batch_point_cloud, batch_points, k)
+    k = num_points - num_cropped_points
+    choice = [torch.Tensor([1, 0, 0]), torch.Tensor([0, 0, 1]), torch.Tensor([1, 0, 1]), torch.Tensor([-1, 0, 0]),
+              torch.Tensor([-1, 1, 0])]
+    p_center = []
+    for m in range(batch_size):
+        index = random.sample(choice, 1)
+        p_center.append(index[0])
+    # it should have shape (batch_size, 3): one center for one point_cloud inside the batch
+    batch_centers = torch.cat(p_center, dim=0).cuda()
+    batch_centers = batch_centers.view(-1, 1, 3)
+    incomplete_input, idx, cropped_input = farthest_and_nearest_points(batch_point_cloud, batch_centers, k)
     if batch_target is not None:
         batch_target = batch_target.view(-1, 1)
         batch_target = batch_target[idx, :]
         return incomplete_input,  batch_target.view(-1, k, 1), cropped_input
+    # cropped_input is our incomplete_input
     return incomplete_input, cropped_input
+        #
+        # for n in range(opt.pnum):
+        #     distance_list.append(distance_squre(real_point[m, 0, n], p_center))
+        # distance_order = sorted(enumerate(distance_list), key=lambda x: x[1])
+        #
+        # for sp in range(opt.crop_point_num):
+        #     input_cropped1.data[m, 0, distance_order[sp][0]] = torch.FloatTensor([0, 0, 0])
+        #     real_center.data[m, 0, sp] = real_point[m, 0, distance_order[sp][0]]
+
+    # k = num_points-num_cropped_points
+    # idx = torch.randint(0, num_points, (batch_size,), device="cuda")
+    # idx_base = torch.arange(0, batch_size, device="cuda").view(-1) * num_points
+    # idx = (idx + idx_base).view(-1)
+    # batch_points = batch_point_cloud.view(-1, 3)[idx, :].view(-1, 1, 3)
+    # incomplete_input, idx, cropped_input = farthest_and_nearest_points(batch_point_cloud, batch_points, k)
+    # if batch_target is not None:
+    #     batch_target = batch_target.view(-1, 1)
+    #     batch_target = batch_target[idx, :]
+    #     return incomplete_input,  batch_target.view(-1, k, 1), cropped_input
+
+    # real center is our cropped_input
+    # return incomplete_input, cropped_input
 
 
 def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
@@ -67,6 +96,8 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
                 output, pred = output_clouds[2].cuda(), pred.cuda()
                 pred = pred.view(-1, n_classes)
                 target = target.view(-1, 1)[:, 0]
+                if opt.seg_class_offset is not None:
+                    target += opt.seg_class_offset
                 seg_loss = F.nll_loss(pred, target)
                 pred_choice = pred.data.max(1)[1].cuda()
                 correct = pred_choice.eq(target.data).sum()
@@ -92,7 +123,7 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
         test_loss_2048 = test_loss_2048 / len(test_dataloader.dataset)
         if opt.segmentation:
             test_loss_512 = test_loss_512 / len(test_dataloader.dataset)
-            accuracy_test_loss = accuracy_test_loss /  len(test_dataloader.dataset)
+            accuracy_test_loss = accuracy_test_loss / len(test_dataloader.dataset)
             seg_test_loss = seg_test_loss / len(test_dataloader.dataset)
             print(f"Test Accuracy: {accuracy_test_loss}\t Test neg log likelihood: {seg_test_loss}")
         print(f'Test Loss (overall pc: mean, gt->pred, pred->gt): {test_loss_2048}\n')
@@ -107,6 +138,8 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
     classes = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table"] if opt.test_class_choice is None\
         else [opt.test_class_choice]
     novel_classes = []
+    # n.b.: training_classes should be equal to classes.
+    training_classes = opt.dict_category_offset if hasattr(opt, "dict_category_offset") else None
     if opt.test_class_choice is None:
         novel_classes = ["bag", "cap", "earphone", "guitar", "knife", "laptop", "pistol", "rocket", "skateboard"]
     autoencoder.cuda()
@@ -122,18 +155,23 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
             batch_size=opt.batchSize,
             shuffle=True,
             num_workers=int(opt.workers))
+        if opt.segmentation:
+            if classs in training_classes:
+                setattr(opt, "seg_class_offset", opt.dict_category_offset[classs])
+            else:
+                setattr(opt, "seg_class_offset", None)
         losss = test_example(opt, test_dataloader, autoencoder, n_classes)
         if opt.segmentation:
-            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0][0]
+            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0][0]/2
             run[f"loss/overall_pc/{classs}_cd_(gt->pred)"] = losss[0][1]
             run[f"loss/overall_pc/{classs}_cd_(pred->gt)"] = losss[0][2]
             run[f"loss/{classs}_nll_seg"] = losss[1]
             run[f"loss/{classs}_accuracy_seg"] = losss[2]
-            run[f"loss/cropped_pc/{classs}_cd_mean"] = losss[3][0]
+            run[f"loss/cropped_pc/{classs}_cd_mean"] = losss[3][0]/2
             run[f"loss/cropped_pc/{classs}_cd_(gt->pred)"] = losss[3][1]
             run[f"loss/cropped_pc/{classs}_cd_(pred->gt)"] = losss[3][2]
         else:
-            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0]
+            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0]/2
             run[f"loss/overall_pc/{classs}_cd_(gt->pred)"] = losss[1]
             run[f"loss/overall_pc/{classs}_cd_(pred->gt)"] = losss[2]
         if classs in novel_classes:
@@ -191,8 +229,8 @@ def train_pc(opt):
     except OSError:
         pass
     num_classes = training_dataset.seg_num_all if opt.segmentation else 0
-    pc_architecture = PFNet_MultiTaskCompletionNet(num_classes=num_classes, crop_point_num=n_crop_points,\
-                                                   pfnet_encoder=opt.pfnet_encoder)\
+    pc_architecture = PFNet_MultiTaskCompletionNet(num_classes=num_classes, crop_point_num=n_crop_points,
+                                                   pfnet_encoder=opt.pfnet_encoder, point_scales_list=opt.point_scales_list)\
         if opt.segmentation else PointNet_NaiveCompletionNetwork(num_points=opt.num_points, size_encoder=opt.size_encoder)
 
     optimizer = optim.Adam(pc_architecture.parameters(), lr=opt.lr, betas=(opt.beta_1, opt.beta_2), eps=1e-5,
@@ -263,8 +301,8 @@ def train_pc(opt):
 
                 CD_loss = chamfer_loss(cropped_input, decoded_input)
                 loss = CD_loss \
-                       + alpha1 * chamfer_loss(coarse_sampling, decoded_coarse) \
-                       + alpha2 * chamfer_loss(fine_sampling, decoded_fine) \
+                       + alpha1 * chamfer_loss(decoded_coarse, coarse_sampling) \
+                       + alpha2 * chamfer_loss(decoded_fine, fine_sampling) \
                        + weight_sl*seg_loss
                 run["train/batch_seg_loss"].log(seg_loss)
                 segmentation_losses.append(seg_loss.item())
@@ -358,12 +396,31 @@ def train_pc(opt):
         return pc_architecture, val_history
     else:
         run["model_dictionary"].upload(checkpoint_path)
+        setattr(opt, "dict_category_offset", training_dataset.map_class_offset)
         evaluate_loss_by_class(opt, pc_architecture, run, num_classes)
         run.stop()
         return pc_architecture, 0
 
 
 if __name__ == '__main__':
+    # filename = "D:\\UNIVERSITA\\PRIMO ANNO\\SECONDO SEMESTRE\\Machine learning and Deep learning\\PROJECTS\\P1\\shapenetcorev2_hdf5_2048"
+    # training_dataset = ShapeNetPart(
+    #         root=filename,
+    #         class_choice="None",
+    #         segmentation=True,
+    #         split="trainval"
+    #     )
+    # train_dataloader = torch.utils.data.DataLoader(
+    #     training_dataset,
+    #     batch_size=8,
+    #     shuffle=True)
     opt = upload_args_from_json(os.path.join("parameters", "pc_fixed_params.json"))
+    # for i, data in enumerate(train_dataloader, 0):
+    #     val_points, target = data
+    #     incomplete_input_val, target, cropped_input_val = cropping(val_points, target)
+    #     inc_np = incomplete_input_val.cpu().detach().numpy()
+    #     cropped = cropped.cpu().detach().numpy()
+    #     savePtsFile(f"incomplete", "prova", opt, inc_np)
+    #     savePtsFile(f"cropped", "prova", opt, cropped)
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
     train_pc(opt)

@@ -32,7 +32,7 @@ class ShapeNetPart(data.Dataset):
         assert split.lower() in ['train', 'test', 'val', 'trainval', 'all']
 
         self.root = root
-        self.class_choice = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table"] \
+        self.class_choice = ["airplane", "car", "chair", "lamp", "motorbike", "mug", "table"] \
             if class_choice is None else [class_choice]
         self.num_points = num_points
         self.split = split
@@ -75,6 +75,11 @@ class ShapeNetPart(data.Dataset):
                 self.seg_start_index = np.array(shapenetpart_seg_start_index)[id_choice]
                 self.seg_num_class = np.array(shapenetpart_seg_num)[id_choice]
                 self.class_idx = np.array(id_choice)
+                offset = 0
+                self.map_class_offset = dict()
+                for idx, classs in zip(self.class_idx, self.class_choice):
+                    self.map_class_offset[classs] = offset
+                    offset += shapenetpart_seg_num[idx]
             if self.load_file:
                 self.file = self.file[indices]
         elif self.segmentation:
