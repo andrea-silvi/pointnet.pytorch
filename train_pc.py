@@ -181,8 +181,9 @@ def train_pc(opt):
         os.makedirs(opt.outf)
     except OSError:
         pass
-    num_classes = training_dataset.seg_num_all
-    pc_architecture = PFNet_MultiTaskCompletionNet(num_classes=num_classes, crop_point_num=n_crop_points) \
+    num_classes = training_dataset.seg_num_all if opt.segmentation else 0
+    pc_architecture = PFNet_MultiTaskCompletionNet(num_classes=num_classes, crop_point_num=n_crop_points,\
+                                                   pfnet_encoder=opt.pfnet_encoder)\
         if opt.segmentation else PointNet_NaiveCompletionNetwork(num_points=opt.num_points, size_encoder=opt.size_encoder)
 
     optimizer = optim.Adam(pc_architecture.parameters(), lr=opt.lr, betas=(opt.beta_1, opt.beta_2), eps=1e-5,
@@ -358,6 +359,6 @@ def train_pc(opt):
 
 
 if __name__ == '__main__':
-    opt = upload_args_from_json()
+    opt = upload_args_from_json(os.path.join("parameters", "pc_fixed_params.json"))
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
     train_pc(opt)
