@@ -28,7 +28,6 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
     batch_size = batch_point_cloud.size(0)
     num_points = batch_point_cloud.size(1)
     k = num_points - num_cropped_points
-    real_center = torch.FloatTensor(batch_size, 1, num_points, 3)
     choice = [torch.Tensor([1, 0, 0]), torch.Tensor([0, 0, 1]), torch.Tensor([1, 0, 1]), torch.Tensor([-1, 0, 0]),
               torch.Tensor([-1, 1, 0])]
     p_center = []
@@ -36,15 +35,15 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512):
         index = random.sample(choice, 1)
         p_center.append(index[0])
     # it should have shape (batch_size, 3): one center for one point_cloud inside the batch
-    batch_centers = torch.cat(p_center, dim=0)
+    batch_centers = torch.cat(p_center, dim=0).cuda()
     batch_centers = batch_centers.view(-1, 1, 3)
     incomplete_input, idx, cropped_input = farthest_and_nearest_points(batch_point_cloud, batch_centers, k)
-    zeros = torch.zeros((batch_size, num_cropped_points, 3), dtype=torch.float)
+    zeros = torch.zeros((batch_size, num_cropped_points, 3), dtype=torch.float, device="cuda")
     incomplete_input = torch.cat((incomplete_input, zeros), dim=1)
     if batch_target is not None:
         batch_target = batch_target.view(-1, 1)
         batch_target = batch_target[idx, :]
-        return incomplete_input,  batch_target.view(-1, k, 1), cropped_input
+        return incomplete_input,  batch_target.view(-1, k, 1), cropped_input, idx
     # cropped_input is our incomplete_input
     return incomplete_input, cropped_input
         #
@@ -86,7 +85,7 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
             if opt.segmentation:
                 points, target = data
                 points, target = points.cuda(), target.cuda()
-                incomplete_input_test, target, cropped_input_test = cropping(points, target)
+                incomplete_input_test, target, cropped_input_test, idx = cropping(points, target)
                 incomplete_input_test, target, cropped_input_test = incomplete_input_test.cuda(), target.cuda(), cropped_input_test.cuda()
             else:
                 points = data.cuda()
@@ -98,6 +97,7 @@ def test_example(opt, test_dataloader, model, n_classes, n_crop_points=512):
                 output_clouds, pred = model(incomplete_input_test)
                 output, pred = output_clouds[2].cuda(), pred.cuda()
                 pred = pred.view(-1, n_classes)
+                pred = pred[idx, :]
                 target = target.view(-1, 1)[:, 0]
                 seg_loss = F.nll_loss(pred, target)
                 pred_choice = pred.data.max(1)[1].cuda()
@@ -263,7 +263,7 @@ def train_pc(opt):
             if opt.segmentation:
                 points, target = data
                 points, target = points.cuda(), target.cuda()
-                incomplete_input, target, cropped_input = cropping(points, target)
+                incomplete_input, target, cropped_input, idx = cropping(points, target)
                 incomplete_input, target, cropped_input = incomplete_input.cuda(), target.cuda(), cropped_input.cuda()
             else:
                 points = data
@@ -276,6 +276,9 @@ def train_pc(opt):
                 decoded_points, pred = pc_architecture(incomplete_input)
                 pred = pred.cuda()
                 pred = pred.view(-1, num_classes)
+                # select only the points related to the incomplete point cloud. The other points (the cropped ones)
+                # are mapped to [0, 0, 0]: it would be meaningless to compute the nll for those points
+                pred = pred[idx, :]
                 target = target.view(-1, 1)[:, 0]
                 seg_loss = F.nll_loss(pred, target)
                 pred_choice = pred.data.max(1)[1].cuda()
@@ -328,7 +331,7 @@ def train_pc(opt):
                     if opt.segmentation:
                         val_points, target = data
                         val_points, target = val_points.cuda(), target.cuda()
-                        incomplete_input_val, target, cropped_input_val = cropping(val_points, target)
+                        incomplete_input_val, target, cropped_input_val, idx = cropping(val_points, target)
                         incomplete_input_val, target, cropped_input_val = incomplete_input_val.cuda(), target.cuda(), cropped_input_val.cuda()
                     else:
                         val_points = data
@@ -340,6 +343,7 @@ def train_pc(opt):
                         decoded_point_clouds, pred = pc_architecture(incomplete_input_val)
                         pred = pred.cuda()
                         pred = pred.view(-1, num_classes)
+                        pred = pred[idx, :]
                         target = target.view(-1, 1)[:, 0]
                         val_seg_loss = F.nll_loss(pred, target)
                         pred_choice = pred.data.max(1)[1].cuda()
