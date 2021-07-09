@@ -157,21 +157,21 @@ def evaluate_loss_by_class(opt, autoencoder, run, n_classes):
             num_workers=int(opt.workers))
         if opt.segmentation:
             if classs in training_classes:
-                setattr(opt, "seg_class_offset", opt.dict_category_offset)
+                setattr(opt, "seg_class_offset", opt.dict_category_offset[classs])
             else:
                 setattr(opt, "seg_class_offset", None)
         losss = test_example(opt, test_dataloader, autoencoder, n_classes)
         if opt.segmentation:
-            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0][0]
+            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0][0]/2
             run[f"loss/overall_pc/{classs}_cd_(gt->pred)"] = losss[0][1]
             run[f"loss/overall_pc/{classs}_cd_(pred->gt)"] = losss[0][2]
             run[f"loss/{classs}_nll_seg"] = losss[1]
             run[f"loss/{classs}_accuracy_seg"] = losss[2]
-            run[f"loss/cropped_pc/{classs}_cd_mean"] = losss[3][0]
+            run[f"loss/cropped_pc/{classs}_cd_mean"] = losss[3][0]/2
             run[f"loss/cropped_pc/{classs}_cd_(gt->pred)"] = losss[3][1]
             run[f"loss/cropped_pc/{classs}_cd_(pred->gt)"] = losss[3][2]
         else:
-            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0]
+            run[f"loss/overall_pc/{classs}_cd_mean"] = losss[0]/2
             run[f"loss/overall_pc/{classs}_cd_(gt->pred)"] = losss[1]
             run[f"loss/overall_pc/{classs}_cd_(pred->gt)"] = losss[2]
         if classs in novel_classes:

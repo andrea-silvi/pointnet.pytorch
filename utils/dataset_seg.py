@@ -32,7 +32,7 @@ class ShapeNetPart(data.Dataset):
         assert split.lower() in ['train', 'test', 'val', 'trainval', 'all']
 
         self.root = root
-        self.class_choice = ["airplane", "car", "chair", "lamp", "mug", "motorbike", "table"] \
+        self.class_choice = ["airplane", "car", "chair", "lamp", "motorbike", "mug", "table"] \
             if class_choice is None else [class_choice]
         self.num_points = num_points
         self.split = split
