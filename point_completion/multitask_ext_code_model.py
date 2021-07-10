@@ -19,6 +19,7 @@ def spherical_features(x, pred, num_classes, num_spheres=10, constant_area=True)
         radius_array = r_max * np.arange(1, num_spheres + 1) / num_spheres
     with torch.no_grad():
         torch.cuda.empty_cache()
+        # TODO
         func_map_distance2sphere_num = np.vectorize(lambda x: np.argmax((radius_array - x) > 0))
         pred = pred.view(batch_size, x.size(1), 1)
         x_and_class = torch.cat((x, pred), dim=-1).cuda()
@@ -28,13 +29,26 @@ def spherical_features(x, pred, num_classes, num_spheres=10, constant_area=True)
         feat = []
         for id_sphere in range(num_spheres):
             for id_batch in range(batch_size):
-                current_sphere_feat = torch.bincount(torch.tensor(x_and_class[id_batch, point_belongs_to[id_batch, :] == id_sphere, :][:, -1],
-                                                                  dtype=torch.int, device="cuda"),
-                                                     minlength=num_classes)
+                current_sphere_feat = torch.bincount(
+                    torch.tensor(x_and_class[id_batch, point_belongs_to[id_batch, :] == id_sphere, :][:, -1],
+                                 dtype=torch.int, device="cuda"),
+                    minlength=num_classes)
                 tot_frequency = torch.sum(current_sphere_feat)
                 current_sphere_feat = current_sphere_feat / tot_frequency.item() if tot_frequency.item() != 0 else current_sphere_feat
                 feat.append(current_sphere_feat.view(1, num_classes))
     return torch.cat(feat, dim=-1).view(batch_size, -1)
+
+
+arr = torch.tensor([[[0, 0, 0], [0, 0.5, 0], [0, 0.7, 0], [0, 1, 0], [0, -0.9, 0], [0, -0.2, 0],
+                     [0, 0, -0.5], [0, 0, -0.3], [0, 0, 0.3], [0, 0, 0.9], [0, 0, 1], [-0.8, 0, 0],
+                     [-0.7, 0, 0], [-0.6, 0, 0], [-0.3, 0, 0], [-0.1, 0, 0], [0.1, 0, 0], [0.2, 0, 0],
+                     [1, 1, 1], [0.5, 0.5, 0.5], [1, 0.5, 0], [-0.5, -0.5, -0.5], [-1, -1, 0], [-0.5, -1, -1]],
+                    [[0, 0, 0], [0, 0.5, 0], [0, 0.7, 0], [0, 1, 0], [0, -0.9, 0], [0, -0.2, 0],
+                     [0, 0, -0.5], [0, 0, -0.3], [0, 0, 0.3], [0, 0, 0.9], [0, 0, 1], [-0.8, 0, 0],
+                     [-0.7, 0, 0], [-0.6, 0, 0], [-0.3, 0, 0], [-0.1, 0, 0], [0.1, 0, 0], [0.2, 0, 0],
+                     [1, 1, 1], [0.5, 0.5, 0.5], [1, 0.5, 0], [-0.5, -0.5, -0.5], [-1, -1, 0], [-0.5, -1, -1]]
+                    ])
+spherical_features(arr, torch.ones((2, 24, 3)), 2)
 
 
 class Convlayer(nn.Module):
@@ -204,6 +218,7 @@ class OnionNet(nn.Module):
         self.num_spheres = num_spheres
         self.ext_code_size = self.num_spheres * self.num_classes
         self.option = option
+        self.radius_tensor = self.init_radius()
         self.encoder = Latentfeature(num_scales, each_scales_size, self.point_scales_list)
         self.seg_decoder_input_size = 2048
         if self.option:
@@ -234,7 +249,7 @@ class OnionNet(nn.Module):
         prediction_seg = pred.cuda()
         prediction_seg = prediction_seg.view(-1, self.num_classes)
         pred_choice = prediction_seg.data.max(1)[1].cuda()
-        onion_feat = spherical_features(original_x, pred_choice, self.num_classes, self.num_spheres).cuda()
+        onion_feat = self.spherical_features(original_x, pred_choice).cuda()
         if self.option:
             onion_feat = F.relu(self.fc1(onion_feat))
             onion_feat = F.relu(self.fc2(onion_feat))
@@ -243,6 +258,39 @@ class OnionNet(nn.Module):
 
         decoded_x = self.pc_decoder(x)
         return decoded_x, pred
+
+    def init_radius(self, constant_area=True):
+        self.r_max = np.sqrt(3)
+        if constant_area:
+            coeffs = np.array([np.power(2, i / 3) for i in range(self.num_spheres)])
+            r1 = self.r_max / coeffs[-1]
+            radius_array = r1 * coeffs
+        else:
+            radius_array = self.r_max * np.arange(1, self.num_spheres + 1) / self.num_spheres
+        return torch.tensor(radius_array).view(radius_array.shape[0], 1, 1)
+
+    def spherical_features(self, x, pred):
+        batch_size = x.size(0)
+        num_radius = self.radius_tensor.size(0)
+        pred = pred.view(batch_size, x.size(1), 1)
+        x_and_class = torch.cat((x, pred), dim=-1).cuda()
+        distances_from_origin = torch.sqrt(torch.sum(x ** 2, dim=-1)).cuda()
+        # point_belongs_to: each point is associated to a specific sphere (from 0 up to num_spheres-1)
+        distances_from_origin = distances_from_origin.repeat(num_radius, 1, 1) - self.radius_tensor
+        dfo_m_r = self.radius_tensor - distances_from_origin
+        dfo_m_r[dfo_m_r < 0] = self.r_max
+        point_belongs_to = torch.min(dfo_m_r, dim=0)[1].cuda()
+        id_and_pred = torch.cat((point_belongs_to.view(batch_size, -1, 1), pred.view(batch_size, -1, 1)), dim=-1)
+        feat = []
+        for id_sphere in range(self.num_spheres):
+            for id_batch in range(batch_size):
+                current_sphere_feat = torch.bincount(
+                    id_and_pred[id_batch, point_belongs_to[id_batch, :] == id_sphere, :][:, -1].to(torch.int).cuda(),
+                    minlength=self.num_classes)
+                tot_frequency = torch.sum(current_sphere_feat)
+                current_sphere_feat = current_sphere_feat / tot_frequency.item() if tot_frequency.item() != 0 else current_sphere_feat
+                feat.append(current_sphere_feat.view(1, self.num_classes))
+        return torch.cat(feat, dim=-1).view(batch_size, -1)
 
 
 if __name__ == "__main__":
