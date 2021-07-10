@@ -2,7 +2,7 @@
    "lr": 0.0001,
    "weight_decay": 0,
    "scheduler_gamma": 0.2,
-   "nepoch": 130,
+   "nepoch": 5,
    "dataset": "/content/drive/MyDrive/shapenetpart_hdf5_2048",
    "batchSize": 32,
    "num_points": 2048,
@@ -15,10 +15,10 @@
    "beta_1": 0.9,
    "beta_2": 0.999,
    "patience": 30,
-   "final_training": 1,
+   "final_training": 0,
    "segmentation": true,
    "extended_code": true,
-   "num_spheres": 15,
+   "num_spheres": 10,
+   "option_fc": true,
    "point_scales_list": [1536, 768, 384]
-
 }

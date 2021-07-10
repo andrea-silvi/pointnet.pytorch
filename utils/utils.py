@@ -1,6 +1,8 @@
 import argparse
 import json
 import os
+import random
+
 import numpy as np
 import torch
 import pandas as pd
@@ -86,5 +88,49 @@ def plot_neptune_losses(files, log_scale=True):
     plt.savefig("train_val_losses.png", bbox_inches="tight")
 
 
-
 file = "C:\\Users\\vitto\\Downloads\\train_batch_seg_loss (1).csv"
+
+
+def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512, fixed_choice=None):
+    # batch_point_cloud: (batch_size, num_points, 3)
+    batch_size = batch_point_cloud.size(0)
+    num_points = batch_point_cloud.size(1)
+    k = num_points - num_cropped_points
+    choice = [torch.Tensor([1, 0, 0]), torch.Tensor([0, 0, 1]), torch.Tensor([1, 0, 1]), torch.Tensor([-1, 0, 0]),
+              torch.Tensor([-1, 1, 0])] if fixed_choice is None else [fixed_choice]
+    p_center = []
+    for m in range(batch_size):
+        index = random.sample(choice, 1)
+        p_center.append(index[0])
+    # it should have shape (batch_size, 3): one center for one point_cloud inside the batch
+    batch_centers = torch.cat(p_center, dim=0).cuda()
+    batch_centers = batch_centers.view(-1, 1, 3)
+    incomplete_input, idx, cropped_input = farthest_and_nearest_points(batch_point_cloud, batch_centers, k)
+    if batch_target is not None:
+        batch_target = batch_target.view(-1, 1)
+        batch_target = batch_target[idx, :]
+        return incomplete_input, batch_target.view(-1, k, 1), cropped_input
+    # cropped_input is our incomplete_input
+    return incomplete_input, cropped_input
+    #
+    # for n in range(opt.pnum):
+    #     distance_list.append(distance_squre(real_point[m, 0, n], p_center))
+    # distance_order = sorted(enumerate(distance_list), key=lambda x: x[1])
+    #
+    # for sp in range(opt.crop_point_num):
+    #     input_cropped1.data[m, 0, distance_order[sp][0]] = torch.FloatTensor([0, 0, 0])
+    #     real_center.data[m, 0, sp] = real_point[m, 0, distance_order[sp][0]]
+
+    # k = num_points-num_cropped_points
+    # idx = torch.randint(0, num_points, (batch_size,), device="cuda")
+    # idx_base = torch.arange(0, batch_size, device="cuda").view(-1) * num_points
+    # idx = (idx + idx_base).view(-1)
+    # batch_points = batch_point_cloud.view(-1, 3)[idx, :].view(-1, 1, 3)
+    # incomplete_input, idx, cropped_input = farthest_and_nearest_points(batch_point_cloud, batch_points, k)
+    # if batch_target is not None:
+    #     batch_target = batch_target.view(-1, 1)
+    #     batch_target = batch_target[idx, :]
+    #     return incomplete_input,  batch_target.view(-1, k, 1), cropped_input
+
+    # real center is our cropped_input
+    # return incomplete_input, cropped_input

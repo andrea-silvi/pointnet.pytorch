@@ -255,7 +255,7 @@ class OnionNet(nn.Module):
             radius_array = r1 * coeffs
         else:
             radius_array = self.r_max * np.arange(1, self.num_spheres + 1) / self.num_spheres
-        return torch.tensor(radius_array).view(radius_array.shape[0], 1, 1)
+        return torch.tensor(radius_array).view(radius_array.shape[0], 1, 1).cuda()
 
     def spherical_features(self, x, pred):
         batch_size = x.size(0)
