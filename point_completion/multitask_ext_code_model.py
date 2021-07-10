@@ -224,6 +224,7 @@ class OnionNet(nn.Module):
         self.pc_decoder = PointPyramidDecoder(input_dimension=self.pc_decoder_input_size, crop_point_num=crop_point_num)
 
     def forward(self, x):
+        original_x = x
         x1_index = farthest_point_sample(x, self.point_scales_list[1], RAN=True)
         x1 = index_points(x, x1_index)
         x1 = x1.cuda()
@@ -238,7 +239,7 @@ class OnionNet(nn.Module):
         prediction_seg = prediction_seg.cuda()
         prediction_seg = prediction_seg.view(-1, self.num_classes)
         pred_choice = prediction_seg.data.max(1)[1].cuda()
-        onion_feat = spherical_features(x, pred_choice, self.num_classes, self.num_spheres)
+        onion_feat = spherical_features(original_x, pred_choice, self.num_classes, self.num_spheres)
         if self.option:
             onion_feat = torch.nn.ReLU(self.bn1(self.fc1(onion_feat)))
             onion_feat = torch.nn.ReLU(self.bn2(self.fc2(onion_feat)))
@@ -254,6 +255,6 @@ if __name__ == "__main__":
     input2 = torch.randn(64, 512, 3)
     input3 = torch.randn(64, 256, 3)
     input_ = [input1, input2, input3]
-    netG = MultiTaskCompletionNet(3, 1, [2048, 512, 256], 1024)
+    netG = OnionNet(3, 1, [2048, 512, 256], 1024)
     output = netG(input_)
     print(output)
