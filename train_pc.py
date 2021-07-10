@@ -296,7 +296,16 @@ def train_pc(opt):
                 seg_loss = F.nll_loss(pred, target)
                 pred_choice = pred.data.max(1)[1].cuda()
                 correct = pred_choice.eq(target.data).sum()
-                accuracy = correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))
+                try:
+                    accuracy = correct.item() / float(points.size(0) * (opt.num_points - n_crop_points))
+                except RuntimeError as e:
+                    print(f"pred_choice.shape: {pred_choice.shape}")
+                    print(f"pred_choice.item(): {pred_choice.item()}")
+                    print(f"target.shape: {target.shape}")
+                    print(f"target.item(): {target.item()}")
+                    print(f"points.size(): {points.size(0)}")
+                    print(f"correct.size(): {correct.size(0)}")
+                    print(e)
                 training_accuracies.append(accuracy)
                 decoded_coarse = decoded_points[0].cuda()
                 decoded_fine = decoded_points[1].cuda()
