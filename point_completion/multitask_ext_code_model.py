@@ -7,48 +7,36 @@ import numpy as np
 from utils.FPS import farthest_point_sample, index_points
 import matplotlib.pyplot as plt
 
-
-def spherical_features(x, pred, num_classes, num_spheres=10, constant_area=True):
-    batch_size = x.size(0)
-    r_max = np.sqrt(3)
-    if constant_area:
-        coeffs = np.array([np.power(2, i / 3) for i in range(num_spheres)])
-        r1 = r_max / coeffs[-1]
-        radius_array = r1 * coeffs
-    else:
-        radius_array = r_max * np.arange(1, num_spheres + 1) / num_spheres
-    with torch.no_grad():
-        torch.cuda.empty_cache()
-        # TODO
-        func_map_distance2sphere_num = np.vectorize(lambda x: np.argmax((radius_array - x) > 0))
-        pred = pred.view(batch_size, x.size(1), 1)
-        x_and_class = torch.cat((x, pred), dim=-1).cuda()
-        distances_from_origin = torch.sqrt(torch.sum(x ** 2, dim=-1))
-        # point_belongs_to: each point is associated to a specific sphere (from 0 up to num_spheres-1)
-        point_belongs_to = func_map_distance2sphere_num(distances_from_origin.cpu().numpy())
-        feat = []
-        for id_sphere in range(num_spheres):
-            for id_batch in range(batch_size):
-                current_sphere_feat = torch.bincount(
-                    torch.tensor(x_and_class[id_batch, point_belongs_to[id_batch, :] == id_sphere, :][:, -1],
-                                 dtype=torch.int, device="cuda"),
-                    minlength=num_classes)
-                tot_frequency = torch.sum(current_sphere_feat)
-                current_sphere_feat = current_sphere_feat / tot_frequency.item() if tot_frequency.item() != 0 else current_sphere_feat
-                feat.append(current_sphere_feat.view(1, num_classes))
-    return torch.cat(feat, dim=-1).view(batch_size, -1)
-
-
-arr = torch.tensor([[[0, 0, 0], [0, 0.5, 0], [0, 0.7, 0], [0, 1, 0], [0, -0.9, 0], [0, -0.2, 0],
-                     [0, 0, -0.5], [0, 0, -0.3], [0, 0, 0.3], [0, 0, 0.9], [0, 0, 1], [-0.8, 0, 0],
-                     [-0.7, 0, 0], [-0.6, 0, 0], [-0.3, 0, 0], [-0.1, 0, 0], [0.1, 0, 0], [0.2, 0, 0],
-                     [1, 1, 1], [0.5, 0.5, 0.5], [1, 0.5, 0], [-0.5, -0.5, -0.5], [-1, -1, 0], [-0.5, -1, -1]],
-                    [[0, 0, 0], [0, 0.5, 0], [0, 0.7, 0], [0, 1, 0], [0, -0.9, 0], [0, -0.2, 0],
-                     [0, 0, -0.5], [0, 0, -0.3], [0, 0, 0.3], [0, 0, 0.9], [0, 0, 1], [-0.8, 0, 0],
-                     [-0.7, 0, 0], [-0.6, 0, 0], [-0.3, 0, 0], [-0.1, 0, 0], [0.1, 0, 0], [0.2, 0, 0],
-                     [1, 1, 1], [0.5, 0.5, 0.5], [1, 0.5, 0], [-0.5, -0.5, -0.5], [-1, -1, 0], [-0.5, -1, -1]]
-                    ])
-spherical_features(arr, torch.ones((2, 24, 3)), 2)
+#
+# def spherical_features(x, pred, num_classes, num_spheres=10, constant_area=True):
+#     batch_size = x.size(0)
+#     r_max = np.sqrt(3)
+#     if constant_area:
+#         coeffs = np.array([np.power(2, i / 3) for i in range(num_spheres)])
+#         r1 = r_max / coeffs[-1]
+#         radius_array = r1 * coeffs
+#     else:
+#         radius_array = r_max * np.arange(1, num_spheres + 1) / num_spheres
+#     with torch.no_grad():
+#         torch.cuda.empty_cache()
+#         # TODO
+#         func_map_distance2sphere_num = np.vectorize(lambda x: np.argmax((radius_array - x) > 0))
+#         pred = pred.view(batch_size, x.size(1), 1)
+#         x_and_class = torch.cat((x, pred), dim=-1).cuda()
+#         distances_from_origin = torch.sqrt(torch.sum(x ** 2, dim=-1))
+#         # point_belongs_to: each point is associated to a specific sphere (from 0 up to num_spheres-1)
+#         point_belongs_to = func_map_distance2sphere_num(distances_from_origin.cpu().numpy())
+#         feat = []
+#         for id_sphere in range(num_spheres):
+#             for id_batch in range(batch_size):
+#                 current_sphere_feat = torch.bincount(
+#                     torch.tensor(x_and_class[id_batch, point_belongs_to[id_batch, :] == id_sphere, :][:, -1],
+#                                  dtype=torch.int, device="cuda"),
+#                     minlength=num_classes)
+#                 tot_frequency = torch.sum(current_sphere_feat)
+#                 current_sphere_feat = current_sphere_feat / tot_frequency.item() if tot_frequency.item() != 0 else current_sphere_feat
+#                 feat.append(current_sphere_feat.view(1, num_classes))
+#     return torch.cat(feat, dim=-1).view(batch_size, -1)
 
 
 class Convlayer(nn.Module):

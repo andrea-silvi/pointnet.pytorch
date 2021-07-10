@@ -85,4 +85,6 @@ def plot_neptune_losses(files, log_scale=True):
 
     plt.savefig("train_val_losses.png", bbox_inches="tight")
 
+
+
 file = "C:\\Users\\vitto\\Downloads\\train_batch_seg_loss (1).csv"
