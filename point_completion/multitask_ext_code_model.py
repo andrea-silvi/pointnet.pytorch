@@ -9,28 +9,30 @@ import matplotlib.pyplot as plt
 
 
 def spherical_features(x, pred, num_classes, num_spheres=10, constant_area=True):
+    batch_size = x.size(0)
     r_max = np.sqrt(3)
     if constant_area:
         coeffs = np.array([np.power(2, i / 3) for i in range(num_spheres)])
         r1 = r_max / coeffs[-1]
         radius_array = r1 * coeffs
     else:
-        radius_array = r_max*np.arange(1, num_spheres+1)/num_spheres
+        radius_array = r_max * np.arange(1, num_spheres + 1) / num_spheres
     func_map_distance2sphere_num = np.vectorize(lambda x: np.argmax((radius_array - x) > 0))
-    with torch.no_grad():
-        pred = pred.view(x.size(0), x.size(1), 1)
-        x_and_class = torch.cat((x, pred), dim=-1).cuda()
-        torch.cuda.empty_cache()
-        distances_from_origin = torch.sqrt(torch.sum(x ** 2, dim=-1))
-        # point_belongs_to: each point is associated to a specific sphere (from 0 up to num_spheres-1)
-        point_belongs_to = func_map_distance2sphere_num(np.array(distances_from_origin))
-        feat = []
-        for id_sphere in range(num_spheres):
-            current_sphere_feat = torch.bincount(torch.tensor(x[point_belongs_to==id_sphere, :][:, -1], dtype=torch.int, device="cuda"), minlength=num_classes)
+    pred = pred.view(batch_size, x.size(1), 1)
+    x_and_class = torch.cat((x, pred), dim=-1).cuda()
+    distances_from_origin = torch.sqrt(torch.sum(x ** 2, dim=-1))
+    # point_belongs_to: each point is associated to a specific sphere (from 0 up to num_spheres-1)
+    point_belongs_to = func_map_distance2sphere_num(distances_from_origin.cpu().numpy())
+    feat = []
+    for id_sphere in range(num_spheres):
+        for id_batch in range(batch_size):
+            current_sphere_feat = torch.bincount(torch.tensor(x_and_class[id_batch, point_belongs_to[id_batch, :] == id_sphere, :][:, -1],
+                                                              dtype=torch.int, device="cuda"),
+                                                 minlength=num_classes)
             tot_frequency = torch.sum(current_sphere_feat)
-            current_sphere_feat = current_sphere_feat / tot_frequency.item() if tot_frequency.item()!=0 else current_sphere_feat
-            feat.append(current_sphere_feat)
-    return torch.cat(feat, dim=-1)
+            current_sphere_feat = current_sphere_feat / tot_frequency.item() if tot_frequency.item() != 0 else current_sphere_feat
+            feat.append(current_sphere_feat.view(1, num_classes))
+    return torch.cat(feat, dim=-1).view(batch_size, -1)
 
 
 class Convlayer(nn.Module):
@@ -209,11 +211,11 @@ class OnionNet(nn.Module):
         self.encoder = Latentfeature(num_scales, each_scales_size, self.point_scales_list)
         self.seg_decoder_input_size = 2048
         if self.option:
-            self.fc1 = torch.nn.Linear(self.ext_code_size, self.ext_code_size*2)
-            self.fc2 = torch.nn.Linear(self.ext_code_size*2, self.ext_code_size*2)
-            self.fc3 = torch.nn.Linear(self.ext_code_size*2, self.ext_code_size)
-            self.bn1 = torch.nn.BatchNorm1d(self.ext_code_size*2)
-            self.bn2 = torch.nn.BatchNorm1d(self.ext_code_size*2)
+            self.fc1 = torch.nn.Linear(self.ext_code_size, self.ext_code_size * 2)
+            self.fc2 = torch.nn.Linear(self.ext_code_size * 2, self.ext_code_size * 2)
+            self.fc3 = torch.nn.Linear(self.ext_code_size * 2, self.ext_code_size)
+            self.bn1 = torch.nn.BatchNorm1d(self.ext_code_size * 2)
+            self.bn2 = torch.nn.BatchNorm1d(self.ext_code_size * 2)
             self.bn3 = torch.nn.BatchNorm1d(self.ext_code_size)
         self.pc_decoder_input_size = 1920 + self.ext_code_size
 
@@ -241,9 +243,9 @@ class OnionNet(nn.Module):
         pred_choice = prediction_seg.data.max(1)[1].cuda()
         onion_feat = spherical_features(original_x, pred_choice, self.num_classes, self.num_spheres)
         if self.option:
-            onion_feat = torch.nn.ReLU(self.bn1(self.fc1(onion_feat)))
-            onion_feat = torch.nn.ReLU(self.bn2(self.fc2(onion_feat)))
-            onion_feat = torch.nn.ReLU(self.bn3(self.fc3(onion_feat)))
+            onion_feat = F.relu(self.bn1(self.fc1(onion_feat)))
+            onion_feat = F.relu(self.bn2(self.fc2(onion_feat)))
+            onion_feat = F.relu(self.bn3(self.fc3(onion_feat)))
         x = torch.cat((x, onion_feat), dim=1)
 
         decoded_x = self.pc_decoder(x)
