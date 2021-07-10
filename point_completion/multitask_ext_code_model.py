@@ -72,9 +72,6 @@ class Convlayer(nn.Module):
         x = torch.cat(L, 1)
         if self.global_input:
             return x
-        if self.counter == 0:
-            print(x_128_squeezed.shape)
-            self.counter = 1
         return x, x_128_squeezed
 
 
@@ -108,9 +105,6 @@ class Latentfeature(nn.Module):
         latentfeature = F.relu(self.bn1(self.conv1(latentfeature)))
         latentfeature = torch.squeeze(latentfeature, 1)
         segfeatures = latentfeature.view(-1, 1920, 1).repeat(1, 1, self.point_scales_list[0])
-        if self.count == 0:
-            print(segfeatures.shape, points_features.shape)
-            self.count = 1
         segfeatures = torch.cat([points_features, segfeatures], 1)  # BS, 2048, 2048-512
 
         return latentfeature, segfeatures
@@ -237,8 +231,8 @@ class OnionNet(nn.Module):
 
         x, x_seg = self.encoder(x)
 
-        prediction_seg = self.seg_decoder(x_seg)
-        prediction_seg = prediction_seg.cuda()
+        pred = self.seg_decoder(x_seg)
+        prediction_seg = pred.cuda()
         prediction_seg = prediction_seg.view(-1, self.num_classes)
         pred_choice = prediction_seg.data.max(1)[1].cuda()
         onion_feat = spherical_features(original_x, pred_choice, self.num_classes, self.num_spheres)
@@ -249,7 +243,7 @@ class OnionNet(nn.Module):
         x = torch.cat((x, onion_feat), dim=1)
 
         decoded_x = self.pc_decoder(x)
-        return decoded_x, prediction_seg
+        return decoded_x, pred
 
 
 if __name__ == "__main__":
