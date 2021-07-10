@@ -265,7 +265,7 @@ class OnionNet(nn.Module):
         distances_from_origin = torch.sqrt(torch.sum(x ** 2, dim=-1)).cuda()
         # point_belongs_to: each point is associated to a specific sphere (from 0 up to num_spheres-1)
         distances_from_origin = distances_from_origin.repeat(num_radius, 1, 1) - self.radius_tensor
-        dfo_m_r = self.radius_tensor - distances_from_origin
+        dfo_m_r = (self.radius_tensor - distances_from_origin).cuda()
         dfo_m_r[dfo_m_r < 0] = self.r_max
         point_belongs_to = torch.min(dfo_m_r, dim=0)[1].cuda()
         id_and_pred = torch.cat((point_belongs_to.view(batch_size, -1, 1), pred.view(batch_size, -1, 1)), dim=-1)
