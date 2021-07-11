@@ -130,7 +130,7 @@ def print_original_incomplete_decoded_point_clouds(category, model, opt, run):
                 savePtsFile(f"{index}_{num_crop}_decoded", category, opt, decoded_pc_np, run)
 
 
-def init_radius(num_spheres, constant_area=True):
+def init_radius(num_spheres, constant_area=False):
     r_max = np.sqrt(3)
     if constant_area:
         coeffs = np.array([np.power(2, i / 3) for i in range(num_spheres)])

@@ -247,7 +247,7 @@ class OnionNet(nn.Module):
         decoded_x = self.pc_decoder(x)
         return decoded_x, pred
 
-    def init_radius(self, constant_area=True):
+    def init_radius(self, constant_area=False):
         self.r_max = np.sqrt(3)
         if constant_area:
             coeffs = np.array([np.power(2, i / 3) for i in range(self.num_spheres)])
@@ -269,19 +269,24 @@ class OnionNet(nn.Module):
         dfo_m_r[dfo_m_r < 0] = self.r_max
         point_belongs_to = torch.min(dfo_m_r, dim=0)[1].cuda()
         id_and_pred = torch.cat((point_belongs_to.view(batch_size, -1, 1), pred.view(batch_size, -1, 1)), dim=-1)
-        feat = []
-        previous_sphere_feat = 0
-        for id_sphere in range(self.num_spheres):
-            for id_batch in range(batch_size):
+        feat_batch = None
+        for id_pc in range(batch_size):
+            feat = None
+            previous_sphere_feat = 0
+            for id_sphere in range(self.num_spheres):
                 current_sphere_feat = torch.bincount(
-                    id_and_pred[id_batch, point_belongs_to[id_batch, :] == id_sphere, :][:, -1].to(torch.int).cuda(),
+                    id_and_pred[id_pc, point_belongs_to[id_pc, :] == id_sphere, :][:, -1].to(torch.int).cuda(),
                     minlength=self.num_classes)
                 current_sphere_feat = current_sphere_feat + previous_sphere_feat
                 previous_sphere_feat = current_sphere_feat
+                # tot_frequency: num points inside id_sphere (and the nested ones)
                 tot_frequency = torch.sum(current_sphere_feat)
                 normalized_current_sphere_feat = current_sphere_feat / tot_frequency.item() if tot_frequency.item() != 0 else current_sphere_feat
-                feat.append(normalized_current_sphere_feat.view(1, self.num_classes))
-        return torch.cat(feat, dim=-1).view(batch_size, -1)
+                normalized_current_sphere_feat = normalized_current_sphere_feat.view(1, self.num_classes)
+                feat = torch.cat((feat, normalized_current_sphere_feat), dim=-1) if feat is not None else normalized_current_sphere_feat
+            feat = torch.cat(feat, dim=-1).view(1, self.num_spheres*self.num_classes)
+            feat_batch = torch.cat((feat_batch, feat), dim=0) if feat_batch is not None else feat
+        return feat_batch
 
 
 if __name__ == "__main__":
