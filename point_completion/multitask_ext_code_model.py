@@ -284,7 +284,7 @@ class OnionNet(nn.Module):
                 normalized_current_sphere_feat = current_sphere_feat / tot_frequency.item() if tot_frequency.item() != 0 else current_sphere_feat
                 normalized_current_sphere_feat = normalized_current_sphere_feat.view(1, self.num_classes)
                 feat = torch.cat((feat, normalized_current_sphere_feat), dim=-1) if feat is not None else normalized_current_sphere_feat
-            feat = torch.cat(feat, dim=-1).view(1, self.num_spheres*self.num_classes)
+            feat = feat.view(1, self.num_spheres*self.num_classes)
             feat_batch = torch.cat((feat_batch, feat), dim=0) if feat_batch is not None else feat
         return feat_batch
 
