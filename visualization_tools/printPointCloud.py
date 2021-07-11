@@ -145,11 +145,10 @@ def spherical_features(x, pred, num_spheres, num_classes, radius_tensor, r_max):
     batch_size = x.size(0)
     num_radius = radius_tensor.size(0)
     pred = pred.view(batch_size, x.size(1), 1)
-    x_and_class = torch.cat((x, pred), dim=-1)
-    distances_from_origin = torch.sqrt(torch.sum(x ** 2, dim=-1))
+    distances_from_origin = torch.sqrt(torch.sum(x ** 2, dim=-1)).cuda()
     # point_belongs_to: each point is associated to a specific sphere (from 0 up to num_spheres-1)
-    distances_from_origin = distances_from_origin.repeat(num_radius, 1, 1) - radius_tensor
-    dfo_m_r = radius_tensor - distances_from_origin
+    # distances_from_origin =  - radius_tensor
+    dfo_m_r = radius_tensor - distances_from_origin.repeat(num_radius, 1, 1)
     dfo_m_r[dfo_m_r < 0] = r_max
     point_belongs_to = torch.min(dfo_m_r, dim=0)[1]
     id_and_pred = torch.cat((point_belongs_to.view(batch_size, -1, 1), pred.view(batch_size, -1, 1)), dim=-1)
@@ -166,31 +165,32 @@ def spherical_features(x, pred, num_spheres, num_classes, radius_tensor, r_max):
 
 
 
-def print_onion_net(opt, num_spheres=5):
+def print_onion_net(opt, num_spheres=10):
     dataset_airplane = ShapeNetPart(root=opt.dataset, segmentation=True, class_choice="airplane", split="test")
     dataset_car = ShapeNetPart(root=opt.dataset, segmentation=True, class_choice="car", split="test")
     centers = [torch.Tensor([1, 0, 0]), torch.Tensor([0, 0, 1]), torch.Tensor([1, 0, 1]), torch.Tensor([-1, 0, 0]),
                torch.Tensor([-1, 1, 0])]
     radius_tensor, r_max = init_radius(num_spheres)
+    radius_tensor = radius_tensor.cuda()
     num_classes = 27
     for i in range(5):
         airplane, seg_airplane = dataset_airplane[i]
         car, seg_car = dataset_car[i]
-        airplane, seg_airplane, car, seg_car = airplane.view(1, -1, 3), seg_airplane.view(1, -1),\
-            car.view(1, -1, 3), seg_car.view(1, -1)
-        incomplete_airplane, seg_airplane = cropping(airplane, seg_airplane, fixed_choice=centers[i])
-        incomplete_car, seg_car = cropping(car, seg_car, fixed_choice=torch.Tensor([1, 0, 0]))
+        airplane, seg_airplane, car, seg_car = airplane.view(1, -1, 3).cuda(), seg_airplane.view(1, -1).cuda(),\
+            car.view(1, -1, 3).cuda(), seg_car.view(1, -1).cuda()
+        incomplete_airplane, seg_airplane, _ = cropping(airplane, seg_airplane, fixed_choice=centers[i])
+        incomplete_car, seg_car, _ = cropping(car, seg_car, fixed_choice=torch.Tensor([1, 0, 0]))
         _, id_and_pred_airplane = spherical_features(incomplete_airplane, seg_airplane, num_spheres, num_classes, radius_tensor, r_max)
         _, id_and_pred_car = spherical_features(incomplete_car, seg_car, num_spheres, num_classes, radius_tensor, r_max)
         for sphere in range(num_spheres):
             mask_curr_sphere_car = id_and_pred_car[:, :, -2] == sphere
-            filt_pc_car = incomplete_car[mask_curr_sphere_car]
-            savePtsFile(f"n{i}_sphere{sphere}", "car", opt,
-                        torch.cat((filt_pc_car, id_and_pred_car[:, -1].view(1,-1,1)),dim=-1).numpy(), None)
+            if mask_curr_sphere_car.sum()>0:
+                filt_pc_car = incomplete_car[mask_curr_sphere_car]
+                savePtsFile(f"n{i}_sphere{sphere}", "car", opt, filt_pc_car.cpu().numpy(), None)
             mask_curr_sphere_airplane = id_and_pred_airplane[:, :, -2] == sphere
-            filt_pc_airplane = incomplete_airplane[mask_curr_sphere_airplane]
-            savePtsFile(f"n{i}_sphere{sphere}", "airplane", opt,
-                        torch.cat((filt_pc_airplane, id_and_pred_airplane[:, -1].view(1, -1, 1)), dim=-1).numpy(), None)
+            if mask_curr_sphere_airplane.sum() > 0:
+                filt_pc_airplane = incomplete_airplane[mask_curr_sphere_airplane]
+                savePtsFile(f"n{i}_sphere{sphere}", "airplane", opt, filt_pc_airplane.cpu().numpy(), None)
 
 
 if __name__=="__main__":
