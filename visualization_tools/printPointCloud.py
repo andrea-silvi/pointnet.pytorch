@@ -192,9 +192,9 @@ def print_onion_net(opt, num_spheres=5):
             savePtsFile(f"n{i}_sphere{sphere}", "airplane", opt,
                         torch.cat((filt_pc_airplane, id_and_pred_airplane[:, -1].view(1, -1, 1)), dim=-1).numpy(), None)
 
-#
-# if __name__=="__main__":
-#     file = "D:\\UNIVERSITA\\PRIMO ANNO\\SECONDO SEMESTRE\\Machine learning and Deep learning\\PROJECTS\\P1\\CODICE\\parameters\\pc_fixed_params.json"
-#     opt = upload_args_from_json(file)
-#     setattr(opt, "runNumber", 0)
-#     print_onion_net(opt)
+
+if __name__=="__main__":
+    file = "D:\\UNIVERSITA\\PRIMO ANNO\\SECONDO SEMESTRE\\Machine learning and Deep learning\\PROJECTS\\P1\\CODICE\\parameters\\pc_fixed_params.json"
+    opt = upload_args_from_json(file)
+    setattr(opt, "runNumber", 0)
+    print_onion_net(opt)

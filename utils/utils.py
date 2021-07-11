@@ -50,45 +50,55 @@ def farthest_and_nearest_points(x, batch_points, n):
     return x_far.view(batch_size, n, 3), idx_farthest, x_near.view(batch_size, -1, 3)
 
 
-def plot_neptune_losses(files, log_scale=True):
+def plot_neptune_losses(folder, chosen_loss="cd", log_scale=True):
+    # filename format:
+    # for training: <cd or accuracy>___training__numSpheres-<n>_optionFc-<True or False>
+    # for validation: <cd or accuracy>___validation__numSpheres-<n>_optionFc-<True or False>
     colors = ["blue", "g", "y", "r", "black", "fuchsia"]
+    loss_names = {
+        "cd": "Mean Chamfer Loss",
+        "accuracy": "Accuracy"
+    }
     count_color = 0
+    min_loss_description = ""
     dict_files = dict()
     sns.set_style("darkgrid")
     min_loss = 100000000
     max_loss = 0
-    for file in files:
-        filename = file.split("\\")[-1]
-        file_suffix = filename.split("___")[1]
-        if dict_files.get(file_suffix, 0) == 0:
+    for filename in os.listdir(folder):
+        filepath = os.path.join(folder, filename)
+        type_loss, file_description = filename.split("___")
+        run_info = file_description.split("__")[1]
+        file_description = file_description.replace("__", ": ").replace("_", ", ").replace(".csv", "").replace("-", ": ")
+        if not os.path.isfile(filepath) or type_loss != chosen_loss:
+            continue
+        if dict_files.get(run_info, 0) == 0:
             color = colors[count_color]
             count_color += 1
-            dict_files[file_suffix] = color
+            dict_files[run_info] = color
         else:
-            color = dict_files[file_suffix]
-        if filename.startswith("val"):
-            linestyle = "--"
-        else:
-            linestyle = None
-        losses = pd.read_csv(file, header=None)
+            color = dict_files[run_info]
+        losses = pd.read_csv(filepath, header=None)
         losses = losses[[0, 2]]
         losses.columns = ["epoch", "loss"]
-        sns.lineplot(x="epoch", y="loss", data=losses, linestyle=linestyle, color=color, label=filename)
+        if file_description.startswith("val"):
+            linestyle = "--"
+            min_loss_description = file_description if min(losses["loss"]) < min_loss else min_loss_description
+        else:
+            linestyle = None
+        sns.lineplot(x="epoch", y="loss", data=losses, linestyle=linestyle, color=color, label=file_description)
         min_loss = min(min(losses["loss"]), min_loss)
         max_loss = max(max(losses["loss"]), max_loss)
-    plt.gca().set_xlabel("EPOCH", fontsize=14)
-    plt.gca().set_ylabel("MEAN CHAMFER LOSS", fontsize=14)
-    plt.gca().set_title("OnionNet: Training and Validation Losses")
+    plt.gca().set_xlabel("Epoch", fontsize=12)
+    plt.gca().set_ylabel(loss_names[type_loss], fontsize=12)
+    plt.gca().set_title("OnionNet: Training and Validation Losses", fontsize=14)
     if log_scale:
         sample_count = np.around(np.logspace(math.log10(min_loss), math.log10(max_loss), 8), 4)
         plt.gca().set(yscale='log')
-        plt.gca().set(yticks = sample_count, yticklabels = sample_count)
-        plt.gca().set_ylabel("MEAN CHAMFER LOSS (log scale)", fontsize=14)
-
-    plt.savefig("train_val_losses.png", bbox_inches="tight")
-
-
-file = "C:\\Users\\vitto\\Downloads\\train_batch_seg_loss (1).csv"
+        plt.gca().set(yticks=sample_count, yticklabels=sample_count)
+        plt.gca().set_ylabel(f"{loss_names[type_loss]} (log scale)", fontsize=12)
+    print(f"Min Loss: {min_loss}, params: {min_loss_description}")
+    plt.savefig(f"train_val_{type_loss}_loss.png", bbox_inches="tight", linewidth=.2)
 
 
 def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512, fixed_choice=None):
@@ -134,3 +144,7 @@ def cropping(batch_point_cloud, batch_target=None, num_cropped_points=512, fixed
 
     # real center is our cropped_input
     # return incomplete_input, cropped_input
+
+
+if __name__ == "__main__":
+    plot_neptune_losses("../grid_search_files")
