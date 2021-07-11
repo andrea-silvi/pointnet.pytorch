@@ -368,24 +368,6 @@ def train_pc(opt):
 
 
 if __name__ == '__main__':
-    # filename = "D:\\UNIVERSITA\\PRIMO ANNO\\SECONDO SEMESTRE\\Machine learning and Deep learning\\PROJECTS\\P1\\shapenetcorev2_hdf5_2048"
-    # training_dataset = ShapeNetPart(
-    #         root=filename,
-    #         class_choice="None",
-    #         segmentation=True,
-    #         split="trainval"
-    #     )
-    # train_dataloader = torch.utils.data.DataLoader(
-    #     training_dataset,
-    #     batch_size=8,
-    #     shuffle=True)
     opt = upload_args_from_json(os.path.join("parameters", "pc_fixed_params.json"))
-    # for i, data in enumerate(train_dataloader, 0):
-    #     val_points, target = data
-    #     incomplete_input_val, target, cropped_input_val = cropping(val_points, target)
-    #     inc_np = incomplete_input_val.cpu().detach().numpy()
-    #     cropped = cropped.cpu().detach().numpy()
-    #     savePtsFile(f"incomplete", "prova", opt, inc_np)
-    #     savePtsFile(f"cropped", "prova", opt, cropped)
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
     train_pc(opt)

@@ -9,6 +9,7 @@ import pandas as pd
 import seaborn as sns
 import json
 import matplotlib.pyplot as plt
+import matplotlib
 import math
 
 
@@ -54,6 +55,7 @@ def plot_neptune_losses(folder, chosen_loss="cd", log_scale=True):
     # filename format:
     # for training: <cd or accuracy>___training__numSpheres-<n>_optionFc-<True or False>
     # for validation: <cd or accuracy>___validation__numSpheres-<n>_optionFc-<True or False>
+    matplotlib.rcParams["lines.linewidth"] = .5
     colors = ["blue", "g", "y", "r", "black", "fuchsia"]
     loss_names = {
         "cd": "Mean Chamfer Loss",
