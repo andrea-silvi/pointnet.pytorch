@@ -113,7 +113,6 @@ class Decoder(nn.Module):
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
         x = F.relu(self.fc4(x))
-        #x = self.dp(x)
         x = self.th(self.fc5(x))
         x = x.view(batchsize, self.num_points, 3)
         return x
@@ -133,8 +132,6 @@ class PointNet_NaiveCompletionNetwork(nn.Module):
 
     def __init__(self, num_points=2048, size_encoder=1024, feature_transform=False):
         super(PointNet_NaiveCompletionNetwork, self).__init__()
-        #print("PointNet AE Init - num_points (# generated): %d" % num_points)
-
         #  Encoder Definition
         self.encoder = torch.nn.Sequential(
             PointNetfeat(global_feat=True, feature_transform=feature_transform),

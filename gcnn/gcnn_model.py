@@ -7,11 +7,6 @@
 @Time: 2018/10/13 6:35 PM
 """
 
-import os
-import sys
-import copy
-import math
-import numpy as np
 import argparse
 import torch
 import torch.nn as nn
@@ -146,19 +141,11 @@ class PyramidDecoder(nn.Module):
         self.fc2_1 = nn.Linear(512, 128 * 256)
         self.fc3_1 = nn.Linear(256, 128 * 3)
 
-        #        self.bn1 = nn.BatchNorm1d(1024)
-        #        self.bn2 = nn.BatchNorm1d(512)
-        #        self.bn3 = nn.BatchNorm1d(256)#nn.BatchNorm1d(64*256) !
-        #        self.bn4 = nn.BatchNorm1d(128*512)#nn.BatchNorm1d(256)
-        #        self.bn5 = nn.BatchNorm1d(64*128)
-        #
         self.conv1_1 = torch.nn.Conv1d(self.num_points, self.num_points, 1)
         self.conv1_2 = torch.nn.Conv1d(self.num_points, 512, 1)
         self.conv1_3 = torch.nn.Conv1d(512, int((self.num_points * 3) / 256), 1)
         self.conv2_1 = torch.nn.Conv1d(256, 6, 1)
 
-        #        self.bn1_ = nn.BatchNorm1d(512)
-        #        self.bn2_ = nn.BatchNorm1d(256)
 
     def forward(self, x):
         x_1 = F.relu(self.fc1(x))  # 1024

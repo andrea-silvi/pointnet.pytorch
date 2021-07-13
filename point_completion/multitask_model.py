@@ -195,9 +195,6 @@ class MultiTaskCompletionNet(nn.Module):
             x2_index = farthest_point_sample(x, self.point_scales_list[2], RAN=False)
             x2 = index_points(x, x2_index)
             x2 = x2.cuda()
-            # x = x.permute(0, 2, 1)
-            # x1 = x1.permute(0, 2, 1)
-            # x2 = x2.permute(0, 2, 1)
             x = [x, x1, x2]
         else:
             x = x.permute(0, 2, 1)  # [BS, N, 3] => [BS, 3, N]

@@ -125,22 +125,8 @@ class Decoder(nn.Module):
 
 
 class PointNet_DeeperAutoEncoder(nn.Module):
-    '''
-  Complete AutoEncoder Model:
-  Given an input point cloud X:
-      - Step 1: encode the point cloud X into a latent low-dimensional code
-      - Step 2: Starting from the code geneate a representation Y as close as possible to the original input X
-
-  Details:
-  1. the 'code' size is hardocoded to 100 at line 45 - could be detrimental such a small code size
-  1.1. If you change the code size you must modify accordingly also the decoder
-  2. 'num_points' is the parameter controlling the number of points to be generated. In general we want to generate a number of points equal to the number of input points.
-  '''
-
     def __init__(self, num_points=1024, size_encoder=1024, feature_transform=False, dropout=0):
         super(PointNet_DeeperAutoEncoder, self).__init__()
-        #print("PointNet AE Init - num_points (# generated): %d" % num_points)
-
         #  Encoder Definition
         self.encoder = torch.nn.Sequential(
             PointNetfeat(global_feat=True, feature_transform=feature_transform),

@@ -134,8 +134,6 @@ def train_example(opt):
         shuffle=True,
         num_workers=int(opt.workers))
 
-    # print(f"Length training/validation/test datasets: {len(training_dataset)}, {len(validation_dataset)}, "
-    #      f"{len(test_dataset)}")
 
     try:
         os.makedirs(opt.outf)
@@ -159,8 +157,6 @@ def train_example(opt):
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=opt.scheduler_stepSize, gamma=opt.scheduler_gamma)
     autoencoder.cuda()
     run["model"] = autoencoder
-    # num_batch = len(dataset) / opt.batchSize
-    # checkpoint_path = os.path.join(opt.outf, f"{hash(str(opt))}_checkpoint.pt")
     checkpoint_path = os.path.join(opt.outf, f"checkpoint{opt.runNumber}.pt")
     training_history = []
     val_history = []
@@ -169,9 +165,7 @@ def train_example(opt):
     early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=checkpoint_path)
     #  instantiate the loss
     chamfer_loss = PointLoss()
-    # flag_stampa = False
     n_epoch = opt.nepoch
-    # n_batches = np.floor(training_dataset.__len__() / opt.batchSize)
     for epoch in range(n_epoch):
         if epoch > 0:
             scheduler.step()
@@ -185,15 +179,11 @@ def train_example(opt):
             alpha1 = 0.1
             alpha2 = 0.2
         training_losses = []
-        # running_loss = 0.0
         for i, points in enumerate(train_dataloader, 0):
-            # print(f"Points size: {points.size()}")
-            # points = points.transpose(2, 1)
             points = points.cuda()
             optimizer.zero_grad()
             autoencoder.train()
             decoded_points = autoencoder(points)
-            # print(f"Decoded points size: {decoded_points.size()}")
             # let's compute the chamfer distance between the two sets: 'points' and 'decoded'
             if opt.type_decoder == "pyramid":
                 decoded_coarse = decoded_points[0].cuda()
@@ -215,24 +205,16 @@ def train_example(opt):
             else:
                 decoded_points = decoded_points.cuda()
                 CD_loss = loss = chamfer_loss(points, decoded_points)
-            # if epoch==0 and i==0:
-            # print(f"LOSS: first epoch, first batch: \t {loss}")
             training_losses.append(CD_loss.item())
             run["train/batch_loss"].log(CD_loss.item())
-            # if opt.feature_transform:
-            #     loss += feature_transform_regularizer(trans_feat) * 0.001
             loss.backward()
-            # running_loss += loss.item()
             optimizer.step()
-            # if i % 1000 == 999: #every 1000 mini batches
-            # writer.add_scalar('training loss', running_loss/1000, epoch * len(train_dataloader))
-            # print_there(text=f"TRAINING: \t Epoch: {epoch}/{n_epoch},\t batch: {i}/{n_batches}")
         gc.collect()
         torch.cuda.empty_cache()
         train_mean = np.average(training_losses)
         run["train/epoch_loss"].log(train_mean)
 
-        # TODO - VALIDATION PHASE
+        # Validation Phase
         if not final_training:
             with torch.no_grad():
                 val_losses = []
@@ -244,8 +226,6 @@ def train_example(opt):
                         decoded_val_points = decoded_val_points[2]  # take only the actual prediction (num_points)
                     decoded_val_points = decoded_val_points.cuda()
                     val_loss = chamfer_loss(val_points, decoded_val_points)
-                    # if j==0:
-                    # print(f"LOSS FIRST VALIDATION BATCH: {val_loss}")
                     val_losses.append(val_loss.item())
                     run["validation/batch_loss"].log(val_loss.item())
                 val_mean = np.average(val_losses)
@@ -265,21 +245,6 @@ def train_example(opt):
         if not final_training:
             val_history.append(val_mean)
 
-            # if i % 10 == 0:
-            #     j, data = next(enumerate(testdataloader, 0))
-            #     points, target = data
-            #     target = target[:, 0]
-            #     points = points.transpose(2, 1)
-            #     points, target = points.cuda(), target.cuda()
-            #     classifier = classifier.eval()
-            #     pred, _, _ = classifier(points)
-            #     loss = F.nll_loss(pred, target)
-            #     pred_choice = pred.data.max(1)[1]
-            #     correct = pred_choice.eq(target.data).cpu().sum()
-            #     print('[%d: %d/%d] %s loss: %f accuracy: %f' % (
-            #     epoch, i, num_batch, blue('test'), loss.item(), correct.item() / float(opt.batchSize)))
-
-        # Commented: early_stopping already saves the best model
     if opt.nepoch <= 50:
         torch.save(autoencoder.state_dict(), checkpoint_path)
     autoencoder.load_state_dict(torch.load(checkpoint_path))
@@ -289,100 +254,18 @@ def train_example(opt):
         class_choice=opt.test_class_choice,
         npoints=opt.num_points,
         set_size=opt.set_size), opt.test_class_choice, autoencoder, opt, run)
-
-    # TODO PLOT LOSSES
-    # print(training_history)
-    # print(val_history)
     if not final_training:
-        # print_loss_graph(training_history, val_history, opt)
         run.stop()
         return autoencoder, val_history
     else:
-        # print_loss_graph(training_history, None, opt)
         run["model_dictionary"].upload(checkpoint_path)
         evaluate_loss_by_class(opt, autoencoder, run)
-        # test_loss = test_example(opt, test_dataloader, autoencoder)
-        # run["test/loss"].log(test_loss)
         run.stop()
         return autoencoder, 0
 
 
-def train_model_by_class(opt):
-    worst_test_loss = 0
-    worst_class = ""
-    dataset = ShapeNetDataset(
-        root=opt.dataset,
-        class_choice=None,
-        split='test',
-        npoints=opt.num_points)
-    classes = ["Airplane", "Car", "Chair", "Lamp", "Motorbike", "Mug", "Table"]
-    base_folder = opt.outf
-    for class_choice in classes:
-        setattr(opt, "train_class_choice", class_choice)
-        setattr(opt, "test_class_choice", class_choice)
-        output_folder = os.path.join(base_folder, class_choice)
-        setattr(opt, "outf", output_folder)
-        # setattr(opt, "final_training", 0)
-        # Implement for transfer learning
-        # settattr(opt, "model", "path of trained general model")
-        try:
-            os.makedirs(output_folder)
-        except Exception as e:
-            print(e)
-        print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
-        model, test_loss = train_example(opt)
-
-        if test_loss[-1] > worst_test_loss:
-            print(f"--- Worst validation loss found! {test_loss[-1]} (previous one: {worst_test_loss})")
-            worst_class = class_choice
-            worst_test_loss = test_loss[-1]
-
-        # Save final model + final test loss
-        # torch.save(model.state_dict(), os.path.join(opt.outf, "final_checkpoint.pt"))
-        # with open(os.path.join(opt.outf, "test_loss.csv"), 'w') as f:
-        #     writer = csv.writer(f)
-        #     writer.writerow(test_loss)
-        #
-        # print(opt)
-        # model, val_loss = train_example(opt)
-        # for class_choice_pc in classes:
-        #     print_original_decoded_point_clouds(dataset, class_choice_pc, model, opt)
-    print(f"Worst class: {worst_class},\t last loss: {worst_test_loss} (20th epoch)")
-
-
 if __name__ == '__main__':
-    # TODO - create a json file for setting all the arguments. Actually:
-    # TODO - create a json for the FINAL arguments (after the cross-validation, e.g.: {'batchSize': 32})
-    # TODO - and a json for the GRID SEARCH phase (e.g.: {'batchSize': [16, 32, 64], ...}
     parser = argparse.ArgumentParser()
-    # parser.add_argument("--set_size", type=float, default=1, help="Subset size (between 0 and 1) of the training set. "
-    #                                                               "Use it for fake test")
-    # parser.add_argument("--size_encoder", type=int, default=1024, help="Size latent code")
-    # parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
-    # parser.add_argument('--num_points', type=int, default=1024, help='Number points from point cloud')
-    # parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
-    # parser.add_argument('--nepoch', type=int, default=250, help='number of epochs to train for')
-    # parser.add_argument('--outf', type=str, default='cls', help='output folder')
-    # parser.add_argument('--model', type=str, default='', help='model path')
-    # parser.add_argument('--dataset', type=str, required=True, help="dataset path")
-    # parser.add_argument('--train_class_choice', type=str, default=None, help="Training class")
-    # parser.add_argument('--test_class_choice', type=str, default=None, help="Test class")
-    # # parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
-    # parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
-    # parser.add_argument('--scheduler_gamma', type=float, default=0.5, help="reduction factor of the learning rate")
-    # parser.add_argument("--scheduler_stepSize", type=int, default=20)
-    # parser.add_argument("--dropout", type=int, default=1, help="dropout percentage")
-    # parser.add_argument("--lr", type=float, default=1e-6, help="learning rate")
-    # parser.add_argument("--weight_decay", type=float, default=1e-3, help="weight decay")
-    # parser.add_argument("--beta_1", type=float, default=0.9, help="decay rate for first moment")
-    # parser.add_argument("--beta_2", type=float, default=0.999, help="decay rate for second moment")
-    # parser.add_argument("--patience", type=int, default=7, help="How long to wait after last time val loss improved.")
-    # opt = parser.parse_args()
-    # TODO - remove the following instruction (it overrides all the previous args)
     opt = upload_args_from_json(os.path.join("parameters", "ae_fixed_params.json"))
     print(f"\n\n------------------------------------------------------------------\nParameters: {opt}\n")
     train_example(opt)
-    # train_model_by_class(opt)
-
-# TODO - Implement training phase (you should also implement cross-validation for tuning the hyperparameters)
-# TODO - You should also implement the visualization tools (visualization_tools package)

@@ -145,7 +145,7 @@ def spherical_features(x, pred, num_spheres, num_classes, radius_tensor, r_max):
     batch_size = x.size(0)
     num_radius = radius_tensor.size(0)
     pred = pred.view(batch_size, x.size(1), 1)
-    distances_from_origin = torch.sqrt(torch.sum(x ** 2, dim=-1)).cuda()
+    distances_from_origin = torch.sqrt(torch.sum(x ** 2, dim=-1))
     # point_belongs_to: each point is associated to a specific sphere (from 0 up to num_spheres-1)
     # distances_from_origin =  - radius_tensor
     dfo_m_r = radius_tensor - distances_from_origin.repeat(num_radius, 1, 1)
@@ -156,7 +156,7 @@ def spherical_features(x, pred, num_spheres, num_classes, radius_tensor, r_max):
     for id_sphere in range(num_spheres):
         for id_batch in range(batch_size):
             current_sphere_feat = torch.bincount(
-                id_and_pred[id_batch, point_belongs_to[id_batch, :] == id_sphere, :][:, -1].to(torch.int).cuda(),
+                id_and_pred[id_batch, point_belongs_to[id_batch, :] == id_sphere, :][:, -1].to(torch.int),
                 minlength=num_classes)
             tot_frequency = torch.sum(current_sphere_feat)
             current_sphere_feat = current_sphere_feat / tot_frequency.item() if tot_frequency.item() != 0 else current_sphere_feat
@@ -170,19 +170,19 @@ def print_onion_net(opt, num_spheres=5):
     centers = [torch.Tensor([1, 0, 0])]
     i = 0
     radius_tensor, r_max = init_radius(num_spheres)
-    radius_tensor = radius_tensor.cuda()
+    radius_tensor = radius_tensor
     num_classes = 27
     airplane, seg_airplane = dataset_airplane[i]
-    airplane, seg_airplane = airplane.view(1, -1, 3).cuda(), seg_airplane.view(1, -1).cuda(),
-    incomplete_airplane, seg_airplane, _ = cropping(airplane, seg_airplane, fixed_choice=centers[i])
+    airplane, seg_airplane = airplane.view(1, -1, 3), seg_airplane.view(1, -1),
+    incomplete_airplane, seg_airplane, _ = cropping(airplane, seg_airplane, fixed_choice=centers[i], device="cpu")
     _, id_and_pred_airplane = spherical_features(incomplete_airplane, seg_airplane, num_spheres, num_classes, radius_tensor, r_max)
     for sphere in range(num_spheres):
         mask_curr_sphere_airplane = id_and_pred_airplane[:, :, -2] == sphere
         if mask_curr_sphere_airplane.sum() == 0:
             continue
         filt_pc_airplane_in_sphere = incomplete_airplane[mask_curr_sphere_airplane]
-        for seg_class in range(dataset_airplane.seg_num_class):
-            mask_curr_seg_class = id_and_pred_airplane[:, mask_curr_sphere_airplane, -1] == seg_class
+        for seg_class in range(dataset_airplane.seg_num_class[0]):
+            mask_curr_seg_class = id_and_pred_airplane[mask_curr_sphere_airplane][:, -1] == seg_class
             if mask_curr_seg_class.sum() == 0:
                 continue
             filt_pc_airplane = filt_pc_airplane_in_sphere[mask_curr_seg_class]

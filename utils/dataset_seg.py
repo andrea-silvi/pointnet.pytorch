@@ -137,16 +137,6 @@ class ShapeNetPart(data.Dataset):
 
         if self.segmentation:
             seg = self.seg[item]
-
-            # self.seg_num_all
-            # self.seg_start_index
-            # self.seg_num_class
-            # shapenetpart_cat2id = {'airplane': 0, 'bag': 1, 'cap': 2, 'car': 3, 'chair': 4,
-            #                        'earphone': 5, 'guitar': 6, 'knife': 7, 'lamp': 8, 'laptop': 9,
-            #                        'motorbike': 10, 'mug': 11, 'pistol': 12, 'rocket': 13, 'skateboard': 14,
-            #                        'table': 15}
-            # shapenetpart_seg_num = [4, 2, 2, 4, 4, 3, 3, 2, 4, 2, 6, 2, 3, 3, 3, 3]
-            # shapenetpart_seg_start_index = [0, 4, 6, 8, 12, 16, 19, 22, 24, 28, 30, 36, 38, 41, 44, 47]
             offset = 0
             for idx in range(label.item()):
                 if idx in self.class_idx:
@@ -161,17 +151,3 @@ class ShapeNetPart(data.Dataset):
     def __len__(self):
         return self.data.shape[0]
 
-
-if __name__ == '__main__':
-    root = os.getcwd()
-    path = "D:\\UNIVERSITA\\PRIMO ANNO\\SECONDO SEMESTRE\\Machine learning and Deep learning\\PROJECTS\\P1\\shapenetpart_hdf5_2048"
-    # choose split type from 'train', 'test', 'all', 'trainval' and 'val'
-    # only shapenetcorev2 and shapenetpart dataset support 'trainval' and 'val'
-    split = 'train'
-
-    d = ShapeNetPart(root=path, num_points=2048, split=split, class_choice="mug", segmentation=True)
-    print("datasize:", d.__len__())
-
-    item = 0
-    ps = d[2]
-    print(ps.size(), ps.type())
